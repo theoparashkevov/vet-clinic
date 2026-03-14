@@ -1,0 +1,10 @@
+{
+  "name": "vet-clinic",
+  "private": true,
+  "workspaces": ["api", "web", "bot"],
+  "scripts": {
+    "lint": "echo 'lint TBD'",
+    "build": "echo 'build TBD'",
+    "test": "echo 'test TBD'"
+  }
+}
