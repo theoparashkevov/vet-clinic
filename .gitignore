@@ -4,3 +4,5 @@ node_modules/
 .env*
 dist/
 Dockerfile.local
+.git-credentials
+!api/.env.example

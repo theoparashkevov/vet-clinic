@@ -72,6 +72,8 @@ vet-clinic/
 - GET /patients/:id (includes timeline)
 - POST /appointments (create)
 - GET /appointments/slots?date=YYYY-MM-DD
+  - Returns: { date: 'YYYY-MM-DD', slots: ISODateTime[] }
+  - Notes: currently mocked in api (fixed 20-min slots 09:00–10:40); will move to service with configurable clinic hours
 - POST /owners
 - POST /tools/create-appointment (LLM tool)
 - POST /tools/register-client (LLM tool)

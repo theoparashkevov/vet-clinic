@@ -1,10 +1,16 @@
 {
   "name": "vet-clinic",
   "private": true,
-  "workspaces": ["api", "web", "bot"],
+  "workspaces": [
+    "api",
+    "web",
+    "bot"
+  ],
   "scripts": {
     "lint": "echo 'lint TBD'",
     "build": "echo 'build TBD'",
-    "test": "echo 'test TBD'"
+    "test": "echo 'test TBD'",
+    "api:prisma:generate": "npm --workspace api run prisma:generate",
+    "api:prisma:migrate": "npm --workspace api run prisma:migrate"
   }
 }
