@@ -11,7 +11,7 @@ Legend: [A]=Architect/Orchestrator, [B]=Backend Agent, [F]=Frontend Agent, [D]=D
    - Status: PARTIAL — schema present; migration pending
 3. [B] NestJS bootstrap with modules: auth, patients, owners, appointments
    - Accept: compiles, healthcheck endpoint, basic REST stubs
-   - Status: PARTIAL — minimal Nest app with GET /health is live; modules + stubs pending
+   - Status: PARTIAL — app compiles; GET /health live; appointments controller added; other modules + stubs pending
 4. [B] Tool endpoints: create_appointment, get_available_slots, create_client_profile (mocked)
    - Accept: validated payloads, returns mocked data, unit tests for DTO validation
 5. [F] Next.js app bootstrap with doctor dashboard shell
@@ -20,6 +20,7 @@ Legend: [A]=Architect/Orchestrator, [B]=Backend Agent, [F]=Frontend Agent, [D]=D
 ## Next (Cycle 4–6)
 6. [B] Implement appointments slots logic (configurable clinic hours)
    - Accept: GET /appointments/slots returns slots for a date
+   - Status: PARTIAL — endpoint stub returns mocked slots; move to service + config next
 7. [F] Appointment create form (doctor UI)
    - Accept: form posts to API, shows success/error
 8. [B] Patient CRUD (attach to owner)
@@ -45,5 +46,6 @@ Legend: [A]=Architect/Orchestrator, [B]=Backend Agent, [F]=Frontend Agent, [D]=D
 15. [A] Update ARCHITECTURE.md with endpoint contracts/examples
 
 ## Notes (today)
-- Added NestJS minimal service with healthcheck and Docker wiring to accelerate future backend tasks.
+- Cleaned NestJS bootstrap to use AppModule; removed duplicate inline controller in main.ts
+- Added appointments controller with GET /appointments/slots returning mocked slots (next: service + config)
 
