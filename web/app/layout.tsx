@@ -10,6 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ul style={{ listStyle: 'none', display: 'flex', gap: 12, margin: 0, padding: 0 }}>
               <li><Link href="/">Home</Link></li>
               <li><Link href="/patients">Patients</Link></li>
+              <li><Link href="/appointments">Appointments</Link></li>
             </ul>
           </nav>
         </header>
