@@ -92,9 +92,6 @@ export default function HomePage() {
           InputLabelProps={{ shrink: true }}
           aria-label="Select date"
         />
-<<<<<<< HEAD
-        <Button type="submit" variant="contained" disabled={loading} aria-label="Show slots">
-=======
         <Button
           type="submit"
           variant="contained"
@@ -107,7 +104,6 @@ export default function HomePage() {
             },
           }}
         >
->>>>>>> origin/main
           {loading ? <><CircularProgress size={18} sx={{ mr: 1 }} /> Loading…</> : "Show slots"}
         </Button>
       </Box>
