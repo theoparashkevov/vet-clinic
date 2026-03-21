@@ -92,7 +92,22 @@ export default function HomePage() {
           InputLabelProps={{ shrink: true }}
           aria-label="Select date"
         />
+<<<<<<< HEAD
         <Button type="submit" variant="contained" disabled={loading} aria-label="Show slots">
+=======
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={loading}
+          aria-label="Show slots"
+          sx={{
+            '&:focus-visible': {
+              outline: '3px solid rgba(25, 118, 210, 0.6)',
+              outlineOffset: 2,
+            },
+          }}
+        >
+>>>>>>> origin/main
           {loading ? <><CircularProgress size={18} sx={{ mr: 1 }} /> Loading…</> : "Show slots"}
         </Button>
       </Box>

@@ -1,0 +1,59 @@
+name: CI Smoke
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vet
+          POSTGRES_PASSWORD: vet
+          POSTGRES_DB: vet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vet" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://vet:vet@localhost:5432/vet?schema=public
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install API deps
+        working-directory: api
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: api
+        run: npx prisma generate
+
+      - name: Apply DB migrations
+        working-directory: api
+        run: npx prisma migrate deploy
+
+      - name: Build API
+        working-directory: api
+        run: npm run build
+
+      - name: Start API
+        working-directory: api
+        run: nohup node dist/main.js &
+
+      - name: Wait for API and curl /health
+        run: |
+          for i in {1..30}; do
+            if curl -sSf http://localhost:3000/health > /dev/null; then
+              echo "API is healthy"; exit 0; fi; sleep 1; done
+          echo "API did not become healthy in time"; exit 1
