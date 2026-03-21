@@ -8,12 +8,13 @@ datasource db {
 }
 
 model Owner {
-  id        String    @id @default(cuid())
-  name      String
-  phone     String
-  email     String?
-  patients  Patient[]
-  createdAt DateTime  @default(now())
+  id          String        @id @default(cuid())
+  name        String
+  phone       String
+  email       String?
+  patients    Patient[]
+  appointments Appointment[]
+  createdAt   DateTime      @default(now())
 }
 
 model Patient {
@@ -48,15 +49,15 @@ model Appointment {
 }
 
 model MedicalRecord {
-  id          String   @id @default(cuid())
-  patient     Patient  @relation(fields: [patientId], references: [id])
-  patientId   String
-  visitDate   DateTime
-  summary     String
-  diagnoses   String?
-  treatments  String?
+  id            String   @id @default(cuid())
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  patientId     String
+  visitDate     DateTime
+  summary       String
+  diagnoses     String?
+  treatments    String?
   prescriptions String?
-  attachments String?
+  attachments   String?
 }
 
 model User {
