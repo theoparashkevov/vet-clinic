@@ -7,10 +7,16 @@
     "bot"
   ],
   "scripts": {
+    "dev": "concurrently --names api,web --prefix-colors blue,green \"npm --workspace api run start:dev\" \"npm --workspace web run dev\"",
     "lint": "echo 'lint TBD'",
     "build": "echo 'build TBD'",
     "test": "echo 'test TBD'",
     "api:prisma:generate": "npm --workspace api run prisma:generate",
-    "api:prisma:migrate": "npm --workspace api run prisma:migrate"
+    "api:prisma:migrate": "npm --workspace api run prisma:migrate",
+    "api:prisma:push": "npm --workspace api run prisma:push",
+    "api:prisma:seed": "npm --workspace api run prisma:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

@@ -10,6 +10,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:create-migration": "prisma migrate dev --create-only --name init",
+    "prisma:push": "prisma db push --force-reset",
     "prisma:seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {

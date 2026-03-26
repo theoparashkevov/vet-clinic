@@ -2,205 +2,268 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+function daysAgo(n: number): Date {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function todayAt(h: number, m = 0): Date {
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+function dateAt(base: Date, h: number, m = 0): Date {
+  const d = new Date(base);
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
 async function main() {
   console.log('Seeding database...');
 
-  // Create doctors
+  // ── Doctors ──────────────────────────────────────────────────────────────
   const drMaria = await prisma.user.upsert({
     where: { email: 'maria.ivanova@vetclinic.com' },
     update: {},
-    create: {
-      name: 'Dr. Maria Ivanova',
-      email: 'maria.ivanova@vetclinic.com',
-      role: 'doctor',
-    },
+    create: { name: 'Dr. Maria Ivanova', email: 'maria.ivanova@vetclinic.com', role: 'doctor' },
   });
-
   const drPetar = await prisma.user.upsert({
     where: { email: 'petar.dimitrov@vetclinic.com' },
     update: {},
-    create: {
-      name: 'Dr. Petar Dimitrov',
-      email: 'petar.dimitrov@vetclinic.com',
-      role: 'doctor',
-    },
+    create: { name: 'Dr. Petar Dimitrov', email: 'petar.dimitrov@vetclinic.com', role: 'doctor' },
   });
-
   const drElena = await prisma.user.upsert({
     where: { email: 'elena.georgieva@vetclinic.com' },
     update: {},
-    create: {
-      name: 'Dr. Elena Georgieva',
-      email: 'elena.georgieva@vetclinic.com',
-      role: 'doctor',
-    },
+    create: { name: 'Dr. Elena Georgieva', email: 'elena.georgieva@vetclinic.com', role: 'doctor' },
   });
+  console.log('  Doctors: Dr. Ivanova, Dr. Dimitrov, Dr. Georgieva');
 
-  console.log('Created doctors:', drMaria.name, drPetar.name, drElena.name);
-
-  // Create owners
-  const owner1 = await prisma.owner.create({
-    data: {
-      name: 'Ivan Petrov',
-      phone: '+359 888 111 222',
-      email: 'ivan.petrov@mail.com',
-    },
+  // ── Owners ───────────────────────────────────────────────────────────────
+  const ivan = await prisma.owner.create({
+    data: { name: 'Ivan Petrov', phone: '+359 888 111 222', email: 'ivan.petrov@mail.com' },
   });
-
-  const owner2 = await prisma.owner.create({
-    data: {
-      name: 'Ana Stoyanova',
-      phone: '+359 888 333 444',
-      email: 'ana.stoyanova@mail.com',
-    },
+  const ana = await prisma.owner.create({
+    data: { name: 'Ana Stoyanova', phone: '+359 888 333 444', email: 'ana.stoyanova@mail.com' },
   });
-
-  const owner3 = await prisma.owner.create({
-    data: {
-      name: 'Georgi Nikolov',
-      phone: '+359 888 555 666',
-      email: 'georgi.nikolov@mail.com',
-    },
+  const georgi = await prisma.owner.create({
+    data: { name: 'Georgi Nikolov', phone: '+359 888 555 666', email: 'georgi.nikolov@mail.com' },
   });
+  const marina = await prisma.owner.create({
+    data: { name: 'Marina Todorova', phone: '+359 888 777 888', email: 'marina.todorova@mail.com' },
+  });
+  console.log('  Owners: Ivan, Ana, Georgi, Marina');
 
-  console.log('Created owners:', owner1.name, owner2.name, owner3.name);
-
-  // Create patients (pets)
+  // ── Patients ─────────────────────────────────────────────────────────────
   const rex = await prisma.patient.create({
     data: {
-      name: 'Rex',
-      species: 'Dog',
-      breed: 'German Shepherd',
-      birthdate: new Date('2020-03-15'),
-      microchipId: 'BG-DOG-001',
-      ownerId: owner1.id,
-      allergies: 'Penicillin',
+      name: 'Rex', species: 'Dog', breed: 'German Shepherd',
+      birthdate: new Date('2020-03-15'), microchipId: 'BG-DOG-001',
+      ownerId: ivan.id, allergies: 'Penicillin',
     },
   });
-
   const whiskers = await prisma.patient.create({
     data: {
-      name: 'Whiskers',
-      species: 'Cat',
-      breed: 'Siamese',
-      birthdate: new Date('2021-07-20'),
-      microchipId: 'BG-CAT-001',
-      ownerId: owner2.id,
-      chronicConditions: 'Mild asthma',
+      name: 'Whiskers', species: 'Cat', breed: 'Siamese',
+      birthdate: new Date('2021-07-20'), microchipId: 'BG-CAT-001',
+      ownerId: ana.id, chronicConditions: 'Mild asthma',
     },
   });
-
   const buddy = await prisma.patient.create({
     data: {
-      name: 'Buddy',
-      species: 'Dog',
-      breed: 'Golden Retriever',
-      birthdate: new Date('2019-11-05'),
-      microchipId: 'BG-DOG-002',
-      ownerId: owner1.id,
+      name: 'Buddy', species: 'Dog', breed: 'Golden Retriever',
+      birthdate: new Date('2019-11-05'), microchipId: 'BG-DOG-002',
+      ownerId: ivan.id,
     },
   });
-
   const luna = await prisma.patient.create({
     data: {
-      name: 'Luna',
-      species: 'Cat',
-      breed: 'Persian',
-      birthdate: new Date('2022-01-10'),
-      ownerId: owner3.id,
+      name: 'Luna', species: 'Cat', breed: 'Persian',
+      birthdate: new Date('2022-01-10'), ownerId: georgi.id,
     },
   });
-
-  console.log('Created patients:', rex.name, whiskers.name, buddy.name, luna.name);
-
-  // Create some appointments
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const appt1 = await prisma.appointment.create({
+  const milo = await prisma.patient.create({
     data: {
-      patientId: rex.id,
-      ownerId: owner1.id,
-      doctorId: drMaria.id,
-      startsAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0),
-      endsAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 30),
-      reason: 'Annual vaccination',
-      status: 'scheduled',
+      name: 'Milo', species: 'Rabbit', breed: 'Holland Lop',
+      birthdate: new Date('2023-06-01'), ownerId: marina.id,
+      notes: 'Very timid, handle gently',
     },
   });
-
-  const appt2 = await prisma.appointment.create({
+  const bella = await prisma.patient.create({
     data: {
-      patientId: whiskers.id,
-      ownerId: owner2.id,
-      doctorId: drPetar.id,
-      startsAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0),
-      endsAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 30),
-      reason: 'Respiratory check-up',
-      status: 'scheduled',
+      name: 'Bella', species: 'Dog', breed: 'Beagle',
+      birthdate: new Date('2021-04-18'), microchipId: 'BG-DOG-003',
+      ownerId: ana.id, allergies: 'Chicken-based food',
     },
   });
+  console.log('  Patients: Rex, Whiskers, Buddy, Luna, Milo, Bella');
 
-  const appt3 = await prisma.appointment.create({
+  // ── Today's appointments ──────────────────────────────────────────────────
+  await prisma.appointment.create({
     data: {
-      patientId: buddy.id,
-      ownerId: owner1.id,
-      doctorId: drElena.id,
-      startsAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 0),
-      endsAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 30),
-      reason: 'Dental cleaning',
-      status: 'scheduled',
+      patientId: rex.id, ownerId: ivan.id, doctorId: drMaria.id,
+      startsAt: todayAt(9, 0), endsAt: todayAt(9, 30),
+      reason: 'Annual vaccination', status: 'scheduled',
     },
   });
+  await prisma.appointment.create({
+    data: {
+      patientId: whiskers.id, ownerId: ana.id, doctorId: drPetar.id,
+      startsAt: todayAt(10, 0), endsAt: todayAt(10, 30),
+      reason: 'Respiratory check-up', status: 'scheduled',
+    },
+  });
+  await prisma.appointment.create({
+    data: {
+      patientId: buddy.id, ownerId: ivan.id, doctorId: drElena.id,
+      startsAt: todayAt(14, 0), endsAt: todayAt(14, 30),
+      reason: 'Dental cleaning', status: 'scheduled',
+    },
+  });
+  await prisma.appointment.create({
+    data: {
+      patientId: luna.id, ownerId: georgi.id, doctorId: drMaria.id,
+      startsAt: todayAt(11, 0), endsAt: todayAt(11, 30),
+      reason: 'General check-up', status: 'scheduled',
+    },
+  });
+  await prisma.appointment.create({
+    data: {
+      patientId: bella.id, ownerId: ana.id, doctorId: drPetar.id,
+      startsAt: todayAt(15, 0), endsAt: todayAt(15, 30),
+      reason: 'Skin allergy follow-up', status: 'scheduled',
+    },
+  });
+  console.log("  Today's appointments: 5");
 
-  console.log('Created appointments:', appt1.id, appt2.id, appt3.id);
-
-  // Create medical records
-  const pastDate = new Date(today);
-  pastDate.setDate(pastDate.getDate() - 30);
-
+  // ── Past appointments + medical records ───────────────────────────────────
+  const pastAppt1 = await prisma.appointment.create({
+    data: {
+      patientId: rex.id, ownerId: ivan.id, doctorId: drMaria.id,
+      startsAt: dateAt(daysAgo(30), 9, 0), endsAt: dateAt(daysAgo(30), 9, 30),
+      reason: 'Routine check-up', status: 'completed',
+    },
+  });
   await prisma.medicalRecord.create({
     data: {
-      patientId: rex.id,
-      visitDate: pastDate,
-      summary: 'Routine check-up. All vitals normal.',
+      patientId: rex.id, appointmentId: pastAppt1.id,
+      visitDate: daysAgo(30),
+      summary: 'Routine check-up. All vitals normal. Weight 32 kg.',
       diagnoses: 'Healthy',
       treatments: 'None required',
-      prescriptions: 'Heartworm prevention - monthly',
+      prescriptions: 'Heartworm prevention — monthly',
     },
   });
 
+  const pastAppt2 = await prisma.appointment.create({
+    data: {
+      patientId: rex.id, ownerId: ivan.id, doctorId: drPetar.id,
+      startsAt: dateAt(daysAgo(90), 10, 0), endsAt: dateAt(daysAgo(90), 10, 30),
+      reason: 'Ear infection', status: 'completed',
+    },
+  });
   await prisma.medicalRecord.create({
     data: {
-      patientId: whiskers.id,
-      visitDate: new Date(today.getFullYear(), today.getMonth() - 2, 15),
-      summary: 'Presented with mild coughing. Lungs clear on auscultation.',
-      diagnoses: 'Mild upper respiratory irritation',
-      treatments: 'Steam therapy recommended',
-      prescriptions: 'Bronchodilator - as needed',
+      patientId: rex.id, appointmentId: pastAppt2.id,
+      visitDate: daysAgo(90),
+      summary: 'Presented with head shaking and ear scratching. Left ear inflamed.',
+      diagnoses: 'Otitis externa (bacterial)',
+      treatments: 'Ear cleaning, topical antibiotic drops',
+      prescriptions: 'Otomax ear drops — 7 days',
     },
   });
 
+  const pastAppt3 = await prisma.appointment.create({
+    data: {
+      patientId: whiskers.id, ownerId: ana.id, doctorId: drPetar.id,
+      startsAt: dateAt(daysAgo(60), 11, 0), endsAt: dateAt(daysAgo(60), 11, 30),
+      reason: 'Coughing episode', status: 'completed',
+    },
+  });
   await prisma.medicalRecord.create({
     data: {
-      patientId: buddy.id,
-      visitDate: new Date(today.getFullYear(), today.getMonth() - 1, 10),
-      summary: 'Limping on right front leg. X-ray performed.',
-      diagnoses: 'Minor sprain',
-      treatments: 'Rest, cold compress',
-      prescriptions: 'Anti-inflammatory - 5 days',
+      patientId: whiskers.id, appointmentId: pastAppt3.id,
+      visitDate: daysAgo(60),
+      summary: 'Mild coughing. Lungs clear on auscultation. Asthma history noted.',
+      diagnoses: 'Mild upper respiratory irritation — asthma flare',
+      treatments: 'Steam therapy recommended, reduce dust exposure',
+      prescriptions: 'Bronchodilator — as needed',
     },
   });
 
-  console.log('Created medical records');
-  console.log('Seeding complete!');
+  const pastAppt4 = await prisma.appointment.create({
+    data: {
+      patientId: buddy.id, ownerId: ivan.id, doctorId: drElena.id,
+      startsAt: dateAt(daysAgo(45), 14, 0), endsAt: dateAt(daysAgo(45), 14, 30),
+      reason: 'Limping — right front leg', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: buddy.id, appointmentId: pastAppt4.id,
+      visitDate: daysAgo(45),
+      summary: 'Limping on right front leg. X-ray performed — no fracture.',
+      diagnoses: 'Minor sprain — right carpus',
+      treatments: 'Rest, cold compress 3× daily',
+      prescriptions: 'Meloxicam 1 mg/kg — 5 days',
+    },
+  });
+
+  const pastAppt5 = await prisma.appointment.create({
+    data: {
+      patientId: buddy.id, ownerId: ivan.id, doctorId: drElena.id,
+      startsAt: dateAt(daysAgo(38), 14, 0), endsAt: dateAt(daysAgo(38), 14, 30),
+      reason: 'Sprain follow-up', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: buddy.id, appointmentId: pastAppt5.id,
+      visitDate: daysAgo(38),
+      summary: 'Follow-up for right carpus sprain. Full weight bearing restored. Good recovery.',
+      diagnoses: 'Resolved sprain',
+      treatments: 'Gradual return to normal activity',
+      prescriptions: 'None',
+    },
+  });
+
+  const pastAppt6 = await prisma.appointment.create({
+    data: {
+      patientId: luna.id, ownerId: georgi.id, doctorId: drMaria.id,
+      startsAt: dateAt(daysAgo(15), 9, 0), endsAt: dateAt(daysAgo(15), 9, 30),
+      reason: 'Vomiting', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: luna.id, appointmentId: pastAppt6.id,
+      visitDate: daysAgo(15),
+      summary: 'Presented with 2-day vomiting history. Palpation normal. Likely dietary indiscretion.',
+      diagnoses: 'Acute gastritis',
+      treatments: '24h fasting, bland diet (boiled chicken + rice)',
+      prescriptions: 'Cerenia 1 mg/kg — 3 days',
+    },
+  });
+
+  // ── Future appointment ────────────────────────────────────────────────────
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  await prisma.appointment.create({
+    data: {
+      patientId: milo.id, ownerId: marina.id, doctorId: drElena.id,
+      startsAt: dateAt(tomorrow, 10, 30), endsAt: dateAt(tomorrow, 11, 0),
+      reason: 'First visit — health screening', status: 'scheduled',
+    },
+  });
+
+  console.log('  Past appointments + medical records: 6');
+  console.log('  Upcoming appointments: 1 (tomorrow)');
+  console.log('\nSeeding complete!');
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(async () => { await prisma.$disconnect(); });
