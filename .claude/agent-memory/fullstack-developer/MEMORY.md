@@ -1,0 +1,1 @@
+- [Vet Clinic Tech Stack](project_stack.md) — NestJS+Prisma API, Next.js 14+MUI frontend, Postgres on Docker

@@ -35,34 +35,40 @@ model Patient {
 }
 
 model Appointment {
-  id         String   @id @default(cuid())
-  patient    Patient  @relation(fields: [patientId], references: [id])
-  patientId  String
-  owner      Owner    @relation(fields: [ownerId], references: [id])
-  ownerId    String
-  doctorId   String?
-  startsAt   DateTime
-  endsAt     DateTime
-  reason     String?
-  status     String   @default("scheduled")
-  createdAt  DateTime @default(now())
+  id             String          @id @default(cuid())
+  patient        Patient         @relation(fields: [patientId], references: [id])
+  patientId      String
+  owner          Owner           @relation(fields: [ownerId], references: [id])
+  ownerId        String
+  doctor         User?           @relation(fields: [doctorId], references: [id])
+  doctorId       String?
+  startsAt       DateTime
+  endsAt         DateTime
+  reason         String?
+  status         String          @default("scheduled")
+  medicalRecords MedicalRecord[]
+  createdAt      DateTime        @default(now())
 }
 
 model MedicalRecord {
-  id            String   @id @default(cuid())
-  patient       Patient  @relation(fields: [patientId], references: [id])
+  id            String       @id @default(cuid())
+  patient       Patient      @relation(fields: [patientId], references: [id])
   patientId     String
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  appointmentId String?
   visitDate     DateTime
   summary       String
   diagnoses     String?
   treatments    String?
   prescriptions String?
   attachments   String?
+  createdAt     DateTime     @default(now())
 }
 
 model User {
-  id    String @id @default(cuid())
-  name  String
-  email String @unique
-  role  String
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  role         String
+  appointments Appointment[]
 }

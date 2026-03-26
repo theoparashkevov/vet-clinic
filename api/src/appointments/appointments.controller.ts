@@ -1,19 +1,36 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { AppointmentsService } from './appointments.service';
+import { CreateAppointmentDto, UpdateAppointmentDto } from './dto';
 
 @Controller('appointments')
 export class AppointmentsController {
+  constructor(private readonly appointments: AppointmentsService) {}
+
+  @Get()
+  list(
+    @Query('date') date?: string,
+    @Query('doctorId') doctorId?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.appointments.list({ date, doctorId, status });
+  }
+
   @Get('slots')
-  getSlots(@Query('date') date: string) {
-    // TODO: move to service + config hours; mock for now
-    const base = new Date(date || new Date().toISOString().slice(0,10));
-    const mk = (h: number, m: number) => {
-      const d = new Date(base);
-      d.setHours(h, m, 0, 0);
-      return d.toISOString();
-    };
-    return {
-      date: (date || base.toISOString().slice(0,10)),
-      slots: [mk(9,0), mk(9,20), mk(9,40), mk(10,0), mk(10,20), mk(10,40)]
-    };
+  getSlots(
+    @Query('date') date: string,
+    @Query('doctorId') doctorId?: string,
+  ) {
+    const d = date || new Date().toISOString().slice(0, 10);
+    return this.appointments.getSlots(d, doctorId);
+  }
+
+  @Post()
+  create(@Body() dto: CreateAppointmentDto) {
+    return this.appointments.create(dto);
+  }
+
+  @Put(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateAppointmentDto) {
+    return this.appointments.update(id, dto);
   }
 }
