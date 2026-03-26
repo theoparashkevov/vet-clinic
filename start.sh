@@ -18,10 +18,10 @@ done
 info "Installing dependencies..."
 npm install --silent
 
-# ── API .env ──────────────────────────────────────────────────────────────────
-if [ ! -f api/.env ]; then
-  cp api/.env.example api/.env
-  info "Created api/.env from .env.example (SQLite demo mode)"
+# ── API .env (always ensure SQLite URL for demo) ──────────────────────────────
+if [ ! -f api/.env ] || ! grep -q '^DATABASE_URL="file:' api/.env 2>/dev/null; then
+  echo 'DATABASE_URL="file:./dev.db"' > api/.env
+  info "Set api/.env → SQLite demo mode (file:./dev.db)"
 fi
 
 # ── Prisma client ─────────────────────────────────────────────────────────────
