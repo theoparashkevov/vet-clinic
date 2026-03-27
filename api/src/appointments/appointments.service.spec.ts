@@ -49,8 +49,9 @@ describe('AppointmentsService.getSlots', () => {
     // 09:00–09:30 is booked
     const booked = [
       {
-        startsAt: new Date(`${baseDate}T09:00:00.000Z`),
-        endsAt: new Date(`${baseDate}T09:30:00.000Z`),
+        // Date strings without timezone are interpreted as local time.
+        startsAt: new Date(`${baseDate}T09:00:00`),
+        endsAt: new Date(`${baseDate}T09:30:00`),
       },
     ];
     const prisma = makePrisma({ findMany: jest.fn().mockResolvedValue(booked) });
@@ -59,9 +60,9 @@ describe('AppointmentsService.getSlots', () => {
     const result = await svc.getSlots(baseDate);
 
     expect(result.slots).toHaveLength(17);
-    // The 09:00 UTC slot should be absent
+    // The 09:00 local slot should be absent
     expect(
-      result.slots.some((s) => new Date(s).getUTCHours() === 9 && new Date(s).getUTCMinutes() === 0),
+      result.slots.some((s) => new Date(s).getHours() === 9 && new Date(s).getMinutes() === 0),
     ).toBe(false);
   });
 
@@ -70,8 +71,8 @@ describe('AppointmentsService.getSlots', () => {
     // Booking starts at 09:15 — overlaps with both 09:00 and 09:30 slots
     const booked = [
       {
-        startsAt: new Date(`${baseDate}T09:15:00.000Z`),
-        endsAt: new Date(`${baseDate}T09:45:00.000Z`),
+        startsAt: new Date(`${baseDate}T09:15:00`),
+        endsAt: new Date(`${baseDate}T09:45:00`),
       },
     ];
     const prisma = makePrisma({ findMany: jest.fn().mockResolvedValue(booked) });
@@ -129,7 +130,7 @@ describe('AppointmentsService.getSlots', () => {
 
     const times = result.slots.map((s) => {
       const d = new Date(s);
-      return `${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+      return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
     });
     expect(times[0]).toBe('9:00');
     expect(times[times.length - 1]).toBe('17:30');
@@ -140,8 +141,8 @@ describe('AppointmentsService.getSlots', () => {
     // One long appointment covers 09:00 to 18:00
     const booked = [
       {
-        startsAt: new Date(`${baseDate}T09:00:00.000Z`),
-        endsAt: new Date(`${baseDate}T18:00:00.000Z`),
+        startsAt: new Date(`${baseDate}T09:00:00`),
+        endsAt: new Date(`${baseDate}T18:00:00`),
       },
     ];
     const prisma = makePrisma({ findMany: jest.fn().mockResolvedValue(booked) });

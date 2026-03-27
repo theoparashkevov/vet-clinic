@@ -4,6 +4,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { OwnersController } from './owners.controller';
 import { OwnersService } from './owners.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
 
 const SAMPLE_OWNER = { id: 'own-1', name: 'Alice', phone: '555-1234', email: 'alice@example.com' };
 
@@ -21,7 +23,12 @@ async function buildApp(service: Partial<OwnersService>): Promise<INestApplicati
   const module: TestingModule = await Test.createTestingModule({
     controllers: [OwnersController],
     providers: [{ provide: OwnersService, useValue: service }],
-  }).compile();
+  })
+    .overrideGuard(JwtAuthGuard)
+    .useValue({ canActivate: () => true })
+    .overrideGuard(RolesGuard)
+    .useValue({ canActivate: () => true })
+    .compile();
 
   const app = module.createNestApplication();
   app.useGlobalPipes(

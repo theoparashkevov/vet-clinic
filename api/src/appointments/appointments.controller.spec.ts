@@ -4,6 +4,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppointmentsController } from './appointments.controller';
 import { AppointmentsService } from './appointments.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
 
 const SAMPLE_APPT = {
   id: 'appt-1',
@@ -32,7 +34,12 @@ async function buildApp(service: Partial<AppointmentsService>): Promise<INestApp
   const module: TestingModule = await Test.createTestingModule({
     controllers: [AppointmentsController],
     providers: [{ provide: AppointmentsService, useValue: service }],
-  }).compile();
+  })
+    .overrideGuard(JwtAuthGuard)
+    .useValue({ canActivate: () => true })
+    .overrideGuard(RolesGuard)
+    .useValue({ canActivate: () => true })
+    .compile();
 
   const app = module.createNestApplication();
   app.useGlobalPipes(
