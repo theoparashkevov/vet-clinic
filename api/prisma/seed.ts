@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import { hashPassword } from '../src/auth/password';
+import { USER_ROLES } from '../src/auth/roles.constants';
 
 const prisma = new PrismaClient();
+const demoDoctorPassword = 'demo12345';
 
 function daysAgo(n: number): Date {
   const d = new Date();
@@ -23,24 +26,43 @@ function dateAt(base: Date, h: number, m = 0): Date {
 
 async function main() {
   console.log('Seeding database...');
+  const passwordHash = hashPassword(demoDoctorPassword);
 
   // ── Doctors ──────────────────────────────────────────────────────────────
   const drMaria = await prisma.user.upsert({
     where: { email: 'maria.ivanova@vetclinic.com' },
-    update: {},
-    create: { name: 'Dr. Maria Ivanova', email: 'maria.ivanova@vetclinic.com', role: 'doctor' },
+    update: { name: 'Dr. Maria Ivanova', role: USER_ROLES.doctor, passwordHash },
+    create: { name: 'Dr. Maria Ivanova', email: 'maria.ivanova@vetclinic.com', role: USER_ROLES.doctor, passwordHash },
   });
   const drPetar = await prisma.user.upsert({
     where: { email: 'petar.dimitrov@vetclinic.com' },
-    update: {},
-    create: { name: 'Dr. Petar Dimitrov', email: 'petar.dimitrov@vetclinic.com', role: 'doctor' },
+    update: { name: 'Dr. Petar Dimitrov', role: USER_ROLES.doctor, passwordHash },
+    create: { name: 'Dr. Petar Dimitrov', email: 'petar.dimitrov@vetclinic.com', role: USER_ROLES.doctor, passwordHash },
   });
   const drElena = await prisma.user.upsert({
     where: { email: 'elena.georgieva@vetclinic.com' },
-    update: {},
-    create: { name: 'Dr. Elena Georgieva', email: 'elena.georgieva@vetclinic.com', role: 'doctor' },
+    update: { name: 'Dr. Elena Georgieva', role: USER_ROLES.doctor, passwordHash },
+    create: { name: 'Dr. Elena Georgieva', email: 'elena.georgieva@vetclinic.com', role: USER_ROLES.doctor, passwordHash },
+  });
+  await prisma.user.upsert({
+    where: { email: 'admin@vetclinic.com' },
+    update: { name: 'Clinic Admin', role: USER_ROLES.admin, passwordHash },
+    create: { name: 'Clinic Admin', email: 'admin@vetclinic.com', role: USER_ROLES.admin, passwordHash },
+  });
+  await prisma.user.upsert({
+    where: { email: 'staff@vetclinic.com' },
+    update: { name: 'Front Desk Staff', role: USER_ROLES.staff, passwordHash },
+    create: { name: 'Front Desk Staff', email: 'staff@vetclinic.com', role: USER_ROLES.staff, passwordHash },
+  });
+  await prisma.user.upsert({
+    where: { email: 'client@vetclinic.com' },
+    update: { name: 'Client Demo', role: USER_ROLES.client, passwordHash },
+    create: { name: 'Client Demo', email: 'client@vetclinic.com', role: USER_ROLES.client, passwordHash },
   });
   console.log('  Doctors: Dr. Ivanova, Dr. Dimitrov, Dr. Georgieva');
+  console.log('  Staff users: admin@vetclinic.com, staff@vetclinic.com');
+  console.log('  Client user: client@vetclinic.com');
+  console.log(`  Demo doctor password: ${demoDoctorPassword}`);
 
   // ── Owners ───────────────────────────────────────────────────────────────
   const ivan = await prisma.owner.create({

@@ -7,6 +7,12 @@ import { RequestMethod } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+
+  const corsOrigins = (process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim()).filter(Boolean)
+    : ['http://localhost:3001', 'http://localhost:3000']);
+  app.enableCors({ origin: corsOrigins, credentials: true });
+
   // Version REST under /v1, but keep /health at root
   app.setGlobalPrefix('v1', { exclude: [{ path: 'health', method: RequestMethod.GET }] });
   await app.listen(process.env.PORT || 3000);

@@ -5,4 +5,6 @@ node_modules/
 dist/
 Dockerfile.local
 .git-credentials
+api/prisma/*.db
+api/prisma/*.db-journal
 !api/.env.example

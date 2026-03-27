@@ -1,7 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { OwnersService } from './owners.service';
 import { CreateOwnerDto, UpdateOwnerDto } from './dto';
+import { StaffAccess } from '../auth/staff-access.decorator';
 
+@StaffAccess()
 @Controller('owners')
 export class OwnersController {
   constructor(private readonly owners: OwnersService) {}

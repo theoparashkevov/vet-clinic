@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePatientDto, UpdatePatientDto } from './dto';
 
@@ -52,5 +53,24 @@ export class PatientsService {
       },
       include: { owner: true },
     });
+  }
+
+  async remove(id: string) {
+    await this.get(id);
+
+    try {
+      await this.prisma.patient.delete({ where: { id } });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new ConflictException('Cannot delete patient with linked appointments or medical records');
+      }
+
+      throw error;
+    }
+
+    return { ok: true };
   }
 }

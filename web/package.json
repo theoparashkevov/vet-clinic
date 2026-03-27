@@ -11,10 +11,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
-    "@mui/icons-material": "^7.3.9",
     "@mui/material": "^5.15.0",
-    "@mui/x-date-pickers": "^8.27.2",
-    "date-fns": "^4.1.0",
     "next": "^14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
@@ -25,6 +22,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
+    "@types/node": "^24.5.2",
     "@types/react": "19.2.14",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",

@@ -1,4 +1,5 @@
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsIn, IsOptional, IsString } from 'class-validator';
+import { APPOINTMENT_STATUSES } from './statuses';
 
 export class CreateAppointmentDto {
   @IsString()
@@ -24,6 +25,7 @@ export class CreateAppointmentDto {
 
 export class UpdateAppointmentDto {
   @IsString()
+  @IsIn(APPOINTMENT_STATUSES)
   @IsOptional()
   status?: string;
 

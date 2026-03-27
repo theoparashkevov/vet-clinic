@@ -1,12 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto';
+import { publicUserSelect } from '../users/user-selects';
 
 @Injectable()
 export class AppointmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(filters: { date?: string; doctorId?: string; status?: string }) {
+  list(filters: { date?: string; doctorId?: string; status?: string; patientId?: string }) {
     const where: Record<string, unknown> = {};
 
     if (filters.date) {
@@ -25,12 +27,16 @@ export class AppointmentsService {
       where.status = filters.status;
     }
 
+    if (filters.patientId) {
+      where.patientId = filters.patientId;
+    }
+
     return this.prisma.appointment.findMany({
       where,
       include: {
         patient: true,
         owner: true,
-        doctor: true,
+        doctor: { select: publicUserSelect },
       },
       orderBy: { startsAt: 'asc' },
     });
@@ -39,7 +45,7 @@ export class AppointmentsService {
   async get(id: string) {
     const found = await this.prisma.appointment.findUnique({
       where: { id },
-      include: { patient: true, owner: true, doctor: true },
+      include: { patient: true, owner: true, doctor: { select: publicUserSelect } },
     });
     if (!found) throw new NotFoundException('Appointment not found');
     return found;
@@ -55,7 +61,7 @@ export class AppointmentsService {
         endsAt: new Date(dto.endsAt),
         reason: dto.reason,
       },
-      include: { patient: true, owner: true, doctor: true },
+      include: { patient: true, owner: true, doctor: { select: publicUserSelect } },
     });
   }
 
@@ -71,8 +77,27 @@ export class AppointmentsService {
     return this.prisma.appointment.update({
       where: { id },
       data,
-      include: { patient: true, owner: true, doctor: true },
+      include: { patient: true, owner: true, doctor: { select: publicUserSelect } },
     });
+  }
+
+  async remove(id: string) {
+    await this.get(id);
+
+    try {
+      await this.prisma.appointment.delete({ where: { id } });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new ConflictException('Cannot delete appointment with linked medical records');
+      }
+
+      throw error;
+    }
+
+    return { ok: true };
   }
 
   async getSlots(date: string, doctorId?: string) {

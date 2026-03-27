@@ -21,8 +21,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import MenuItem from "@mui/material/MenuItem";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+import { apiJson } from "../../lib/api";
 
 type Owner = { id: string; name: string; phone: string; email: string | null };
 type Patient = {
@@ -59,11 +58,10 @@ export default function PatientsPage() {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(`${API}/v1/patients`);
-      if (q) url.searchParams.set("search", q);
-      const res = await fetch(url.toString());
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setPatients(await res.json());
+      const searchParams = new URLSearchParams();
+      if (q) searchParams.set("search", q);
+      const suffix = searchParams.toString();
+      setPatients(await apiJson<Patient[]>(`/v1/patients${suffix ? `?${suffix}` : ""}`));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
@@ -82,8 +80,7 @@ export default function PatientsPage() {
   const openCreateDialog = async () => {
     // Load owners for dropdown
     try {
-      const res = await fetch(`${API}/v1/owners`);
-      if (res.ok) setOwners(await res.json());
+      setOwners(await apiJson<Owner[]>("/v1/owners"));
     } catch { /* ignore */ }
     setDialogOpen(true);
   };
@@ -102,12 +99,11 @@ export default function PatientsPage() {
       if (form.allergies) body.allergies = form.allergies;
       if (form.chronicConditions) body.chronicConditions = form.chronicConditions;
 
-      const res = await fetch(`${API}/v1/patients`, {
+      await apiJson<Patient>("/v1/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setDialogOpen(false);
       setForm({ name: "", species: "", breed: "", ownerId: "", birthdate: "", microchipId: "", allergies: "", chronicConditions: "" });
       loadPatients();

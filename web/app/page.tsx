@@ -14,8 +14,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Chip from "@mui/material/Chip";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+import { apiJson } from "../lib/api";
 
 type Appointment = {
   id: string;
@@ -54,16 +53,12 @@ export default function DashboardPage() {
       setError(null);
       try {
         const [apptRes, patRes] = await Promise.all([
-          fetch(`${API}/v1/appointments?date=${today}`),
-          fetch(`${API}/v1/patients`),
+          apiJson<Appointment[]>(`/v1/appointments?date=${today}`),
+          apiJson<Patient[]>("/v1/patients"),
         ]);
-        if (!apptRes.ok) throw new Error(`Appointments: HTTP ${apptRes.status}`);
-        if (!patRes.ok) throw new Error(`Patients: HTTP ${patRes.status}`);
-        const appts = (await apptRes.json()) as Appointment[];
-        const pats = (await patRes.json()) as Patient[];
         if (!cancelled) {
-          setAppointments(appts);
-          setPatientCount(pats.length);
+          setAppointments(apptRes);
+          setPatientCount(patRes.length);
         }
       } catch (e: unknown) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load");

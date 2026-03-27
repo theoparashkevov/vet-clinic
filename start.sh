@@ -18,9 +18,17 @@ done
 info "Installing dependencies..."
 npm install --silent
 
+info "Activating SQLite demo schema..."
+npm run api:prisma:use:sqlite --silent
+
 # ── API .env (always ensure SQLite URL for demo) ──────────────────────────────
 if [ ! -f api/.env ] || ! grep -q '^DATABASE_URL="file:' api/.env 2>/dev/null; then
-  echo 'DATABASE_URL="file:./dev.db"' > api/.env
+  cat > api/.env <<'EOF'
+DATABASE_URL="file:./dev.db"
+CORS_ORIGIN="http://localhost:3001,http://localhost:3000"
+JWT_SECRET="dev-only-secret"
+JWT_EXPIRES_IN="8h"
+EOF
   info "Set api/.env → SQLite demo mode (file:./dev.db)"
 fi
 

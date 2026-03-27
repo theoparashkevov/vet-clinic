@@ -19,8 +19,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import MedicalRecordDialog from "../../../components/MedicalRecordDialog";
 import BookingDialog from "../../../components/BookingDialog";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+import { apiJson } from "../../../lib/api";
 
 type Owner = { id: string; name: string; phone: string; email: string | null };
 type Patient = {
@@ -77,20 +76,11 @@ export default function PatientDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [patRes, recRes, apptRes] = await Promise.all([
-        fetch(`${API}/v1/patients/${id}`),
-        fetch(`${API}/v1/patients/${id}/medical-records`),
-        fetch(`${API}/v1/appointments`),
+      const [pat, recs, patAppts] = await Promise.all([
+        apiJson<Patient>(`/v1/patients/${id}`),
+        apiJson<MedicalRecord[]>(`/v1/patients/${id}/medical-records`),
+        apiJson<Appointment[]>(`/v1/appointments?patientId=${encodeURIComponent(id)}`),
       ]);
-      if (!patRes.ok) throw new Error(`Patient: HTTP ${patRes.status}`);
-      const pat = (await patRes.json()) as Patient;
-      const recs = recRes.ok ? ((await recRes.json()) as MedicalRecord[]) : [];
-      const allAppts = apptRes.ok ? ((await apptRes.json()) as Appointment[]) : [];
-      // Filter appointments for this patient
-      const patAppts = allAppts.filter(
-        (a: Appointment & { patientId?: string }) =>
-          (a as Record<string, unknown>).patientId === id
-      );
       setPatient(pat);
       setRecords(recs);
       setAppointments(patAppts);

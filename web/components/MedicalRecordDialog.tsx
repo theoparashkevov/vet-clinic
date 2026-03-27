@@ -8,8 +8,7 @@ import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+import { apiJson } from "../lib/api";
 
 type Props = {
   open: boolean;
@@ -41,12 +40,11 @@ export default function MedicalRecordDialog({ open, patientId, onClose, onCreate
       if (form.treatments) body.treatments = form.treatments;
       if (form.prescriptions) body.prescriptions = form.prescriptions;
 
-      const res = await fetch(`${API}/v1/patients/${patientId}/medical-records`, {
+      await apiJson(`/v1/patients/${patientId}/medical-records`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setForm({ visitDate: new Date().toISOString().slice(0, 10), summary: "", diagnoses: "", treatments: "", prescriptions: "" });
       onCreated();
     } catch (e: unknown) {

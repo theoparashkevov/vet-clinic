@@ -1,20 +1,14 @@
-import Link from "next/link";
+import type { ReactNode } from "react";
+import { AuthProvider } from "../components/AuthProvider";
+import AppShell from "../components/AppShell";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body style={{ fontFamily: 'Inter, system-ui, sans-serif', margin: 0 }}>
-        <header style={{ padding: 16, borderBottom: '1px solid #eee', display: 'flex', gap: 16, alignItems: 'center' }}>
-          <strong>Vet Clinic</strong>
-          <nav aria-label="Primary">
-            <ul style={{ listStyle: 'none', display: 'flex', gap: 12, margin: 0, padding: 0 }}>
-              <li><Link href="/">Dashboard</Link></li>
-              <li><Link href="/patients">Patients</Link></li>
-              <li><Link href="/appointments">Appointments</Link></li>
-            </ul>
-          </nav>
-        </header>
-        <main style={{ padding: 16 }}>{children}</main>
+        <AuthProvider>
+          <AppShell>{children}</AppShell>
+        </AuthProvider>
       </body>
     </html>
   );

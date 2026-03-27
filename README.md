@@ -19,6 +19,17 @@ cd vet-clinic
 
 The script installs dependencies, creates a local SQLite database, seeds demo data, and starts both services.
 
+Demo doctor login credentials:
+
+- Email: `maria.ivanova@vetclinic.com`
+- Password: `demo12345`
+
+Additional seeded accounts:
+
+- Admin: `admin@vetclinic.com` / `demo12345`
+- Staff: `staff@vetclinic.com` / `demo12345`
+- Client: `client@vetclinic.com` / `demo12345`
+
 **Reset demo data at any time:**
 
 ```bash
@@ -54,10 +65,13 @@ The script installs dependencies, creates a local SQLite database, seeds demo da
 
 ## Production setup (PostgreSQL)
 
-1. In `api/prisma/schema.prisma` change `provider = "sqlite"` → `"postgresql"`
-2. Set `DATABASE_URL` in `api/.env` to a PostgreSQL connection string
-3. Run `npm run api:prisma:migrate` to apply migrations
-4. Start with Docker: `docker compose up -d db && docker compose up api`
+1. Start Postgres-backed services with `docker compose up --build`
+2. The API container automatically activates the Postgres Prisma schema and syncs it to the database
+3. Optionally seed demo data with `docker compose exec api npm run prisma:seed`
+4. Log in with the same demo doctor credentials shown above after seeding
+5. The Postgres container is published on host port `5433` by default to avoid conflicts with an existing local Postgres install
+
+Local demo mode stays SQLite-first via `./start.sh`.
 
 ## Development
 
@@ -70,10 +84,12 @@ cd api && npm run start:dev
 cd web && npm run dev
 
 # Database (demo/SQLite)
+npm run api:prisma:use:sqlite  # activate SQLite schema
 npm run api:prisma:push    # sync schema → dev.db
 npm run api:prisma:seed    # seed demo data
 
 # Database (production/PostgreSQL)
+npm run api:prisma:use:postgres
 npm run api:prisma:migrate
 ```
 

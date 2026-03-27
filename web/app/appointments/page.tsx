@@ -18,8 +18,7 @@ import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
 import BookingDialog from "../../components/BookingDialog";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+import { apiJson } from "../../lib/api";
 
 type Doctor = { id: string; name: string };
 type Appointment = {
@@ -52,12 +51,10 @@ export default function AppointmentsPage() {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(`${API}/v1/appointments`);
-      if (date) url.searchParams.set("date", date);
-      if (doctorId) url.searchParams.set("doctorId", doctorId);
-      const res = await fetch(url.toString());
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setAppointments(await res.json());
+      const searchParams = new URLSearchParams();
+      if (date) searchParams.set("date", date);
+      if (doctorId) searchParams.set("doctorId", doctorId);
+      setAppointments(await apiJson<Appointment[]>(`/v1/appointments?${searchParams.toString()}`));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
@@ -67,8 +64,7 @@ export default function AppointmentsPage() {
 
   // Load doctors once
   useEffect(() => {
-    fetch(`${API}/v1/doctors`)
-      .then((r) => r.json())
+    apiJson<Doctor[]>("/v1/doctors")
       .then(setDoctors)
       .catch(() => {});
   }, []);

@@ -16,8 +16,7 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import CircularProgress from "@mui/material/CircularProgress";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+import { apiJson } from "../lib/api";
 
 type Doctor = { id: string; name: string };
 type Patient = { id: string; name: string; species: string; ownerId: string; owner: { id: string; name: string } };
@@ -66,8 +65,8 @@ export default function BookingDialog({
     setDate(new Date().toISOString().slice(0, 10));
 
     Promise.all([
-      fetch(`${API}/v1/doctors`).then((r) => r.json()),
-      fetch(`${API}/v1/patients`).then((r) => r.json()),
+      apiJson<Doctor[]>("/v1/doctors"),
+      apiJson<Patient[]>("/v1/patients"),
     ]).then(([docs, pats]) => {
       setDoctors(docs);
       setPatients(pats);
@@ -79,12 +78,9 @@ export default function BookingDialog({
     setError(null);
     setSlots([]);
     try {
-      const url = new URL(`${API}/v1/appointments/slots`);
-      url.searchParams.set("date", date);
-      if (doctorId) url.searchParams.set("doctorId", doctorId);
-      const res = await fetch(url.toString());
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const searchParams = new URLSearchParams({ date });
+      if (doctorId) searchParams.set("doctorId", doctorId);
+      const data = await apiJson<{ slots?: string[] }>(`/v1/appointments/slots?${searchParams.toString()}`);
       setSlots(data.slots ?? []);
       setActiveStep(1);
     } catch (e: unknown) {
@@ -122,12 +118,11 @@ export default function BookingDialog({
         reason: reason || undefined,
       };
 
-      const res = await fetch(`${API}/v1/appointments`, {
+      await apiJson(`/v1/appointments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       onBooked();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to book");

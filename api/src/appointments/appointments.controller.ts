@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto';
+import { StaffAccess } from '../auth/staff-access.decorator';
 
+@StaffAccess()
 @Controller('appointments')
 export class AppointmentsController {
   constructor(private readonly appointments: AppointmentsService) {}
@@ -11,8 +13,9 @@ export class AppointmentsController {
     @Query('date') date?: string,
     @Query('doctorId') doctorId?: string,
     @Query('status') status?: string,
+    @Query('patientId') patientId?: string,
   ) {
-    return this.appointments.list({ date, doctorId, status });
+    return this.appointments.list({ date, doctorId, status, patientId });
   }
 
   @Get('slots')
@@ -29,8 +32,18 @@ export class AppointmentsController {
     return this.appointments.create(dto);
   }
 
+  @Get(':id')
+  get(@Param('id') id: string) {
+    return this.appointments.get(id);
+  }
+
   @Put(':id')
   update(@Param('id') id: string, @Body() dto: UpdateAppointmentDto) {
     return this.appointments.update(id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.appointments.remove(id);
   }
 }

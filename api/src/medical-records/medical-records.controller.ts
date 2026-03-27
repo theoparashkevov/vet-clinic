@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { MedicalRecordsService } from './medical-records.service';
 import { CreateMedicalRecordDto, UpdateMedicalRecordDto } from './dto';
+import { StaffAccess } from '../auth/staff-access.decorator';
 
+@StaffAccess()
 @Controller()
 export class MedicalRecordsController {
   constructor(private readonly records: MedicalRecordsService) {}

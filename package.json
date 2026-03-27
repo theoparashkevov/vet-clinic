@@ -11,6 +11,8 @@
     "lint": "echo 'lint TBD'",
     "build": "echo 'build TBD'",
     "test": "echo 'test TBD'",
+    "api:prisma:use:sqlite": "npm --workspace api run prisma:use:sqlite",
+    "api:prisma:use:postgres": "npm --workspace api run prisma:use:postgres",
     "api:prisma:generate": "npm --workspace api run prisma:generate",
     "api:prisma:migrate": "npm --workspace api run prisma:migrate",
     "api:prisma:push": "npm --workspace api run prisma:push",
