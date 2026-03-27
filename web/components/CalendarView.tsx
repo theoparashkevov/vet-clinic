@@ -37,9 +37,10 @@ type Props = {
 const CLINIC_HOURS = { start: 9, end: 18 }; // 9 AM to 6 PM
 const SLOT_HEIGHT = 60; // pixels per hour
 
-function statusColor(s: string): "default" | "success" | "warning" | "error" {
+function statusColor(s: string): "default" | "success" | "warning" | "error" | "primary" {
   if (s === "completed") return "success";
   if (s === "cancelled") return "error";
+  if (s === "in-progress") return "primary";
   return "default";
 }
 

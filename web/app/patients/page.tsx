@@ -17,6 +17,8 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import MenuItem from "@mui/material/MenuItem";
+import Pagination from "@mui/material/Pagination";
+import Typography from "@mui/material/Typography";
 import PageHeader from "../../components/PageHeader";
 import EmptyState from "../../components/EmptyState";
 import ErrorState from "../../components/ErrorState";
@@ -42,6 +44,12 @@ export default function PatientsPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [owners, setOwners] = useState<Owner[]>([]);
+  
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   // Form state
   const [form, setForm] = useState({
@@ -56,31 +64,40 @@ export default function PatientsPage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const loadPatients = useCallback(async (q?: string) => {
+  const loadPatients = useCallback(async (q?: string, pageNum = 1) => {
     setLoading(true);
     setLoadError(null);
     try {
       const searchParams = new URLSearchParams();
       if (q) searchParams.set("search", q);
-      const suffix = searchParams.toString();
-      const response = await apiJson<{ data: Patient[]; meta: any }>(
-        `/v1/patients${suffix ? `?${suffix}` : ""}`
+      searchParams.set("page", pageNum.toString());
+      searchParams.set("limit", limit.toString());
+      const response = await apiJson<{ data: Patient[]; meta: { total: number; totalPages: number } }>(
+        `/v1/patients?${searchParams.toString()}`
       );
       setPatients(response.data);
+      setTotal(response.meta.total);
+      setTotalPages(response.meta.totalPages);
     } catch (e: unknown) {
       if (e instanceof AuthError) return;
       setLoadError(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [limit]);
 
   useEffect(() => {
     loadPatients();
   }, [loadPatients]);
 
   const handleSearch = () => {
-    loadPatients(search || undefined);
+    setPage(1);
+    loadPatients(search || undefined, 1);
+  };
+  
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+    loadPatients(search || undefined, value);
   };
 
   const openCreateDialog = async () => {
@@ -170,33 +187,48 @@ export default function PatientsPage() {
           }
         />
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Species</TableCell>
-                <TableCell>Breed</TableCell>
-                <TableCell>Owner</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {patients.map((p) => (
-                <TableRow
-                  key={p.id}
-                  hover
-                  sx={{ cursor: "pointer" }}
-                  onClick={() => router.push(`/patients/${p.id}`)}
-                >
-                  <TableCell>{p.name}</TableCell>
-                  <TableCell>{p.species}</TableCell>
-                  <TableCell>{p.breed ?? "—"}</TableCell>
-                  <TableCell>{p.owner.name}</TableCell>
+        <>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Species</TableCell>
+                  <TableCell>Breed</TableCell>
+                  <TableCell>Owner</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {patients.map((p) => (
+                  <TableRow
+                    key={p.id}
+                    hover
+                    sx={{ cursor: "pointer" }}
+                    onClick={() => router.push(`/patients/${p.id}`)}
+                  >
+                    <TableCell>{p.name}</TableCell>
+                    <TableCell>{p.species}</TableCell>
+                    <TableCell>{p.breed ?? "—"}</TableCell>
+                    <TableCell>{p.owner.name}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Showing {patients.length} of {total} patients
+            </Typography>
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+              disabled={loading}
+            />
+          </Box>
+        </>
       )}
 
       {/* Create Patient Dialog */}

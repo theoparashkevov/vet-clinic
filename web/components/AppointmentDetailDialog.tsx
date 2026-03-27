@@ -12,7 +12,7 @@ import FormLayout from "./FormLayout";
 import { apiJson, AuthError } from "../lib/api";
 import { useToast } from "./ToastProvider";
 
-const APPOINTMENT_STATUSES = ["scheduled", "completed", "cancelled", "no-show"];
+const APPOINTMENT_STATUSES = ["scheduled", "in-progress", "completed", "cancelled", "no-show"];
 
 type Appointment = {
   id: string;
@@ -32,9 +32,10 @@ type Props = {
   onUpdated: () => void;
 };
 
-function statusColor(s: string): "default" | "success" | "warning" | "error" {
+function statusColor(s: string): "default" | "success" | "warning" | "error" | "primary" {
   if (s === "completed") return "success";
   if (s === "cancelled" || s === "no-show") return "error";
+  if (s === "in-progress") return "primary";
   return "default";
 }
 

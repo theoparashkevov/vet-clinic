@@ -31,6 +31,9 @@ model Patient {
   chronicConditions String?
   medicalRecords    MedicalRecord[]
   appointments      Appointment[]
+  vaccinations      Vaccination[]
+  weightRecords     WeightRecord[]
+  patientAlerts     PatientAlert[]
   createdAt         DateTime        @default(now())
 }
 
@@ -72,4 +75,50 @@ model User {
   role         String
   passwordHash String?
   appointments Appointment[]
+}
+
+model Vaccination {
+  id            String   @id @default(cuid())
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId     String
+  type          String
+  name          String
+  givenDate     DateTime
+  dueDate       DateTime
+  batchNumber   String?
+  veterinarian  String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([dueDate])
+}
+
+model WeightRecord {
+  id          String   @id @default(cuid())
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId   String
+  weight      Float
+  date        DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([date])
+}
+
+model PatientAlert {
+  id          String   @id @default(cuid())
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId   String
+  type        String
+  severity    String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([severity])
 }

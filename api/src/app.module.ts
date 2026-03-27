@@ -8,6 +8,9 @@ import { MedicalRecordsModule } from './medical-records/medical-records.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PatientClinicalModule } from './patient-clinical/patient-clinical.module';
+import { VaccinationsModule } from './vaccinations/vaccinations.module';
+import { WeightModule } from './weight/weight.module';
+import { ClientModule } from './client/client.module';
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { PatientClinicalModule } from './patient-clinical/patient-clinical.modul
     UsersModule,
     AuthModule,
     PatientClinicalModule,
+    VaccinationsModule,
+    WeightModule,
+    ClientModule,
   ],
   controllers: [HealthController],
 })

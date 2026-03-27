@@ -276,9 +276,10 @@ Committed backlog:
 | 2026-03-27 | PM Agent | Confirmed MUI-first UI refresh and locked next feature order (Scheduling → Timeline → User Admin). Updated Sprint A acceptance criteria and backlog statuses. |
 | 2026-03-27 | PM Agent | Completed Sprint A Phase 1: centralized MUI theme, responsive app shell, standard UI states (loading/empty/error), consistent layouts. Task #34 done. |
 | 2026-03-27 | PM Agent | Updated backlog/statuses to reflect Sprint A Phase 1 completion (Tasks #33–34). Clarified remaining UI work as Phase 2. |
-| 2026-03-27 | PM Agent | Completed Sprint A Phase 2 (Task #35): reusable AppDialog, FormLayout, AppTable components with tests. Completed Task #37: API overlap prevention with tests. |
+| 2026-03-27 | PM Agent | Completed Sprint A Phase 2 (Task #35): reusable AppDialog, FormLayout, AppTable components with tests. Completed Task #37: Scheduling overlap prevention in API. |
 | 2026-03-27 | PM Agent | Completed Sprint B Task #36: Calendar view v1 with day/week toggle, appointment detail modal, and status updates. 40 tests passing, both packages build. |
 | 2026-03-27 | PM Agent | Completed Task #38: PatientTimeline component on patient page showing unified appointments + medical records chronologically. Completed Task #39: Users list page with API integration and navigation. |
+| 2026-03-27 | PM Agent | Created comprehensive improvement roadmap document mapping 5 phases of future work. Updated project plan with Phase 1-5 priorities. |
 
 # Action Items
 
@@ -292,3 +293,95 @@ Committed backlog:
 - [x] 2026-03-27 — frontend-developer — Completed Task #39: User management v1 (list users with role badges)
 - [ ] 2026-03-27 — teo — Decide target: "clinic internal only" vs start carving "client portal" endpoints
 - [ ] 2026-03-28 — teo — Inspect the app with start.sh and plan next iteration (full user CRUD dialog, pagination, or CI/CD)
+
+---
+
+# Improvement Roadmap
+
+See [improvement-roadmap.md](./improvement-roadmap.md) for detailed phase-by-phase breakdown.
+
+## Quick Summary
+
+**Phase 1 (Safety & Workflow):** Wire up orphaned components + CI/CD  
+**Phase 2 (Clinical Data):** Weight tracking + vaccination status + pagination  
+**Phase 3 (Quality):** Guard tests + error boundaries + logging  
+**Phase 4 (Efficiency):** Templates + prescriptions + photos + reminders  
+**Phase 5 (Client-Facing):** Viber bot + client portal
+
+## Immediate Next Steps
+
+| Priority | Task | Owner | Effort |
+|----------|------|-------|--------|
+| P0 | Integrate PatientAlertBanner into patient page | frontend-developer | 4h |
+| P0 | Add "in-progress" appointment status | backend-developer | 3h |
+| P0 | Setup GitHub Actions CI/CD | devops-engineer | 6h |
+| P1 | Weight tracking schema + API | backend-developer | 4h |
+| P1 | Vaccination tracking schema + API | backend-developer | 6h |
+
+## Orphaned Components (Built but Not Connected)
+
+| Component | Location | Status | Blocker |
+|-----------|----------|--------|---------|
+| PatientAlertBanner | `web/components/PatientAlertBanner.tsx` | 🟡 Built | Needs integration on patient page |
+| VaccinationStatus | `web/components/VaccinationStatus.tsx` | 🟡 Built | Needs Vaccination schema & API |
+| WeightHistoryChart | `web/components/WeightHistoryChart.tsx` | 🟡 Built | Needs WeightRecord schema & API |
+
+## Phase-by-Phase Breakdown
+
+### Phase 1: Safety & Workflow (Weeks 1-2)
+**Goal:** Connect orphaned components, add safety-critical workflow status, establish CI/CD
+
+**Tasks:**
+1. **Integrate PatientAlertBanner** into patient detail page - parse allergies/chronicConditions
+2. **Add "In Progress" appointment status** - API + calendar UI update
+3. **Setup GitHub Actions CI/CD** - build, test, lint on PRs
+4. **ESLint + Prettier** baseline configuration
+
+**Why first:** These are the fastest wins. Dr. Mitchell needs patient alerts for safety, and CI/CD prevents regressions.
+
+### Phase 2: Clinical Data Foundation (Weeks 3-5)
+**Goal:** Give Dr. Mitchell the clinical data she needs at her fingertips
+
+**Tasks:**
+1. **Weight tracking** - schema, API, auto-capture at visits, chart integration
+2. **Vaccination tracking** - schema, API, status calculation, list/detail integration
+3. **Pagination** - patients and appointments lists
+
+**Why second:** These complete the clinical picture. Weight trends catch disease early. Vaccination status prevents liability issues.
+
+### Phase 3: Quality & Safety (Weeks 6-7)
+**Goal:** Make the system safe to operate and maintain
+
+**Tasks:**
+1. **API Guard Tests** - auth + role-based access coverage
+2. **Error Boundaries** - graceful React error handling
+3. **Request Logging** - audit trail with pino
+4. **Auth UX Improvements** - better 401/403/session expiry handling
+
+**Why third:** Before adding more features, ensure the foundation is solid. Tests and logging prevent production fires.
+
+### Phase 4: Clinical Efficiency (Weeks 8-10)
+**Goal:** Reduce clicks and typing for Dr. Mitchell's daily workflow
+
+**Tasks:**
+1. **Quick Note Templates** - one-click common findings
+2. **Prescription Management** - templates, printing, drug interaction warnings
+3. **Photo Upload** - attach images to medical records
+4. **Follow-up Reminders** - track and remind about callbacks
+
+**Why fourth:** These are convenience features that save time but aren't safety-critical. Do them after the foundation is solid.
+
+### Phase 5: Client-Facing Features (Weeks 11-14)
+**Goal:** Enable pet owner self-service
+
+**Tasks:**
+1. **Bot Package** - scaffold Viber webhook handler
+2. **LLM Integration** - tool-calling for appointment booking
+3. **Tool Endpoints** - LLM-accessible appointment creation
+4. **Client Portal Foundation** - separate auth for pet owners
+
+**Why last:** This is the most complex and requires external APIs (Viber, LLM). Build it after internal workflows are solid.
+
+---
+
+*This roadmap is a living document. Update it as priorities shift or work completes.*

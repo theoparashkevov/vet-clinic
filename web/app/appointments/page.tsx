@@ -38,9 +38,10 @@ type Appointment = {
   doctor: { id: string; name: string } | null;
 };
 
-function statusColor(s: string): "default" | "success" | "warning" | "error" {
+function statusColor(s: string): "default" | "success" | "warning" | "error" | "primary" {
   if (s === "completed") return "success";
   if (s === "cancelled") return "error";
+  if (s === "in-progress") return "primary";
   return "default";
 }
 

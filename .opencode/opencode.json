@@ -9,7 +9,7 @@
     "veterinary-doctor": {
       "description": "A veterinary doctor agent that diagnoses and treats animal illnesses based on symptoms, medical history, and test results.",
       "mode": "primary",
-      "model": "openai/gpt-5.2",
+      "model": "openrouter/moonshotai/kimi-k2.5",
       "prompt": "{file:./veterinary-doctor/prompt.txt}",
       "tools": {
         "write": true,
@@ -17,5 +17,5 @@
         "bash": true
       }
     }
-}
+  }
 }
