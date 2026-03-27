@@ -63,7 +63,10 @@ export default function PatientsPage() {
       const searchParams = new URLSearchParams();
       if (q) searchParams.set("search", q);
       const suffix = searchParams.toString();
-      setPatients(await apiJson<Patient[]>(`/v1/patients${suffix ? `?${suffix}` : ""}`));
+      const response = await apiJson<{ data: Patient[]; meta: any }>(
+        `/v1/patients${suffix ? `?${suffix}` : ""}`
+      );
+      setPatients(response.data);
     } catch (e: unknown) {
       if (e instanceof AuthError) return;
       setLoadError(e instanceof Error ? e.message : "Failed to load");

@@ -54,12 +54,12 @@ export default function DashboardPage() {
       setError(null);
       try {
         const [apptRes, patRes] = await Promise.all([
-          apiJson<Appointment[]>(`/v1/appointments?date=${today}`),
-          apiJson<Patient[]>("/v1/patients"),
+          apiJson<{ data: Appointment[]; meta: any }>(`/v1/appointments?date=${today}`),
+          apiJson<{ data: Patient[]; meta: any }>("/v1/patients"),
         ]);
         if (!cancelled) {
-          setAppointments(apptRes);
-          setPatientCount(patRes.length);
+          setAppointments(apptRes.data);
+          setPatientCount(patRes.data.length);
         }
       } catch (e: unknown) {
         if (cancelled) return;

@@ -78,14 +78,14 @@ export default function PatientDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [pat, recs, patAppts] = await Promise.all([
+      const [pat, recs, patApptsRes] = await Promise.all([
         apiJson<Patient>(`/v1/patients/${id}`),
         apiJson<MedicalRecord[]>(`/v1/patients/${id}/medical-records`),
-        apiJson<Appointment[]>(`/v1/appointments?patientId=${encodeURIComponent(id)}`),
+        apiJson<{ data: Appointment[]; meta: any }>(`/v1/appointments?patientId=${encodeURIComponent(id)}`),
       ]);
       setPatient(pat);
       setRecords(recs);
-      setAppointments(patAppts);
+      setAppointments(patApptsRes.data);
     } catch (e: unknown) {
       if (e instanceof AuthError) return;
       setError(e instanceof Error ? e.message : "Failed to load");

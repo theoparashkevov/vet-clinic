@@ -68,10 +68,10 @@ export default function BookingDialog({
 
     Promise.all([
       apiJson<Doctor[]>("/v1/doctors"),
-      apiJson<Patient[]>("/v1/patients"),
-    ]).then(([docs, pats]) => {
+      apiJson<{ data: Patient[]; meta: any }>("/v1/patients"),
+    ]).then(([docs, patsRes]) => {
       setDoctors(docs);
-      setPatients(pats);
+      setPatients(patsRes.data);
     }).catch(() => {
       // Auth/session handling is done globally.
     });

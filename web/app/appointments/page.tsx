@@ -65,7 +65,10 @@ export default function AppointmentsPage() {
       const searchParams = new URLSearchParams();
       if (date) searchParams.set("date", date);
       if (doctorId) searchParams.set("doctorId", doctorId);
-      setAppointments(await apiJson<Appointment[]>(`/v1/appointments?${searchParams.toString()}`));
+      const response = await apiJson<{ data: Appointment[]; meta: any }>(
+        `/v1/appointments?${searchParams.toString()}`
+      );
+      setAppointments(response.data);
     } catch (e: unknown) {
       if (e instanceof AuthError) return;
       setError(e instanceof Error ? e.message : "Failed to load");
