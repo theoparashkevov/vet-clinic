@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
-import { theme } from "../lib/theme";
+import { theme } from "./theme";
 import { ToastProvider } from "../components/ToastProvider";
 import { AuthProvider } from "../components/AuthProvider";
 

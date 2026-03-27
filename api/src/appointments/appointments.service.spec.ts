@@ -7,6 +7,7 @@ function makePrisma(overrides: Partial<Record<string, jest.Mock>> = {}) {
     appointment: {
       findMany: jest.fn().mockResolvedValue([]),
       findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
       update: jest.fn(),
       ...overrides,
@@ -228,12 +229,12 @@ describe('AppointmentsService.get', () => {
 // create
 // ---------------------------------------------------------------------------
 describe('AppointmentsService.create', () => {
-  it('converts startsAt and endsAt strings to Date objects', () => {
+  it('converts startsAt and endsAt strings to Date objects', async () => {
     const created = { ...SAMPLE_APPT };
     const prisma = makePrisma({ create: jest.fn().mockResolvedValue(created) });
     const svc = new AppointmentsService(prisma);
 
-    svc.create({
+    await svc.create({
       patientId: 'p1',
       ownerId: 'o1',
       doctorId: 'd1',

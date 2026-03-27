@@ -77,7 +77,7 @@ export default function DashboardPage() {
   return (
     <Box>
       <PageHeader
-        title="Dashboard"
+        title="Home"
         subtitle="Today at a glance"
       />
 

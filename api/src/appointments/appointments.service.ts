@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto';
@@ -7,6 +12,45 @@ import { publicUserSelect } from '../users/user-selects';
 @Injectable()
 export class AppointmentsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private assertValidTimeWindow(startsAt: Date, endsAt: Date) {
+    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+      throw new BadRequestException('Invalid startsAt/endsAt');
+    }
+
+    if (startsAt >= endsAt) {
+      throw new BadRequestException('startsAt must be before endsAt');
+    }
+  }
+
+  private async assertNoOverlappingAppointments(params: {
+    startsAt: Date;
+    endsAt: Date;
+    patientId: string;
+    doctorId?: string | null;
+    excludeId?: string;
+  }) {
+    const { startsAt, endsAt, patientId, doctorId, excludeId } = params;
+
+    const or: Prisma.AppointmentWhereInput[] = [{ patientId }];
+    if (doctorId) or.push({ doctorId });
+
+    const where: Prisma.AppointmentWhereInput = {
+      status: { not: 'cancelled' },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+      AND: [{ startsAt: { lt: endsAt } }, { endsAt: { gt: startsAt } }],
+      OR: or,
+    };
+
+    const overlapping = await this.prisma.appointment.findFirst({
+      where,
+      select: { id: true },
+    });
+
+    if (overlapping) {
+      throw new ConflictException('Appointment overlaps an existing booking');
+    }
+  }
 
   list(filters: { date?: string; doctorId?: string; status?: string; patientId?: string }) {
     const where: Record<string, unknown> = {};
@@ -51,14 +95,25 @@ export class AppointmentsService {
     return found;
   }
 
-  create(dto: CreateAppointmentDto) {
+  async create(dto: CreateAppointmentDto) {
+    const startsAt = new Date(dto.startsAt);
+    const endsAt = new Date(dto.endsAt);
+    this.assertValidTimeWindow(startsAt, endsAt);
+
+    await this.assertNoOverlappingAppointments({
+      startsAt,
+      endsAt,
+      patientId: dto.patientId,
+      doctorId: dto.doctorId,
+    });
+
     return this.prisma.appointment.create({
       data: {
         patientId: dto.patientId,
         ownerId: dto.ownerId,
         doctorId: dto.doctorId,
-        startsAt: new Date(dto.startsAt),
-        endsAt: new Date(dto.endsAt),
+        startsAt,
+        endsAt,
         reason: dto.reason,
       },
       include: { patient: true, owner: true, doctor: { select: publicUserSelect } },
@@ -66,7 +121,45 @@ export class AppointmentsService {
   }
 
   async update(id: string, dto: UpdateAppointmentDto) {
-    await this.get(id);
+    const existing = await this.prisma.appointment.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        patientId: true,
+        doctorId: true,
+        startsAt: true,
+        endsAt: true,
+        status: true,
+      },
+    });
+    if (!existing) throw new NotFoundException('Appointment not found');
+
+    const nextStartsAt = dto.startsAt !== undefined ? new Date(dto.startsAt) : existing.startsAt;
+    const nextEndsAt = dto.endsAt !== undefined ? new Date(dto.endsAt) : existing.endsAt;
+    const nextDoctorId = dto.doctorId !== undefined ? dto.doctorId : existing.doctorId;
+    const nextStatus = dto.status !== undefined ? dto.status : existing.status;
+
+    this.assertValidTimeWindow(nextStartsAt, nextEndsAt);
+
+    const becomingBooked = nextStatus !== 'cancelled';
+    const wasCancelled = existing.status === 'cancelled';
+    const needsOverlapCheck =
+      becomingBooked &&
+      (dto.startsAt !== undefined ||
+        dto.endsAt !== undefined ||
+        dto.doctorId !== undefined ||
+        (wasCancelled && dto.status !== undefined && dto.status !== 'cancelled'));
+
+    if (needsOverlapCheck) {
+      await this.assertNoOverlappingAppointments({
+        startsAt: nextStartsAt,
+        endsAt: nextEndsAt,
+        patientId: existing.patientId,
+        doctorId: nextDoctorId,
+        excludeId: id,
+      });
+    }
+
     const data: Record<string, unknown> = {};
     if (dto.status !== undefined) data.status = dto.status;
     if (dto.reason !== undefined) data.reason = dto.reason;

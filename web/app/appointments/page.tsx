@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
-import Alert from "@mui/material/Alert";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -15,10 +15,15 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import BookingDialog from "../../components/BookingDialog";
+import AppointmentDetailDialog from "../../components/AppointmentDetailDialog";
+import CalendarView from "../../components/CalendarView";
 import PageHeader from "../../components/PageHeader";
-import InlineLoading from "../../components/InlineLoading";
 import EmptyState from "../../components/EmptyState";
+import ErrorState from "../../components/ErrorState";
+import TableSkeleton from "../../components/TableSkeleton";
 import { apiJson, AuthError } from "../../lib/api";
 
 type Doctor = { id: string; name: string };
@@ -39,6 +44,8 @@ function statusColor(s: string): "default" | "success" | "warning" | "error" {
   return "default";
 }
 
+type ViewMode = "list" | "calendar";
+
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -47,6 +54,9 @@ export default function AppointmentsPage() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [doctorId, setDoctorId] = useState("");
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("calendar");
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const loadAppointments = useCallback(async () => {
     setLoading(true);
@@ -97,6 +107,7 @@ export default function AppointmentsPage() {
           onChange={(e) => setDate(e.target.value)}
           InputLabelProps={{ shrink: true }}
           sx={{ minWidth: 180 }}
+          disabled={loading}
         />
         <TextField
           select
@@ -105,6 +116,7 @@ export default function AppointmentsPage() {
           value={doctorId}
           onChange={(e) => setDoctorId(e.target.value)}
           sx={{ minWidth: 200 }}
+          disabled={loading}
         >
           <MenuItem value="">All doctors</MenuItem>
           {doctors.map((d) => (
@@ -115,10 +127,37 @@ export default function AppointmentsPage() {
         </TextField>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {/* View Toggle */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={(_, value) => value && setViewMode(value)}
+          size="small"
+        >
+          <ToggleButton value="list">
+            <ViewListIcon sx={{ mr: 0.5 }} />
+            List
+          </ToggleButton>
+          <ToggleButton value="calendar">
+            <CalendarMonthIcon sx={{ mr: 0.5 }} />
+            Calendar
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
 
       {loading ? (
-        <InlineLoading />
+        <TableSkeleton
+          columns={6}
+          headers={["Time", "Patient", "Owner", "Doctor", "Reason", "Status"]}
+        />
+      ) : error ? (
+        <ErrorState
+          title="Couldn't load appointments"
+          message="Please check your connection and try again."
+          details={error}
+          onRetry={loadAppointments}
+        />
       ) : appointments.length === 0 ? (
         <EmptyState
           title="No appointments"
@@ -128,6 +167,17 @@ export default function AppointmentsPage() {
               Book appointment
             </Button>
           }
+        />
+      ) : viewMode === "calendar" ? (
+        <CalendarView
+          appointments={appointments}
+          selectedDate={date}
+          onDateChange={setDate}
+          onAppointmentClick={(appt) => {
+            setSelectedAppointment(appt);
+            setDetailOpen(true);
+          }}
+          doctorFilter={doctorId || undefined}
         />
       ) : (
         <TableContainer component={Paper}>
@@ -144,7 +194,15 @@ export default function AppointmentsPage() {
             </TableHead>
             <TableBody>
               {appointments.map((a) => (
-                <TableRow key={a.id}>
+                <TableRow
+                  key={a.id}
+                  hover
+                  sx={{ cursor: "pointer" }}
+                  onClick={() => {
+                    setSelectedAppointment(a);
+                    setDetailOpen(true);
+                  }}
+                >
                   <TableCell>
                     {new Date(a.startsAt).toLocaleTimeString([], {
                       hour: "2-digit",
@@ -179,6 +237,15 @@ export default function AppointmentsPage() {
         onClose={() => setBookingOpen(false)}
         onBooked={() => {
           setBookingOpen(false);
+          loadAppointments();
+        }}
+      />
+
+      <AppointmentDetailDialog
+        appointment={selectedAppointment}
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        onUpdated={() => {
           loadAppointments();
         }}
       />

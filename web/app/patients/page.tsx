@@ -3,10 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
-import Alert from "@mui/material/Alert";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -20,8 +18,9 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import MenuItem from "@mui/material/MenuItem";
 import PageHeader from "../../components/PageHeader";
-import InlineLoading from "../../components/InlineLoading";
 import EmptyState from "../../components/EmptyState";
+import ErrorState from "../../components/ErrorState";
+import TableSkeleton from "../../components/TableSkeleton";
 import { useToast } from "../../components/ToastProvider";
 import { apiJson, AuthError } from "../../lib/api";
 
@@ -39,7 +38,7 @@ export default function PatientsPage() {
   const toast = useToast();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [owners, setOwners] = useState<Owner[]>([]);
@@ -59,7 +58,7 @@ export default function PatientsPage() {
 
   const loadPatients = useCallback(async (q?: string) => {
     setLoading(true);
-    setError(null);
+    setLoadError(null);
     try {
       const searchParams = new URLSearchParams();
       if (q) searchParams.set("search", q);
@@ -67,7 +66,7 @@ export default function PatientsPage() {
       setPatients(await apiJson<Patient[]>(`/v1/patients${suffix ? `?${suffix}` : ""}`));
     } catch (e: unknown) {
       if (e instanceof AuthError) return;
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setLoadError(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setLoading(false);
     }
@@ -115,7 +114,6 @@ export default function PatientsPage() {
     } catch (e: unknown) {
       if (e instanceof AuthError) return;
       const message = e instanceof Error ? e.message : "Failed to create patient";
-      setError(message);
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -142,16 +140,22 @@ export default function PatientsPage() {
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           sx={{ flex: 1, maxWidth: 400 }}
+          disabled={loading}
         />
-        <Button variant="outlined" onClick={handleSearch}>
+        <Button variant="outlined" onClick={handleSearch} disabled={loading}>
           Search
         </Button>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
       {loading ? (
-        <InlineLoading />
+        <TableSkeleton columns={4} headers={["Name", "Species", "Breed", "Owner"]} />
+      ) : loadError ? (
+        <ErrorState
+          title="Couldn't load patients"
+          message="Please check your connection and try again."
+          details={loadError}
+          onRetry={() => loadPatients(search || undefined)}
+        />
       ) : patients.length === 0 ? (
         <EmptyState
           title={search ? "No matching patients" : "No patients yet"}

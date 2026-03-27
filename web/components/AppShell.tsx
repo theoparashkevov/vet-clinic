@@ -8,7 +8,6 @@ import AppBar from "@mui/material/AppBar";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
@@ -29,12 +28,15 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import PetsIcon from "@mui/icons-material/Pets";
 import EventIcon from "@mui/icons-material/Event";
 import LogoutIcon from "@mui/icons-material/Logout";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import { useAuth } from "./AuthProvider";
+import FullPageLoading from "./FullPageLoading";
+import { useToast } from "./ToastProvider";
 
 const PUBLIC_PATHS = new Set(["/login"]);
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: <DashboardIcon fontSize="small" /> },
+  { href: "/", label: "Home", icon: <DashboardIcon fontSize="small" /> },
   { href: "/patients", label: "Patients", icon: <PetsIcon fontSize="small" /> },
   { href: "/appointments", label: "Appointments", icon: <EventIcon fontSize="small" /> },
 ];
@@ -42,6 +44,7 @@ const navItems = [
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const toast = useToast();
   const { user, isAuthenticated, loading, logout } = useAuth();
   const isPublic = PUBLIC_PATHS.has(pathname);
 
@@ -62,15 +65,23 @@ export default function AppShell({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, isPublic, loading, pathname, router]);
 
+  useEffect(() => {
+    const onAuthError = (event: Event) => {
+      if (isPublic) return;
+      const detail = (event as CustomEvent<{ message?: string }>).detail;
+      if (detail?.message) {
+        toast.error(detail.message);
+      }
+      const nextPath = pathname || "/";
+      router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
+    };
+
+    window.addEventListener("vet-clinic-auth-error", onAuthError);
+    return () => window.removeEventListener("vet-clinic-auth-error", onAuthError);
+  }, [isPublic, pathname, router, toast]);
+
   if (!isPublic && (loading || !isAuthenticated)) {
-    return (
-      <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <CircularProgress size={20} />
-          <Typography>Checking session...</Typography>
-        </Box>
-      </Box>
-    );
+    return <FullPageLoading label="Checking session..." />;
   }
 
   if (isPublic) {
@@ -112,7 +123,20 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 color="text.primary"
                 sx={{ textDecoration: "none", letterSpacing: "-0.02em" }}
               >
-                Vet Clinic
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Avatar
+                    variant="rounded"
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      bgcolor: "primary.main",
+                      borderRadius: 2,
+                    }}
+                  >
+                    <LocalHospitalIcon fontSize="small" />
+                  </Avatar>
+                  <span>Vet Clinic</span>
+                </Stack>
               </Typography>
 
               {!isMobile ? (

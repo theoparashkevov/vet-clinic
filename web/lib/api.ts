@@ -7,6 +7,14 @@ export class AuthError extends Error {
   }
 }
 
+function emitAuthError(message: string) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('vet-clinic-auth-error', { detail: { message } }),
+    );
+  }
+}
+
 async function getErrorMessage(response: Response) {
   try {
     const body = (await response.json()) as { message?: string | string[] };
@@ -43,8 +51,19 @@ export async function apiFetch(
   });
 
   if (response.status === 401) {
+    const message = 'Your session has expired. Please sign in again.';
     clearSession();
-    throw new AuthError();
+    emitAuthError(message);
+    throw new AuthError(message);
+  }
+
+  if (response.status === 403) {
+    // Treat forbidden as an auth boundary for Phase 1.
+    // This keeps UX consistent by redirecting to /login.
+    const message = "You don't have access to this resource. Please sign in with an authorized account.";
+    clearSession();
+    emitAuthError(message);
+    throw new AuthError(message);
   }
 
   if (!response.ok) {
