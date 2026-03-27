@@ -34,6 +34,8 @@ model Patient {
   vaccinations      Vaccination[]
   weightRecords     WeightRecord[]
   patientAlerts     PatientAlert[]
+  prescriptions     Prescription[]
+  photos            PatientPhoto[]
   createdAt         DateTime        @default(now())
 }
 
@@ -75,6 +77,76 @@ model User {
   role         String
   passwordHash String?
   appointments Appointment[]
+}
+
+model Prescription {
+  id               String   @id @default(cuid())
+  patient          Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId        String
+  medication       String   // e.g., "Amoxicillin 250mg"
+  dosage           String   // e.g., "1 tablet"
+  frequency        String   // e.g., "Twice daily"
+  duration         String   // e.g., "7 days"
+  instructions     String?  // Special instructions
+  prescribedAt     DateTime @default(now())
+  expiresAt        DateTime // When prescription expires
+  refillsTotal     Int      @default(0)
+  refillsRemaining Int      @default(0)
+  isControlled     Boolean  @default(false) // Controlled substance flag
+  veterinarian     String   // Prescribing doctor name
+  notes            String?  // Internal notes
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([prescribedAt])
+}
+
+model MedicationTemplate {
+  id           String   @id @default(cuid())
+  name         String   // e.g., "Amoxicillin 250mg"
+  category     String   // e.g., "Antibiotic", "Pain Relief"
+  dosage       String   // Default dosage
+  frequency    String   // Default frequency
+  duration     String   // Default duration
+  instructions String?  // Default instructions
+  isCommon     Boolean  @default(false) // Show in quick list
+  createdAt    DateTime @default(now())
+
+  @@index([category])
+  @@index([isCommon])
+}
+
+model NoteTemplate {
+  id        String   @id @default(cuid())
+  name      String   // e.g., "Wellness Exam - Normal"
+  category  String   // e.g., "Wellness", "Sick Visit", "Surgery"
+  content   String   // Template text with placeholders
+  isCommon  Boolean  @default(false)
+  createdBy String?  // User ID who created it
+  createdAt DateTime @default(now())
+
+  @@index([category])
+  @@index([isCommon])
+}
+
+model PatientPhoto {
+  id           String   @id @default(cuid())
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId    String
+  url          String   // S3/Storage URL
+  thumbnailUrl String?  // Optimized thumbnail
+  category     String   // e.g., "Skin", "Wound", "Dental", "X-Ray"
+  description  String?
+  takenAt      DateTime // When photo was taken
+  uploadedAt   DateTime @default(now())
+  uploadedBy   String   // User ID
+  fileSize     Int      // In bytes
+  mimeType     String   // image/jpeg, image/png
+
+  @@index([patientId])
+  @@index([category])
+  @@index([takenAt])
 }
 
 model Vaccination {

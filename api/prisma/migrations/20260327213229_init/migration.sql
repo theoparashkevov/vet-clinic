@@ -61,9 +61,68 @@ CREATE TABLE "User" (
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "role" TEXT NOT NULL,
-    "passwordHash" TEXT,
-    "ownerId" TEXT,
-    CONSTRAINT "User_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "Owner" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "passwordHash" TEXT
+);
+
+-- CreateTable
+CREATE TABLE "Prescription" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "patientId" TEXT NOT NULL,
+    "medication" TEXT NOT NULL,
+    "dosage" TEXT NOT NULL,
+    "frequency" TEXT NOT NULL,
+    "duration" TEXT NOT NULL,
+    "instructions" TEXT,
+    "prescribedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expiresAt" DATETIME NOT NULL,
+    "refillsTotal" INTEGER NOT NULL DEFAULT 0,
+    "refillsRemaining" INTEGER NOT NULL DEFAULT 0,
+    "isControlled" BOOLEAN NOT NULL DEFAULT false,
+    "veterinarian" TEXT NOT NULL,
+    "notes" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "Prescription_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "Patient" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "MedicationTemplate" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "dosage" TEXT NOT NULL,
+    "frequency" TEXT NOT NULL,
+    "duration" TEXT NOT NULL,
+    "instructions" TEXT,
+    "isCommon" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CreateTable
+CREATE TABLE "NoteTemplate" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "isCommon" BOOLEAN NOT NULL DEFAULT false,
+    "createdBy" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CreateTable
+CREATE TABLE "PatientPhoto" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "patientId" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "thumbnailUrl" TEXT,
+    "category" TEXT NOT NULL,
+    "description" TEXT,
+    "takenAt" DATETIME NOT NULL,
+    "uploadedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "uploadedBy" TEXT NOT NULL,
+    "fileSize" INTEGER NOT NULL,
+    "mimeType" TEXT NOT NULL,
+    CONSTRAINT "PatientPhoto_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "Patient" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -110,7 +169,31 @@ CREATE TABLE "PatientAlert" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_ownerId_key" ON "User"("ownerId");
+CREATE INDEX "Prescription_patientId_idx" ON "Prescription"("patientId");
+
+-- CreateIndex
+CREATE INDEX "Prescription_prescribedAt_idx" ON "Prescription"("prescribedAt");
+
+-- CreateIndex
+CREATE INDEX "MedicationTemplate_category_idx" ON "MedicationTemplate"("category");
+
+-- CreateIndex
+CREATE INDEX "MedicationTemplate_isCommon_idx" ON "MedicationTemplate"("isCommon");
+
+-- CreateIndex
+CREATE INDEX "NoteTemplate_category_idx" ON "NoteTemplate"("category");
+
+-- CreateIndex
+CREATE INDEX "NoteTemplate_isCommon_idx" ON "NoteTemplate"("isCommon");
+
+-- CreateIndex
+CREATE INDEX "PatientPhoto_patientId_idx" ON "PatientPhoto"("patientId");
+
+-- CreateIndex
+CREATE INDEX "PatientPhoto_category_idx" ON "PatientPhoto"("category");
+
+-- CreateIndex
+CREATE INDEX "PatientPhoto_takenAt_idx" ON "PatientPhoto"("takenAt");
 
 -- CreateIndex
 CREATE INDEX "Vaccination_patientId_idx" ON "Vaccination"("patientId");
