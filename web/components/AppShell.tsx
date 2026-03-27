@@ -27,6 +27,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PetsIcon from "@mui/icons-material/Pets";
 import EventIcon from "@mui/icons-material/Event";
+import PeopleIcon from "@mui/icons-material/People";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import { useAuth } from "./AuthProvider";
@@ -39,6 +40,7 @@ const navItems = [
   { href: "/", label: "Home", icon: <DashboardIcon fontSize="small" /> },
   { href: "/patients", label: "Patients", icon: <PetsIcon fontSize="small" /> },
   { href: "/appointments", label: "Appointments", icon: <EventIcon fontSize="small" /> },
+  { href: "/users", label: "Users", icon: <PeopleIcon fontSize="small" /> },
 ];
 
 export default function AppShell({ children }: { children: ReactNode }) {
