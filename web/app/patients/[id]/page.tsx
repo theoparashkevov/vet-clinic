@@ -2,12 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
@@ -19,7 +17,10 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import MedicalRecordDialog from "../../../components/MedicalRecordDialog";
 import BookingDialog from "../../../components/BookingDialog";
-import { apiJson } from "../../../lib/api";
+import PageHeader from "../../../components/PageHeader";
+import InlineLoading from "../../../components/InlineLoading";
+import EmptyState from "../../../components/EmptyState";
+import { apiJson, AuthError } from "../../../lib/api";
 
 type Owner = { id: string; name: string; phone: string; email: string | null };
 type Patient = {
@@ -64,6 +65,7 @@ export default function PatientDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
+
   const [patient, setPatient] = useState<Patient | null>(null);
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -85,6 +87,7 @@ export default function PatientDetailPage() {
       setRecords(recs);
       setAppointments(patAppts);
     } catch (e: unknown) {
+      if (e instanceof AuthError) return;
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setLoading(false);
@@ -97,39 +100,32 @@ export default function PatientDetailPage() {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <CircularProgress size={20} />
-          <Typography>Loading...</Typography>
-        </Box>
-      </Container>
+      <InlineLoading />
     );
   }
 
   if (error || !patient) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error">{error ?? "Patient not found"}</Alert>
-      </Container>
+      <Alert severity="error">{error ?? "Patient not found"}</Alert>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Patient info */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "start", mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          {patient.name}
-        </Typography>
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button variant="outlined" onClick={() => setRecordDialogOpen(true)}>
-            + Add Medical Record
-          </Button>
-          <Button variant="contained" onClick={() => setBookingDialogOpen(true)}>
-            Book Appointment
-          </Button>
-        </Box>
-      </Box>
+    <Box>
+      <PageHeader
+        title={patient.name}
+        subtitle={`${patient.species}${patient.breed ? ` • ${patient.breed}` : ""}`}
+        actions={
+          <>
+            <Button variant="outlined" onClick={() => setRecordDialogOpen(true)}>
+              Add medical record
+            </Button>
+            <Button variant="contained" onClick={() => setBookingDialogOpen(true)}>
+              Book appointment
+            </Button>
+          </>
+        }
+      />
 
       <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap" }}>
         {/* Patient details card */}
@@ -160,9 +156,17 @@ export default function PatientDetailPage() {
         Medical History
       </Typography>
       {records.length === 0 ? (
-        <Typography color="text.secondary" sx={{ mb: 3 }}>
-          No medical records yet.
-        </Typography>
+        <Box sx={{ mb: 3 }}>
+          <EmptyState
+            title="No medical records yet"
+            description="Add a visit summary to start building a clinical history."
+            action={
+              <Button variant="contained" onClick={() => setRecordDialogOpen(true)}>
+                Add medical record
+              </Button>
+            }
+          />
+        </Box>
       ) : (
         <Box sx={{ mb: 3 }}>
           {records.map((r) => (
@@ -200,7 +204,15 @@ export default function PatientDetailPage() {
         Appointments
       </Typography>
       {appointments.length === 0 ? (
-        <Typography color="text.secondary">No appointments.</Typography>
+        <EmptyState
+          title="No appointments"
+          description="Book the next visit to keep care on track."
+          action={
+            <Button variant="contained" onClick={() => setBookingDialogOpen(true)}>
+              Book appointment
+            </Button>
+          }
+        />
       ) : (
         <TableContainer component={Paper}>
           <Table>
@@ -254,7 +266,7 @@ export default function PatientDetailPage() {
           loadData();
         }}
       />
-    </Container>
+    </Box>
   );
 }
 

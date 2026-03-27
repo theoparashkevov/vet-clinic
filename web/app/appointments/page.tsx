@@ -1,14 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -18,7 +16,10 @@ import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
 import BookingDialog from "../../components/BookingDialog";
-import { apiJson } from "../../lib/api";
+import PageHeader from "../../components/PageHeader";
+import InlineLoading from "../../components/InlineLoading";
+import EmptyState from "../../components/EmptyState";
+import { apiJson, AuthError } from "../../lib/api";
 
 type Doctor = { id: string; name: string };
 type Appointment = {
@@ -56,6 +57,7 @@ export default function AppointmentsPage() {
       if (doctorId) searchParams.set("doctorId", doctorId);
       setAppointments(await apiJson<Appointment[]>(`/v1/appointments?${searchParams.toString()}`));
     } catch (e: unknown) {
+      if (e instanceof AuthError) return;
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setLoading(false);
@@ -74,15 +76,16 @@ export default function AppointmentsPage() {
   }, [loadAppointments]);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Appointments
-        </Typography>
-        <Button variant="contained" onClick={() => setBookingOpen(true)}>
-          Book Appointment
-        </Button>
-      </Box>
+    <Box>
+      <PageHeader
+        title="Appointments"
+        subtitle="Filter by date and doctor, then book new appointments"
+        actions={
+          <Button variant="contained" onClick={() => setBookingOpen(true)}>
+            Book appointment
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
@@ -115,12 +118,17 @@ export default function AppointmentsPage() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {loading ? (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <CircularProgress size={20} />
-          <Typography>Loading...</Typography>
-        </Box>
+        <InlineLoading />
       ) : appointments.length === 0 ? (
-        <Typography color="text.secondary">No appointments found for the selected filters.</Typography>
+        <EmptyState
+          title="No appointments"
+          description="Try a different date/doctor or book a new appointment."
+          action={
+            <Button variant="contained" onClick={() => setBookingOpen(true)}>
+              Book appointment
+            </Button>
+          }
+        />
       ) : (
         <TableContainer component={Paper}>
           <Table>
@@ -174,6 +182,6 @@ export default function AppointmentsPage() {
           loadAppointments();
         }}
       />
-    </Container>
+    </Box>
   );
 }

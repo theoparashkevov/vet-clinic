@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -14,7 +12,10 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Chip from "@mui/material/Chip";
-import { apiJson } from "../lib/api";
+import PageHeader from "../components/PageHeader";
+import InlineLoading from "../components/InlineLoading";
+import EmptyState from "../components/EmptyState";
+import { apiJson, AuthError } from "../lib/api";
 
 type Appointment = {
   id: string;
@@ -61,7 +62,9 @@ export default function DashboardPage() {
           setPatientCount(patRes.length);
         }
       } catch (e: unknown) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load");
+        if (cancelled) return;
+        if (e instanceof AuthError) return;
+        setError(e instanceof Error ? e.message : "Failed to load");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -72,22 +75,20 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Dashboard
-      </Typography>
+    <Box>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Today at a glance"
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {loading ? (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <CircularProgress size={20} />
-          <Typography>Loading...</Typography>
-        </Box>
+        <InlineLoading />
       ) : (
         <>
           {/* Quick stats */}
-          <Box sx={{ display: "flex", gap: 3, mb: 4 }}>
+          <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap" }}>
             <Paper sx={{ p: 3, flex: 1, textAlign: "center" }}>
               <Typography variant="h3" color="primary">
                 {appointments.length}
@@ -112,9 +113,10 @@ export default function DashboardPage() {
           </Typography>
 
           {appointments.length === 0 ? (
-            <Typography color="text.secondary">
-              No appointments scheduled for today.
-            </Typography>
+            <EmptyState
+              title="No appointments scheduled"
+              description="Your schedule is clear for today."
+            />
           ) : (
             <TableContainer component={Paper}>
               <Table>
@@ -156,6 +158,6 @@ export default function DashboardPage() {
           )}
         </>
       )}
-    </Container>
+    </Box>
   );
 }

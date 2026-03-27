@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -21,7 +19,11 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import MenuItem from "@mui/material/MenuItem";
-import { apiJson } from "../../lib/api";
+import PageHeader from "../../components/PageHeader";
+import InlineLoading from "../../components/InlineLoading";
+import EmptyState from "../../components/EmptyState";
+import { useToast } from "../../components/ToastProvider";
+import { apiJson, AuthError } from "../../lib/api";
 
 type Owner = { id: string; name: string; phone: string; email: string | null };
 type Patient = {
@@ -34,6 +36,7 @@ type Patient = {
 
 export default function PatientsPage() {
   const router = useRouter();
+  const toast = useToast();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +66,7 @@ export default function PatientsPage() {
       const suffix = searchParams.toString();
       setPatients(await apiJson<Patient[]>(`/v1/patients${suffix ? `?${suffix}` : ""}`));
     } catch (e: unknown) {
+      if (e instanceof AuthError) return;
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setLoading(false);
@@ -106,24 +110,29 @@ export default function PatientsPage() {
       });
       setDialogOpen(false);
       setForm({ name: "", species: "", breed: "", ownerId: "", birthdate: "", microchipId: "", allergies: "", chronicConditions: "" });
+      toast.success("Patient created");
       loadPatients();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to create patient");
+      if (e instanceof AuthError) return;
+      const message = e instanceof Error ? e.message : "Failed to create patient";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Patients
-        </Typography>
-        <Button variant="contained" onClick={openCreateDialog}>
-          + New Patient
-        </Button>
-      </Box>
+    <Box>
+      <PageHeader
+        title="Patients"
+        subtitle="Search, create, and open patient records"
+        actions={
+          <Button variant="contained" onClick={openCreateDialog}>
+            New patient
+          </Button>
+        }
+      />
 
       <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
         <TextField
@@ -142,12 +151,17 @@ export default function PatientsPage() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {loading ? (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <CircularProgress size={20} />
-          <Typography>Loading...</Typography>
-        </Box>
+        <InlineLoading />
       ) : patients.length === 0 ? (
-        <Typography color="text.secondary">No patients found.</Typography>
+        <EmptyState
+          title={search ? "No matching patients" : "No patients yet"}
+          description={search ? "Try a different search term." : "Create your first patient to get started."}
+          action={
+            <Button variant="contained" onClick={openCreateDialog}>
+              Create patient
+            </Button>
+          }
+        />
       ) : (
         <TableContainer component={Paper}>
           <Table>
@@ -246,6 +260,6 @@ export default function PatientsPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </Box>
   );
 }

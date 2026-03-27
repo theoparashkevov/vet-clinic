@@ -1,7 +1,13 @@
+import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import BookingDialog from './BookingDialog';
+import { ToastProvider } from './ToastProvider';
+
+function renderWithProviders(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,26 +63,26 @@ describe('BookingDialog — Step 0: Doctor & Date', () => {
   });
 
   it('renders the dialog with the stepper when open', async () => {
-    render(<BookingDialog {...defaultProps} />);
+    renderWithProviders(<BookingDialog {...defaultProps} />);
     expect(screen.getByText('Book Appointment')).toBeInTheDocument();
     expect(screen.getByText('Select Doctor & Date')).toBeInTheDocument();
   });
 
   it('shows the "Show Available Slots" button', () => {
-    render(<BookingDialog {...defaultProps} />);
+    renderWithProviders(<BookingDialog {...defaultProps} />);
     expect(screen.getByRole('button', { name: /show available slots/i })).toBeInTheDocument();
   });
 
   it('fetches doctors and patients on open', async () => {
-    render(<BookingDialog {...defaultProps} />);
+    renderWithProviders(<BookingDialog {...defaultProps} />);
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/doctors'));
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/patients'));
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/doctors'), expect.anything());
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/patients'), expect.anything());
     });
   });
 
   it('does not render when open is false', () => {
-    render(<BookingDialog {...defaultProps} open={false} />);
+    renderWithProviders(<BookingDialog {...defaultProps} open={false} />);
     expect(screen.queryByText('Book Appointment')).not.toBeInTheDocument();
   });
 });
@@ -91,12 +97,12 @@ describe('BookingDialog — Step 0 → Step 1: slot selection', () => {
   });
 
   it('advances to step 1 after clicking "Show Available Slots"', async () => {
-    render(<BookingDialog {...defaultProps} />);
+    renderWithProviders(<BookingDialog {...defaultProps} />);
 
     fireEvent.click(screen.getByRole('button', { name: /show available slots/i }));
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/slots'));
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/appointments/slots'), expect.anything());
     });
 
     await waitFor(() => {
@@ -107,7 +113,7 @@ describe('BookingDialog — Step 0 → Step 1: slot selection', () => {
   });
 
   it('renders slot chips for each available slot', async () => {
-    render(<BookingDialog {...defaultProps} />);
+    renderWithProviders(<BookingDialog {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /show available slots/i }));
 
     await waitFor(() => {
@@ -124,7 +130,7 @@ describe('BookingDialog — Step 0 → Step 1: slot selection', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     });
 
-    render(<BookingDialog {...defaultProps} />);
+    renderWithProviders(<BookingDialog {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /show available slots/i }));
 
     await waitFor(() => {
@@ -140,11 +146,11 @@ describe('BookingDialog — Step 0 → Step 1: slot selection', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     });
 
-    render(<BookingDialog {...defaultProps} />);
+    renderWithProviders(<BookingDialog {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /show available slots/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/http 500/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/http 500/i).length).toBeGreaterThan(0);
     });
   });
 });
@@ -159,7 +165,7 @@ describe('BookingDialog — Back navigation', () => {
   });
 
   it('goes back to step 0 when "Back" is clicked on step 1', async () => {
-    render(<BookingDialog {...defaultProps} />);
+    renderWithProviders(<BookingDialog {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /show available slots/i }));
 
     await waitFor(() => screen.getByText(/available slots/i));
@@ -180,7 +186,7 @@ describe('BookingDialog — Step 1 → Step 2: patient & reason', () => {
   });
 
   it('advances to step 2 when a slot chip is clicked', async () => {
-    render(<BookingDialog {...defaultProps} />);
+    renderWithProviders(<BookingDialog {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /show available slots/i }));
 
     // Wait for slots to appear
@@ -206,7 +212,7 @@ describe('BookingDialog — Step 2: booking submission', () => {
   });
 
   async function advanceToStep2() {
-    render(
+    renderWithProviders(
       <BookingDialog
         {...defaultProps}
         preselectedPatientId="pat-1"
@@ -266,7 +272,9 @@ describe('BookingDialog — Step 2: booking submission', () => {
     });
 
     render(
-      <BookingDialog {...defaultProps} preselectedPatientId="pat-1" preselectedOwnerId="own-1" />,
+      <ToastProvider>
+        <BookingDialog {...defaultProps} preselectedPatientId="pat-1" preselectedOwnerId="own-1" />
+      </ToastProvider>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /show available slots/i }));
@@ -278,7 +286,7 @@ describe('BookingDialog — Step 2: booking submission', () => {
     fireEvent.click(screen.getByRole('button', { name: /book appointment/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/http 422/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/http 422/i).length).toBeGreaterThan(0);
     });
   });
 });
@@ -289,7 +297,7 @@ describe('BookingDialog — Step 2: booking submission', () => {
 describe('BookingDialog — Cancel', () => {
   it('calls onClose when the Cancel button is clicked', () => {
     defaultFetch();
-    render(<BookingDialog {...defaultProps} />);
+    renderWithProviders(<BookingDialog {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
     expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
   });

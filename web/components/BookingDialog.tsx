@@ -16,7 +16,8 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import CircularProgress from "@mui/material/CircularProgress";
-import { apiJson } from "../lib/api";
+import { apiJson, AuthError } from "../lib/api";
+import { useToast } from "./ToastProvider";
 
 type Doctor = { id: string; name: string };
 type Patient = { id: string; name: string; species: string; ownerId: string; owner: { id: string; name: string } };
@@ -38,6 +39,7 @@ export default function BookingDialog({
   onClose,
   onBooked,
 }: Props) {
+  const toast = useToast();
   const [activeStep, setActiveStep] = useState(0);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -70,7 +72,9 @@ export default function BookingDialog({
     ]).then(([docs, pats]) => {
       setDoctors(docs);
       setPatients(pats);
-    }).catch(() => {});
+    }).catch(() => {
+      // Auth/session handling is done globally.
+    });
   }, [open, preselectedPatientId]);
 
   const loadSlots = async () => {
@@ -84,7 +88,10 @@ export default function BookingDialog({
       setSlots(data.slots ?? []);
       setActiveStep(1);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load slots");
+      if (e instanceof AuthError) return;
+      const message = e instanceof Error ? e.message : "Failed to load slots";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoadingSlots(false);
     }
@@ -123,9 +130,14 @@ export default function BookingDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+
+      toast.success("Appointment booked");
       onBooked();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to book");
+      if (e instanceof AuthError) return;
+      const message = e instanceof Error ? e.message : "Failed to book";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

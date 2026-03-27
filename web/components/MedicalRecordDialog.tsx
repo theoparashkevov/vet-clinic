@@ -8,7 +8,8 @@ import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
-import { apiJson } from "../lib/api";
+import { apiJson, AuthError } from "../lib/api";
+import { useToast } from "./ToastProvider";
 
 type Props = {
   open: boolean;
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export default function MedicalRecordDialog({ open, patientId, onClose, onCreated }: Props) {
+  const toast = useToast();
   const [form, setForm] = useState({
     visitDate: new Date().toISOString().slice(0, 10),
     summary: "",
@@ -46,9 +48,13 @@ export default function MedicalRecordDialog({ open, patientId, onClose, onCreate
         body: JSON.stringify(body),
       });
       setForm({ visitDate: new Date().toISOString().slice(0, 10), summary: "", diagnoses: "", treatments: "", prescriptions: "" });
+      toast.success("Medical record added");
       onCreated();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to create record");
+      if (e instanceof AuthError) return;
+      const message = e instanceof Error ? e.message : "Failed to create record";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
