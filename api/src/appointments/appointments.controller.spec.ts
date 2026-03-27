@@ -22,7 +22,10 @@ const SAMPLE_SLOTS = { date: '2026-03-26', slots: ['2026-03-26T09:00:00.000Z'] }
 
 function makeService(): Partial<AppointmentsService> {
   return {
-    list: jest.fn().mockResolvedValue([SAMPLE_APPT]),
+    list: jest.fn().mockResolvedValue({
+      data: [SAMPLE_APPT],
+      meta: { total: 1, page: 1, limit: 10, totalPages: 1 },
+    }),
     get: jest.fn().mockResolvedValue(SAMPLE_APPT),
     create: jest.fn().mockResolvedValue(SAMPLE_APPT),
     update: jest.fn().mockResolvedValue({ ...SAMPLE_APPT, status: 'completed' }),
@@ -53,10 +56,12 @@ async function buildApp(service: Partial<AppointmentsService>): Promise<INestApp
 // GET /appointments
 // ---------------------------------------------------------------------------
 describe('GET /appointments', () => {
-  it('returns 200 with a list of appointments', async () => {
+  it('returns 200 with paginated appointments', async () => {
     const app = await buildApp(makeService());
     const res = await request(app.getHttpServer()).get('/appointments').expect(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.data).toBeDefined();
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.meta).toBeDefined();
     await app.close();
   });
 
@@ -66,11 +71,14 @@ describe('GET /appointments', () => {
     await request(app.getHttpServer())
       .get('/appointments?date=2026-03-26&doctorId=d1&status=scheduled')
       .expect(200);
-    expect(service.list).toHaveBeenCalledWith({
-      date: '2026-03-26',
-      doctorId: 'd1',
-      status: 'scheduled',
-    });
+    expect(service.list).toHaveBeenCalledWith(
+      {
+        date: '2026-03-26',
+        doctorId: 'd1',
+        status: 'scheduled',
+      },
+      expect.any(Object),
+    );
     await app.close();
   });
 });

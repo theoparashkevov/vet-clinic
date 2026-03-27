@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto';
 import { StaffAccess } from '../auth/staff-access.decorator';
+import { PaginationQuery } from '../common/pagination';
 
 @StaffAccess()
 @Controller('appointments')
@@ -14,8 +15,10 @@ export class AppointmentsController {
     @Query('doctorId') doctorId?: string,
     @Query('status') status?: string,
     @Query('patientId') patientId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.appointments.list({ date, doctorId, status, patientId });
+    return this.appointments.list({ date, doctorId, status, patientId }, { page, limit });
   }
 
   @Get('slots')

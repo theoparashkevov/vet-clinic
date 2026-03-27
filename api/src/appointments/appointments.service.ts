@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto';
 import { publicUserSelect } from '../users/user-selects';
+import { createPaginatedResult, getPaginationParams, PaginatedResult } from '../common/pagination';
 
 @Injectable()
 export class AppointmentsService {
@@ -52,7 +53,10 @@ export class AppointmentsService {
     }
   }
 
-  list(filters: { date?: string; doctorId?: string; status?: string; patientId?: string }) {
+  async list(
+    filters: { date?: string; doctorId?: string; status?: string; patientId?: string },
+    pagination?: { page?: string; limit?: string }
+  ): Promise<PaginatedResult<any>> {
     const where: Record<string, unknown> = {};
 
     if (filters.date) {
@@ -75,15 +79,24 @@ export class AppointmentsService {
       where.patientId = filters.patientId;
     }
 
-    return this.prisma.appointment.findMany({
-      where,
-      include: {
-        patient: true,
-        owner: true,
-        doctor: { select: publicUserSelect },
-      },
-      orderBy: { startsAt: 'asc' },
-    });
+    const { page, limit, skip } = getPaginationParams(pagination ?? {});
+
+    const [data, total] = await Promise.all([
+      this.prisma.appointment.findMany({
+        where,
+        include: {
+          patient: true,
+          owner: true,
+          doctor: { select: publicUserSelect },
+        },
+        orderBy: { startsAt: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.appointment.count({ where }),
+    ]);
+
+    return createPaginatedResult(data, total, page, limit);
   }
 
   async get(id: string) {

@@ -2,12 +2,13 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePatientDto, UpdatePatientDto } from './dto';
+import { createPaginatedResult, getPaginationParams, PaginatedResult } from '../common/pagination';
 
 @Injectable()
 export class PatientsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(search?: string) {
+  async list(search?: string, pagination?: { page?: string; limit?: string }): Promise<PaginatedResult<any>> {
     const where = search
       ? {
           OR: [
@@ -17,11 +18,20 @@ export class PatientsService {
         }
       : undefined;
 
-    return this.prisma.patient.findMany({
-      where,
-      include: { owner: true },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { page, limit, skip } = getPaginationParams(pagination ?? {});
+
+    const [data, total] = await Promise.all([
+      this.prisma.patient.findMany({
+        where,
+        include: { owner: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.patient.count({ where }),
+    ]);
+
+    return createPaginatedResult(data, total, page, limit);
   }
 
   async get(id: string) {

@@ -9,6 +9,7 @@ function makePrisma(overrides: Partial<Record<string, jest.Mock>> = {}) {
       findUnique: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
       update: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
       ...overrides,
     },
   } as unknown as PrismaService;
@@ -28,21 +29,21 @@ const SAMPLE_PATIENT = {
 // list
 // ---------------------------------------------------------------------------
 describe('PatientsService.list', () => {
-  it('passes no where clause when no search term is given', () => {
+  it('passes no where clause when no search term is given', async () => {
     const prisma = makePrisma();
     const svc = new PatientsService(prisma);
 
-    svc.list();
+    await svc.list();
 
     const callArg = (prisma.patient.findMany as jest.Mock).mock.calls[0][0];
     expect(callArg.where).toBeUndefined();
   });
 
-  it('builds an OR clause matching name and species case-insensitively', () => {
+  it('builds an OR clause matching name and species case-insensitively', async () => {
     const prisma = makePrisma();
     const svc = new PatientsService(prisma);
 
-    svc.list('rex');
+    await svc.list('rex');
 
     const where = (prisma.patient.findMany as jest.Mock).mock.calls[0][0].where;
     expect(where.OR).toEqual([
@@ -51,7 +52,7 @@ describe('PatientsService.list', () => {
     ]);
   });
 
-  it('orders results by createdAt descending', () => {
+  it('orders results by createdAt descending', async () => {
     const prisma = makePrisma();
     const svc = new PatientsService(prisma);
 

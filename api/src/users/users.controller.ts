@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { StaffAccess } from '../auth/staff-access.decorator';
 import { CreateUserDto, ResetPasswordDto, UpdateUserDto } from './dto';
+import { PaginationQuery } from '../common/pagination';
 
 @StaffAccess()
 @Controller('doctors')
@@ -20,8 +21,11 @@ export class UsersController {
   constructor(private readonly users: UsersService) {}
 
   @Get()
-  list() {
-    return this.users.list();
+  list(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.users.list({ page, limit });
   }
 
   @Post()

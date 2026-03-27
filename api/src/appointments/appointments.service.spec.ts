@@ -10,6 +10,7 @@ function makePrisma(overrides: Partial<Record<string, jest.Mock>> = {}) {
       findFirst: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
       update: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
       ...overrides,
     },
   } as unknown as PrismaService;

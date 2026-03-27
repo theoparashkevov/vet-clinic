@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/
 import { PatientsService } from './patients.service';
 import { CreatePatientDto, UpdatePatientDto } from './dto';
 import { StaffAccess } from '../auth/staff-access.decorator';
+import { PaginationQuery } from '../common/pagination';
 
 @StaffAccess()
 @Controller('patients')
@@ -9,8 +10,12 @@ export class PatientsController {
   constructor(private readonly patients: PatientsService) {}
 
   @Get()
-  list(@Query('search') search?: string) {
-    return this.patients.list(search);
+  list(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.patients.list(search, { page, limit });
   }
 
   @Get(':id')

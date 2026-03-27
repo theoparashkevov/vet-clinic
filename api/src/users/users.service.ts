@@ -4,16 +4,26 @@ import { authUserSelect, publicUserSelect } from './user-selects';
 import { USER_ROLES } from '../auth/roles.constants';
 import { hashPassword } from '../auth/password';
 import { CreateUserDto, ResetPasswordDto, UpdateUserDto } from './dto';
+import { createPaginatedResult, getPaginationParams, PaginatedResult } from '../common/pagination';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  list() {
-    return this.prisma.user.findMany({
-      select: publicUserSelect,
-      orderBy: { name: 'asc' },
-    });
+  async list(pagination?: { page?: string; limit?: string }): Promise<PaginatedResult<any>> {
+    const { page, limit, skip } = getPaginationParams(pagination ?? {});
+
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        select: publicUserSelect,
+        orderBy: { name: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    return createPaginatedResult(data, total, page, limit);
   }
 
   listDoctors() {
