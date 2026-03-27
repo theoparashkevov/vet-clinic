@@ -7,6 +7,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
 import { MedicalRecordsModule } from './medical-records/medical-records.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { PatientClinicalModule } from './patient-clinical/patient-clinical.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AuthModule } from './auth/auth.module';
     MedicalRecordsModule,
     UsersModule,
     AuthModule,
+    PatientClinicalModule,
   ],
   controllers: [HealthController],
 })
