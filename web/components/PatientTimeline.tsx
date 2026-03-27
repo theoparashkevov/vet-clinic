@@ -6,16 +6,10 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
-import Timeline from "@mui/lab/Timeline";
-import TimelineItem from "@mui/lab/TimelineItem";
-import TimelineSeparator from "@mui/lab/TimelineSeparator";
-import TimelineConnector from "@mui/lab/TimelineConnector";
-import TimelineContent from "@mui/lab/TimelineContent";
-import TimelineDot from "@mui/lab/TimelineDot";
-import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EmptyState from "./EmptyState";
 
 type MedicalRecord = {
@@ -112,7 +106,7 @@ export default function PatientTimeline({
   return (
     <Box>
       {/* Filter */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
         <ToggleButtonGroup
           value={filter}
           exclusive
@@ -125,16 +119,31 @@ export default function PatientTimeline({
         </ToggleButtonGroup>
       </Box>
 
-      <Timeline position="alternate">
-        {events.map((event, index) => (
-          <TimelineItem key={`${event.type}-${getId(event)}`}>
-            <TimelineSeparator>
-              <TimelineDot color={event.type === "record" ? "primary" : "secondary"}>
+      {/* Timeline */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {events.map((event) => (
+          <Box key={`${event.type}-${getId(event)}`} sx={{ display: "flex", gap: 2 }}>
+            {/* Icon and line */}
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: event.type === "record" ? "primary.main" : "secondary.main",
+                  color: "white",
+                }}
+              >
                 {event.type === "record" ? <MedicalServicesIcon /> : <CalendarTodayIcon />}
-              </TimelineDot>
-              {index < events.length - 1 && <TimelineConnector />}
-            </TimelineSeparator>
-            <TimelineContent>
+              </Box>
+              <Box sx={{ width: 2, flex: 1, bgcolor: "divider", my: 1 }} />
+            </Box>
+
+            {/* Content */}
+            <Box sx={{ flex: 1, pb: 3 }}>
               {event.type === "record" ? (
                 <RecordCard
                   record={event.data}
@@ -146,10 +155,10 @@ export default function PatientTimeline({
               ) : (
                 <AppointmentCard appointment={event.data} />
               )}
-            </TimelineContent>
-          </TimelineItem>
+            </Box>
+          </Box>
         ))}
-      </Timeline>
+      </Box>
     </Box>
   );
 }
@@ -168,7 +177,7 @@ function RecordCard({
   onToggle: () => void;
 }) {
   return (
-    <Paper elevation={2} sx={{ p: 2, textAlign: "left" }}>
+    <Paper elevation={2} sx={{ p: 2 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
         <Typography variant="subtitle2" color="primary">
           Medical Record
@@ -213,7 +222,7 @@ function RecordCard({
 
 function AppointmentCard({ appointment }: { appointment: Appointment }) {
   return (
-    <Paper elevation={2} sx={{ p: 2, textAlign: "left" }}>
+    <Paper elevation={2} sx={{ p: 2 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
         <Typography variant="subtitle2" color="secondary">
           Appointment
