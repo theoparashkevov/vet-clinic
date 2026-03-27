@@ -31,9 +31,6 @@ model Patient {
   chronicConditions String?
   medicalRecords    MedicalRecord[]
   appointments      Appointment[]
-  alerts            PatientAlert[]
-  vaccinations      Vaccination[]
-  weightRecords     WeightRecord[]
   createdAt         DateTime        @default(now())
 }
 
@@ -75,40 +72,4 @@ model User {
   role         String
   passwordHash String?
   appointments Appointment[]
-}
-
-model PatientAlert {
-  id          String   @id @default(cuid())
-  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId   String
-  type        String   // allergy, chronic_condition, medication, behavioral, other
-  severity    String   // critical, warning, info
-  description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Vaccination {
-  id          String   @id @default(cuid())
-  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId   String
-  type        String   // rabies, dapp, fvrcp, bordetella, etc.
-  name        String   // Human-readable name
-  givenDate   DateTime
-  dueDate     DateTime
-  batchNumber String?
-  veterinarian String?
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model WeightRecord {
-  id        String   @id @default(cuid())
-  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId String
-  weight    Float    // in kg
-  date      DateTime
-  notes     String?
-  createdAt DateTime @default(now())
 }

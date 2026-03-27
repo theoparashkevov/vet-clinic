@@ -123,6 +123,253 @@ async function main() {
   });
   console.log('  Patients: Rex, Whiskers, Buddy, Luna, Milo, Bella');
 
+  // ── Patient Alerts ────────────────────────────────────────────────────────
+  // Rex - Critical allergy alert
+  await prisma.patientAlert.create({
+    data: {
+      patientId: rex.id,
+      type: 'allergy',
+      severity: 'critical',
+      description: 'Severe penicillin allergy — anaphylaxis risk',
+    },
+  });
+  await prisma.patientAlert.create({
+    data: {
+      patientId: rex.id,
+      type: 'behavioral',
+      severity: 'warning',
+      description: 'Anxious around other dogs — exam room preferred',
+    },
+  });
+
+  // Whiskers - Chronic condition
+  await prisma.patientAlert.create({
+    data: {
+      patientId: whiskers.id,
+      type: 'chronic_condition',
+      severity: 'warning',
+      description: 'Mild asthma — avoid stress, dusty environments',
+    },
+  });
+  await prisma.patientAlert.create({
+    data: {
+      patientId: whiskers.id,
+      type: 'medication',
+      severity: 'info',
+      description: 'Bronchodilator as needed for respiratory distress',
+    },
+  });
+
+  // Bella - Food allergy
+  await prisma.patientAlert.create({
+    data: {
+      patientId: bella.id,
+      type: 'allergy',
+      severity: 'warning',
+      description: 'Chicken-based food — causes skin reactions',
+    },
+  });
+
+  // Milo - Special handling
+  await prisma.patientAlert.create({
+    data: {
+      patientId: milo.id,
+      type: 'behavioral',
+      severity: 'info',
+      description: 'Timid — handle gently, slow movements',
+    },
+  });
+  console.log('  Patient alerts: 7 alerts created (critical: 1, warning: 4, info: 2)');
+
+  // ── Vaccinations ───────────────────────────────────────────────────────────
+  // Rex vaccinations
+  const today = new Date();
+  await prisma.vaccination.create({
+    data: {
+      patientId: rex.id,
+      type: 'rabies',
+      name: 'Rabies Vaccine',
+      givenDate: daysAgo(365),
+      dueDate: new Date(today.getFullYear() + 2, today.getMonth(), today.getDate()),
+      batchNumber: 'RV-2024-001',
+      veterinarian: 'Dr. Maria Ivanova',
+      notes: '3-year vaccine administered',
+    },
+  });
+  await prisma.vaccination.create({
+    data: {
+      patientId: rex.id,
+      type: 'dapp',
+      name: 'DHPP (Distemper/Hepatitis/Parvo/Parainfluenza)',
+      givenDate: daysAgo(365),
+      dueDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30), // Due soon
+      batchNumber: 'DHPP-2024-002',
+      veterinarian: 'Dr. Maria Ivanova',
+    },
+  });
+
+  // Whiskers vaccinations
+  await prisma.vaccination.create({
+    data: {
+      patientId: whiskers.id,
+      type: 'rabies',
+      name: 'Rabies Vaccine',
+      givenDate: daysAgo(400),
+      dueDate: daysAgo(35), // Overdue
+      batchNumber: 'RV-2024-C001',
+      veterinarian: 'Dr. Petar Dimitrov',
+      notes: 'Overdue for booster',
+    },
+  });
+  await prisma.vaccination.create({
+    data: {
+      patientId: whiskers.id,
+      type: 'fvrcp',
+      name: 'FVRCP (Feline Viral Rhinotracheitis, Calicivirus, Panleukopenia)',
+      givenDate: daysAgo(380),
+      dueDate: daysAgo(15), // Overdue
+      batchNumber: 'FVRCP-2024-001',
+      veterinarian: 'Dr. Petar Dimitrov',
+    },
+  });
+
+  // Buddy vaccinations (current)
+  await prisma.vaccination.create({
+    data: {
+      patientId: buddy.id,
+      type: 'rabies',
+      name: 'Rabies Vaccine',
+      givenDate: daysAgo(180),
+      dueDate: new Date(today.getFullYear() + 1, today.getMonth(), today.getDate()),
+      batchNumber: 'RV-2024-003',
+      veterinarian: 'Dr. Elena Georgieva',
+    },
+  });
+  await prisma.vaccination.create({
+    data: {
+      patientId: buddy.id,
+      type: 'dapp',
+      name: 'DHPP',
+      givenDate: daysAgo(180),
+      dueDate: new Date(today.getFullYear(), today.getMonth() + 6, today.getDate()),
+      batchNumber: 'DHPP-2024-004',
+      veterinarian: 'Dr. Elena Georgieva',
+    },
+  });
+  console.log('  Vaccinations: 6 records created');
+
+  // ── Weight Records ─────────────────────────────────────────────────────────
+  // Rex weight history - showing gradual weight gain
+  await prisma.weightRecord.create({
+    data: {
+      patientId: rex.id,
+      weight: 30.5,
+      date: daysAgo(180),
+      notes: 'Healthy weight at 6-month check',
+    },
+  });
+  await prisma.weightRecord.create({
+    data: {
+      patientId: rex.id,
+      weight: 31.2,
+      date: daysAgo(90),
+      notes: 'Slight gain, within normal range',
+    },
+  });
+  await prisma.weightRecord.create({
+    data: {
+      patientId: rex.id,
+      weight: 32.0,
+      date: daysAgo(30),
+      notes: 'Good condition',
+    },
+  });
+  await prisma.weightRecord.create({
+    data: {
+      patientId: rex.id,
+      weight: 33.5,
+      date: today,
+      notes: 'Current weight - slight increase, monitor',
+    },
+  });
+
+  // Buddy weight history - showing significant weight loss (concerning)
+  await prisma.weightRecord.create({
+    data: {
+      patientId: buddy.id,
+      weight: 34.0,
+      date: daysAgo(120),
+      notes: 'Healthy weight',
+    },
+  });
+  await prisma.weightRecord.create({
+    data: {
+      patientId: buddy.id,
+      weight: 33.5,
+      date: daysAgo(90),
+      notes: 'Stable',
+    },
+  });
+  await prisma.weightRecord.create({
+    data: {
+      patientId: buddy.id,
+      weight: 32.0,
+      date: daysAgo(60),
+      notes: 'Some weight loss noted',
+    },
+  });
+  await prisma.weightRecord.create({
+    data: {
+      patientId: buddy.id,
+      weight: 30.0,
+      date: daysAgo(45),
+      notes: 'Post-sprain recovery - decreased appetite',
+    },
+  });
+  await prisma.weightRecord.create({
+    data: {
+      patientId: buddy.id,
+      weight: 29.5,
+      date: today,
+      notes: 'Current - continued weight loss, needs investigation',
+    },
+  });
+
+  // Whiskers weight (stable)
+  await prisma.weightRecord.create({
+    data: {
+      patientId: whiskers.id,
+      weight: 4.2,
+      date: daysAgo(60),
+    },
+  });
+  await prisma.weightRecord.create({
+    data: {
+      patientId: whiskers.id,
+      weight: 4.3,
+      date: today,
+      notes: 'Stable weight',
+    },
+  });
+
+  // Bella weight (slight loss)
+  await prisma.weightRecord.create({
+    data: {
+      patientId: bella.id,
+      weight: 10.5,
+      date: daysAgo(90),
+    },
+  });
+  await prisma.weightRecord.create({
+    data: {
+      patientId: bella.id,
+      weight: 9.8,
+      date: today,
+      notes: 'On hypoallergenic diet - some weight loss expected',
+    },
+  });
+  console.log('  Weight records: 15 records created');
+
   // ── Today's appointments ──────────────────────────────────────────────────
   await prisma.appointment.create({
     data: {
