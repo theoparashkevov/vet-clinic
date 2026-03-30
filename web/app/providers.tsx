@@ -7,6 +7,7 @@ import { theme } from "./theme";
 import { ToastProvider } from "../components/ToastProvider";
 import { AuthProvider } from "../components/AuthProvider";
 import { KeyboardShortcutsProvider } from "../components/KeyboardShortcuts";
+import { ThemeModeProvider } from "../components/ThemeModeProvider";
 import CommandPalette from "../components/CommandPalette";
 
 export default function Providers({ children }: { children: ReactNode }) {
@@ -16,8 +17,10 @@ export default function Providers({ children }: { children: ReactNode }) {
       <ToastProvider>
         <AuthProvider>
           <KeyboardShortcutsProvider>
-            {children}
-            <CommandPalette />
+            <ThemeModeProvider>
+              {children}
+              <CommandPalette />
+            </ThemeModeProvider>
           </KeyboardShortcutsProvider>
         </AuthProvider>
       </ToastProvider>

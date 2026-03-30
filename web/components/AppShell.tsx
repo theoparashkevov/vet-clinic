@@ -31,6 +31,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import { ThemeToggleButton } from "./ThemeModeProvider";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import { useAuth } from "./AuthProvider";
 import FullPageLoading from "./FullPageLoading";
@@ -64,6 +65,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
 
   // Register global keyboard shortcuts
+  useGlobalShortcuts();
   useGlobalShortcuts();
   useEffect(() => {
     if (loading) {
@@ -183,6 +185,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
               >
                 <NotificationsIcon />
               </IconButton>
+              <ThemeToggleButton />
               <Button
                 onClick={(e) => setMenuAnchor(e.currentTarget)}
                 color="inherit"
