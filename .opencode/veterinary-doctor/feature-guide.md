@@ -1,0 +1,1 @@
+.opencode/veterinary-doctor/feature-guide.md
