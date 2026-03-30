@@ -30,9 +30,11 @@ import EventIcon from "@mui/icons-material/Event";
 import PeopleIcon from "@mui/icons-material/People";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useAuth } from "./AuthProvider";
 import FullPageLoading from "./FullPageLoading";
 import { useToast } from "./ToastProvider";
+import MyRemindersDialog from "./MyRemindersDialog";
 
 const PUBLIC_PATHS = new Set(["/login"]);
 
@@ -49,6 +51,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const toast = useToast();
   const { user, isAuthenticated, loading, logout } = useAuth();
   const isPublic = PUBLIC_PATHS.has(pathname);
+  const [remindersOpen, setRemindersOpen] = useState(false);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -167,6 +170,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
             </Stack>
 
             <Stack direction="row" spacing={1} alignItems="center">
+              <IconButton
+                color="inherit"
+                onClick={() => setRemindersOpen(true)}
+                title="My Reminders"
+              >
+                <NotificationsIcon />
+              </IconButton>
               <Button
                 onClick={(e) => setMenuAnchor(e.currentTarget)}
                 color="inherit"
@@ -257,6 +267,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
           {children}
         </Container>
       </Box>
+
+      <MyRemindersDialog
+        open={remindersOpen}
+        onClose={() => setRemindersOpen(false)}
+      />
     </>
   );
 }

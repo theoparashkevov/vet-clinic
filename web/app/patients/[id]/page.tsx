@@ -23,11 +23,15 @@ import VaccinationStatus from "../../../components/VaccinationStatus";
 import VaccinationDialog from "../../../components/VaccinationDialog";
 import WeightRecordDialog from "../../../components/WeightRecordDialog";
 import WeightHistoryChart from "../../../components/WeightHistoryChart";
+import PrescriptionDialog from "../../../components/PrescriptionDialog";
+import PhotoGalleryDialog from "../../../components/PhotoGalleryDialog";
 import PageHeader from "../../../components/PageHeader";
 import InlineLoading from "../../../components/InlineLoading";
 import { apiJson, AuthError } from "../../../lib/api";
 
+// Types
 type Owner = { id: string; name: string; phone: string; email: string | null };
+
 type Patient = {
   id: string;
   name: string;
@@ -58,6 +62,32 @@ type Appointment = {
   reason: string | null;
   status: string;
   doctor: { id: string; name: string } | null;
+};
+
+type Prescription = {
+  id: string;
+  medication: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string | null;
+  refillsTotal: number;
+  refillsRemaining: number;
+  expiresAt: string;
+  isControlled: boolean;
+  veterinarian: string;
+  notes: string | null;
+  prescribedAt: string;
+};
+
+type PatientPhoto = {
+  id: string;
+  url: string;
+  thumbnailUrl: string | null;
+  category: string;
+  description: string | null;
+  takenAt: string;
+  fileSize: number;
 };
 
 type VaccinationStatusType = {
@@ -101,42 +131,42 @@ type WeightSummary = {
   records: WeightRecord[];
 };
 
-function statusColor(s: string): "default" | "success" | "warning" | "error" | "primary" {
-  if (s === "completed") return "success";
-  if (s === "cancelled") return "error";
-  if (s === "in-progress") return "primary";
-  return "default";
-}
-
 export default function PatientDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
-
   const [patient, setPatient] = useState<Patient | null>(null);
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [photos, setPhotos] = useState<PatientPhoto[]>([]);
   const [vaccinationStatus, setVaccinationStatus] = useState<VaccinationStatusType | null>(null);
   const [patientAlerts, setPatientAlerts] = useState<PatientAlert[]>([]);
   const [weightSummary, setWeightSummary] = useState<WeightSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Dialog states
   const [recordDialogOpen, setRecordDialogOpen] = useState(false);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [vaccinationDialogOpen, setVaccinationDialogOpen] = useState(false);
   const [weightDialogOpen, setWeightDialogOpen] = useState(false);
+  const [prescriptionDialogOpen, setPrescriptionDialogOpen] = useState(false);
+  const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [pat, recs, patApptsRes, vacStatus, alerts, weight] = await Promise.all([
+      const [pat, recs, patApptsRes, vacStatus, alerts, weight, rx, photoRes] = await Promise.all([
         apiJson<Patient>(`/v1/patients/${id}`),
         apiJson<MedicalRecord[]>(`/v1/patients/${id}/medical-records`),
         apiJson<{ data: Appointment[]; meta: any }>(`/v1/appointments?patientId=${encodeURIComponent(id)}`),
         apiJson<VaccinationStatusType>(`/v1/vaccinations/patients/${id}/status`).catch(() => null),
         apiJson<PatientAlert[]>(`/v1/patients/${id}/alerts`).catch(() => []),
         apiJson<WeightSummary>(`/v1/weight/patients/${id}/summary`).catch(() => null),
+        apiJson<Prescription[]>(`/v1/patients/${id}/prescriptions`).catch(() => []),
+        apiJson<{ data: PatientPhoto[] }>(`/v1/patients/${id}/photos`).catch(() => ({ data: [] })),
       ]);
       setPatient(pat);
       setRecords(recs);
@@ -144,6 +174,8 @@ export default function PatientDetailPage() {
       setVaccinationStatus(vacStatus);
       setPatientAlerts(alerts);
       setWeightSummary(weight);
+      setPrescriptions(rx);
+      setPhotos(photoRes.data);
     } catch (e: unknown) {
       if (e instanceof AuthError) return;
       setError(e instanceof Error ? e.message : "Failed to load");
@@ -157,15 +189,30 @@ export default function PatientDetailPage() {
   }, [loadData]);
 
   if (loading) {
-    return (
-      <InlineLoading />
-    );
+    return <InlineLoading />;
   }
 
   if (error || !patient) {
-    return (
-      <Alert severity="error">{error ?? "Patient not found"}</Alert>
-    );
+    return <Alert severity="error">{error ?? "Patient not found"}</Alert>;
+  }
+
+  // Build alerts from patient data
+  const derivedAlerts: PatientAlert[] = [...patientAlerts];
+  if (patient.allergies) {
+    derivedAlerts.push({
+      id: "allergy-derived",
+      type: "allergy",
+      severity: "critical",
+      description: patient.allergies,
+    });
+  }
+  if (patient.chronicConditions) {
+    derivedAlerts.push({
+      id: "condition-derived",
+      type: "chronic_condition",
+      severity: "warning",
+      description: patient.chronicConditions,
+    });
   }
 
   return (
@@ -186,9 +233,9 @@ export default function PatientDetailPage() {
       />
 
       {/* Patient Alert Banner */}
-      {patientAlerts.length > 0 && (
+      {derivedAlerts.length > 0 && (
         <Box sx={{ mb: 3 }}>
-          <PatientAlertBanner alerts={patientAlerts} />
+          <PatientAlertBanner alerts={derivedAlerts} />
         </Box>
       )}
 
@@ -198,7 +245,7 @@ export default function PatientDetailPage() {
           <VaccinationStatus
             status={{
               status: vaccinationStatus.status,
-              vaccinations: vaccinationStatus.vaccinations.map(v => ({
+              vaccinations: vaccinationStatus.vaccinations.map((v) => ({
                 id: v.id,
                 name: v.name,
                 dueDate: v.dueDate,
@@ -208,10 +255,21 @@ export default function PatientDetailPage() {
         </Box>
       )}
 
+      {/* Patient Info Cards */}
       <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap" }}>
-        {/* Patient details card */}
         <Paper sx={{ p: 3, flex: 1, minWidth: 300 }}>
-          <Typography variant="h6" gutterBottom>Patient Info</Typography>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
+            <Typography variant="h6" gutterBottom>
+              Patient Info
+            </Typography>
+            <Button 
+              size="small" 
+              variant="outlined"
+              onClick={() => setPhotosDialogOpen(true)}
+            >
+              Photos ({photos.length})
+            </Button>
+          </Box>
           <InfoRow label="Species" value={patient.species} />
           <InfoRow label="Breed" value={patient.breed} />
           <InfoRow label="Birthdate" value={patient.birthdate ? new Date(patient.birthdate).toLocaleDateString() : null} />
@@ -221,13 +279,73 @@ export default function PatientDetailPage() {
           {patient.notes && <InfoRow label="Notes" value={patient.notes} />}
         </Paper>
 
-        {/* Owner card */}
         <Paper sx={{ p: 3, flex: 1, minWidth: 250 }}>
-          <Typography variant="h6" gutterBottom>Owner</Typography>
+          <Typography variant="h6" gutterBottom>
+            Owner
+          </Typography>
           <InfoRow label="Name" value={patient.owner.name} />
           <InfoRow label="Phone" value={patient.owner.phone} />
           <InfoRow label="Email" value={patient.owner.email} />
         </Paper>
+      </Box>
+
+      <Divider sx={{ mb: 3 }} />
+
+      {/* Prescriptions Section */}
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography variant="h5">Prescriptions</Typography>
+          <Button variant="outlined" size="small" onClick={() => setPrescriptionDialogOpen(true)}>
+            New Prescription
+          </Button>
+        </Box>
+
+        {prescriptions.length > 0 ? (
+          <Paper>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Medication</TableCell>
+                    <TableCell>Dosage</TableCell>
+                    <TableCell>Frequency</TableCell>
+                    <TableCell>Refills</TableCell>
+                    <TableCell>Expires</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {prescriptions.slice(0, 5).map((rx) => (
+                    <TableRow key={rx.id}>
+                      <TableCell>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          {rx.medication}
+                          {rx.isControlled && (
+                            <Chip label="Controlled" size="small" color="error" />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>{rx.dosage}</TableCell>
+                      <TableCell>{rx.frequency}</TableCell>
+                      <TableCell>
+                        {rx.refillsRemaining}/{rx.refillsTotal}
+                      </TableCell>
+                      <TableCell>{new Date(rx.expiresAt).toLocaleDateString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        ) : (
+          <Paper sx={{ p: 3, textAlign: "center" }}>
+            <Typography color="text.secondary" gutterBottom>
+              No active prescriptions
+            </Typography>
+            <Button variant="contained" size="small" onClick={() => setPrescriptionDialogOpen(true)}>
+              Create Prescription
+            </Button>
+          </Paper>
+        )}
       </Box>
 
       <Divider sx={{ mb: 3 }} />
@@ -240,7 +358,7 @@ export default function PatientDetailPage() {
             Add Vaccination
           </Button>
         </Box>
-        
+
         {vaccinationStatus && vaccinationStatus.summary.total > 0 ? (
           <Paper>
             <TableContainer>
@@ -248,20 +366,14 @@ export default function PatientDetailPage() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Vaccine</TableCell>
-                    <TableCell>Administered</TableCell>
                     <TableCell>Due Date</TableCell>
                     <TableCell>Status</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {vaccinationStatus.vaccinations.map((vac) => (
+                  {vaccinationStatus.vaccinations.slice(0, 5).map((vac) => (
                     <TableRow key={vac.id}>
                       <TableCell>{vac.name}</TableCell>
-                      <TableCell>
-                        {vaccinationStatus.vaccinations.find(v => v.id === vac.id)?.dueDate 
-                          ? new Date(vaccinationStatus.vaccinations.find(v => v.id === vac.id)!.dueDate).toLocaleDateString()
-                          : "—"}
-                      </TableCell>
                       <TableCell>{new Date(vac.dueDate).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <Chip
@@ -298,7 +410,7 @@ export default function PatientDetailPage() {
             Record Weight
           </Button>
         </Box>
-        
+
         {weightSummary && weightSummary.records.length > 0 ? (
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
@@ -310,7 +422,7 @@ export default function PatientDetailPage() {
                   {weightSummary.current?.toFixed(1) ?? "—"} kg
                 </Typography>
               </Box>
-              
+
               {weightSummary.trend && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
@@ -326,52 +438,11 @@ export default function PatientDetailPage() {
                       {weightSummary.trend.percentage.toFixed(1)}%
                     </Typography>
                   </Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {weightSummary.trend.message}
-                  </Typography>
                 </Box>
               )}
             </Box>
 
             <WeightHistoryChart records={weightSummary.records} />
-
-            <TableContainer sx={{ mt: 3 }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Weight (kg)</TableCell>
-                    <TableCell>Change</TableCell>
-                    <TableCell>Notes</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {weightSummary.records.slice(0, 5).map((record, index) => {
-                    const prevWeight = index < weightSummary.records.length - 1 ? weightSummary.records[index + 1].weight : null;
-                    const change = prevWeight !== null ? record.weight - prevWeight : null;
-                    return (
-                      <TableRow key={record.id}>
-                        <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
-                        <TableCell>{record.weight.toFixed(1)}</TableCell>
-                        <TableCell>
-                          {change !== null ? (
-                            <Typography
-                              variant="body2"
-                              color={change > 0 ? "success.main" : change < 0 ? "error.main" : "text.secondary"}
-                            >
-                              {change > 0 ? "+" : ""}{change.toFixed(1)} kg
-                            </Typography>
-                          ) : (
-                            "—"
-                          )}
-                        </TableCell>
-                        <TableCell>{record.notes ?? "—"}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
           </Paper>
         ) : (
           <Paper sx={{ p: 3, textAlign: "center" }}>
@@ -398,10 +469,12 @@ export default function PatientDetailPage() {
         onBookAppointment={() => setBookingDialogOpen(true)}
       />
 
-      {/* Medical Record Dialog */}
+      {/* Dialogs */}
       <MedicalRecordDialog
         open={recordDialogOpen}
         patientId={id}
+        patientName={patient.name}
+        patientSpecies={patient.species}
         onClose={() => setRecordDialogOpen(false)}
         onCreated={() => {
           setRecordDialogOpen(false);
@@ -409,7 +482,6 @@ export default function PatientDetailPage() {
         }}
       />
 
-      {/* Booking Dialog */}
       <BookingDialog
         open={bookingDialogOpen}
         preselectedPatientId={id}
@@ -421,7 +493,6 @@ export default function PatientDetailPage() {
         }}
       />
 
-      {/* Vaccination Dialog */}
       <VaccinationDialog
         open={vaccinationDialogOpen}
         patientId={id}
@@ -431,13 +502,36 @@ export default function PatientDetailPage() {
           loadData();
         }}
       />
-      {/* Weight Record Dialog */}
+
       <WeightRecordDialog
         open={weightDialogOpen}
         patientId={id}
         onClose={() => setWeightDialogOpen(false)}
         onCreated={() => {
           setWeightDialogOpen(false);
+          loadData();
+        }}
+      />
+
+      <PrescriptionDialog
+        open={prescriptionDialogOpen}
+        patientId={id}
+        patientName={patient.name}
+        ownerName={patient.owner.name}
+        onClose={() => setPrescriptionDialogOpen(false)}
+        onCreated={() => {
+          setPrescriptionDialogOpen(false);
+          loadData();
+        }}
+      />
+
+      <PhotoGalleryDialog
+        open={photosDialogOpen}
+        patientId={id}
+        patientName={patient.name}
+        photos={photos}
+        onClose={() => setPhotosDialogOpen(false)}
+        onPhotoAdded={() => {
           loadData();
         }}
       />

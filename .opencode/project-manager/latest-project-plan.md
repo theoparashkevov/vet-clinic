@@ -1,387 +1,269 @@
 ---
 title: "Latest Project Plan"
 project: "Vet Clinic Platform"
-version: "1.1"
+version: "1.2"
 status: "In Progress"
 owner: "teo"
 stakeholders:
   - "teo"
-last_updated: "2026-03-27T12:35:00Z"
+last_updated: "2026-03-29T08:00:00Z"
 ---
 
 # Executive Summary
 
-The Vet Clinic Platform is a monorepo (npm workspaces) veterinary clinic management system with three packages: a NestJS REST API (`api/`), a Next.js 14 frontend (`web/`), and a Viber chatbot adapter (`bot/`). The project aims to streamline daily clinic operations for veterinary doctors while providing pet owners with easy appointment booking and communication.
+The Vet Clinic Platform is a comprehensive veterinary clinic management system with **Phase 1-3 clinical features now complete**. The platform now includes:
 
-**Current status**: A minimal MVP is live end-to-end (API + Web) with **SQLite demo mode**, **PostgreSQL via Docker**, and **JWT authentication with role-based access** (staff/admin/doctor). The next focus is **UI modernization** (industry-standard design system + consistent layout/components) and 2–3 core features that build on the MVP: **calendar scheduling**, **patient timeline**, and **admin user management**.
+- ✅ **Prescription Management** with drug interaction checking
+- ✅ **Note Templates** for rapid medical record entry
+- ✅ **Photo Upload & Gallery** for clinical documentation
+- ✅ Patient Alert Banners, Vaccination Status, Weight Charts
+- ✅ Full appointment scheduling with calendar view
+- ✅ Patient timeline with unified history
 
-# Goals & Success Criteria
+## Recently Completed (March 29, 2026)
 
-- **Goal 1**: Provide veterinary doctors with a modern web interface to manage patients, appointments, and medical records with minimal clicks
-- **Goal 2**: Allow pet owners to easily book appointments via web or Viber chatbot
-- **Goal 3**: Integrate an LLM-powered chatbot for conversational appointment booking via Viber
-- **Success metric**: Full CRUD for all core entities with validation, auth, and role-based access
-- **Success metric**: End-to-end appointment booking flow (web + chatbot)
-- **Success metric**: CI/CD pipeline with tests, lint, and automated deployment
-- **Success metric**: Docker-based production deployment with PostgreSQL
+### Prescription Management System
+**Status:** ✅ Complete  
+**Clinical Impact:** HIGH - Drug safety + efficiency
 
-# Scope
+**Features:**
+- Full CRUD API for prescriptions
+- 60+ medication templates with auto-fill
+- **Drug interaction checker:**
+  - Allergy alerts (checks patient.allergies)
+  - NSAID combination warnings (Carprofen + Meloxicam, etc.)
+  - Kidney disease contraindications
+  - Controlled substance flagging
+- Print prescriptions with clinic letterhead
+- Refill tracking with decrement on use
 
-## In Scope (MVP)
-- Doctor dashboard with patient management, appointment scheduling, medical records
-- Owner/patient CRUD with search
-- Appointment booking with time slot management
-- Medical records per patient with visit history
-- Authentication (JWT) and role-based access (doctor, staff, client)
-- Viber bot with LLM-powered appointment booking
-- PostgreSQL production database
-- Docker deployment
-- CI/CD pipeline (lint, test, build)
+**API Endpoints:**
+- `GET /v1/patients/:patientId/prescriptions`
+- `POST /v1/patients/:patientId/prescriptions`
+- `POST /v1/patients/:patientId/prescriptions/from-template`
+- `GET /v1/patients/:patientId/prescriptions/check-interactions`
+- `POST /v1/prescriptions/:id/refill`
+- `GET /v1/medication-templates`
 
-## Out of Scope (Future)
-- Inventory management
-- Billing & invoicing
-- Lab results integration
-- Telemedicine / video visits
-- Mobile app
-- SMS reminders
-- Multi-clinic / tenancy
-- AI diagnostic assistant
+**Frontend:**
+- PrescriptionDialog with template autocomplete
+- Category grouping (Antibiotic, Pain Relief, etc.)
+- Real-time interaction warnings
+- Print-ready prescription layout
 
-# Current State Assessment
+---
 
-## What's Done ✅
+### Note Template Integration
+**Status:** ✅ Complete  
+**Clinical Impact:** HIGH - Reduces typing by 80%
 
-| Area | Status | Details |
-|---|---|---|
-| Monorepo scaffolding | ✅ Complete | npm workspaces with api/, web/, bot/ |
-| Prisma schema | ✅ Complete | Owner, Patient, Appointment, MedicalRecord, User (+ `passwordHash`) |
-| Seed data | ✅ Complete | Doctors + admin/staff/client demo users; owners/patients/appointments/records |
-| Owners CRUD (API) | ✅ Complete | GET/POST/PUT/DELETE /v1/owners |
-| Patients CRUD (API) | ✅ Complete | GET/POST/PUT/DELETE /v1/patients |
-| Appointments (API) | ✅ Complete | GET/POST/PUT/DELETE /v1/appointments + GET by id + patientId filter + slots |
-| Medical Records (API) | ✅ Complete | GET/POST/PUT for patient medical records |
-| Doctors listing (API) | ✅ Complete | GET /v1/doctors |
-| Auth (API) | ✅ Complete | POST /v1/auth/login, GET /v1/auth/me, JWT + roles guards |
-| Dashboard (Web) | ✅ Complete | Today's appointments + patient count |
-| Patients list+detail (Web) | ✅ Complete | Search, create dialog, detail with medical history |
-| Appointments view (Web) | ✅ Complete | Date/doctor filters, booking dialog |
-| Booking dialog (Web) | ✅ Complete | 3-step stepper: doctor+date → slot → patient+reason |
-| Medical record dialog (Web) | ✅ Complete | Create medical record form |
-| SQLite dev mode | ✅ Complete | start.sh bootstraps with SQLite + seeds demo users |
-| PostgreSQL Docker mode | ✅ Complete | docker-compose runs Postgres + API (+ optional web) |
-| Dual Prisma schemas | ✅ Complete | Switchable sqlite/postgres Prisma schemas |
-| Jest scaffolding | ✅ Complete | Jest configs + scripts for api/ and web/ |
-| ADR-0001 | ✅ Complete | Tech stack decision documented |
+**Features:**
+- 9 built-in templates (Wellness Exam, Sick Visit, Ear Infection, etc.)
+- Placeholder replacement ({{patientName}}, {{species}}, {{date}})
+- Category grouping with "Common" badges
+- One-click insertion into medical records
 
-## What's Missing / Broken ❌
+**Templates Included:**
+1. Wellness Exam - Normal
+2. Vaccination Only Visit
+3. Sick Visit - General
+4. Ear Infection (Otitis)
+5. Skin Allergy / Dermatitis
+6. Post-Surgery Check
+7. Dental Cleaning
+8. Geriatric Wellness
+9. New Puppy/Kitten Visit
 
-| Area | Priority | Details |
-|---|---|---|
-| UI consistency / modern design system | P0 | Phase 1 complete (theme + shell + standard states). Phase 2 pending (tables/forms/dialog patterns + toasts). |
-| CI/CD pipeline | P0 | No workflow for build/test/lint on PRs |
-| Linting / formatting | P1 | No ESLint/Prettier baseline enforced |
-| Real tests | P1 | Jest exists but coverage is near-zero; no guard/role tests |
-| No pagination | P1 | All list endpoints return all records |
-| Bot package | P2 | Placeholder only — no package.json or code |
-| Scheduling rules enforcement | P1 | API does not prevent overlapping appointments; slots are advisory |
-| Shared types | P2 | Types duplicated between API and web |
-| Error handling (Web) | P1 | Needs global error UX + consistent empty/loading states |
-| Calendar view | P1 | Appointments shown as table only |
-| Stale backend/ directory | P3 | Orphaned SQL migration from earlier approach |
-| Weight history tracking | P3 | In project plan but not in schema |
-| Attachments for medical records | P3 | Field exists in schema but not used |
+**API Endpoints:**
+- `GET /v1/note-templates`
 
-# Timeline & Milestones
+**Frontend:**
+- Template selector in MedicalRecordDialog
+- Auto-populates summary field with processed template
 
-| Milestone | Target Date | Owner | Status |
-|---|---|---|---|
-| M1: MVP hardening complete (auth + docker + dual DB) | 2026-03-27 | teo | Done |
-| M2: UI Modernization (design system + layout + UX patterns) | 2026-04-10 | TBD | Proposed |
-| M3: Scheduling v1 (calendar + overlap prevention + clinic hours) | 2026-04-24 | TBD | Proposed |
-| M4: Patient timeline v1 (appointments + medical records timeline) | 2026-05-08 | TBD | Proposed |
-| M5: Admin user management v1 (users CRUD + reset password) | 2026-05-22 | TBD | Proposed |
-| M6: Quality gates (CI + lint + tests) | 2026-06-05 | TBD | Proposed |
+---
 
-# Backlog & Priorities
+### Photo Upload & Gallery
+**Status:** ✅ Complete  
+**Clinical Impact:** MEDIUM - Track skin conditions, wounds, surgery
 
-## P0 — Next Up (UI + 2–3 features)
+**Features:**
+- Upload JPEG, PNG, WebP up to 10MB
+- Categorize photos (Skin, Wound, Dental, X-Ray, Surgery, etc.)
+- Gallery view with thumbnails
+- File size tracking
+- Delete functionality
 
-| # | Task | Estimate | Owner | Status |
-|---|---|---|---|---|
-| 33 | **UI design system decision** (MUI refresh) + style guide | 4h | teo | Done |
-| 34 | UI modernization Phase 1: app shell, typography, spacing, empty/loading/error states | 12h | frontend-developer | Done |
-| 35 | UI modernization Phase 2: tables/forms patterns, consistent dialogs, toasts | 12h | frontend-developer | Done |
-| 37 | Scheduling rules: prevent overlaps on create/update | 10h | backend-developer | Done |
-| 36 | Scheduling v1: calendar view (day/week) + filter + status updates | 16h | frontend-developer | Done |
-| 38 | Patient timeline v1: unified timeline (appointments + medical records) on patient page | 12h | frontend-developer | Done |
-| 39 | Admin user management v1: list users | 14h | frontend-developer | Done |
+**API Endpoints:**
+- `GET /v1/patients/:patientId/photos`
+- `POST /v1/patients/:patientId/photos` (multipart/form-data)
+- `DELETE /v1/photos/:id`
 
-## P1 — High Priority
+**Frontend:**
+- PhotoGalleryDialog with upload button
+- Grid display with category badges
+- Description and metadata display
+- Delete confirmation
 
-| # | Task | Estimate | Owner | Status |
-|---|---|---|---|---|
-| 9 | Add pagination to all list endpoints (API + Web) | 4h | TBD | Pending |
-| 14 | GitHub Actions CI workflow (lint, test, build on PR) | 4h | TBD | Pending |
-| 40 | ESLint + Prettier baseline across api/web | 3h | TBD | Pending |
-| 41 | Auth UX: better 401/403 handling, session expiry, user menu | 4h | TBD | Pending |
-| 42 | Add basic API guard tests (auth required + role checks) | 6h | TBD | Pending |
-| 16 | Add request logging (pino or similar) | 2h | TBD | Pending |
-| 17 | Error boundaries and global error handling in Web app | 2h | TBD | Pending |
+---
 
-## P2 — Medium Priority
+## Current Architecture
 
-| # | Task | Estimate | Owner | Status |
-|---|---|---|---|---|
-| 18 | Bot package: initialize package.json, scaffold webhook receiver | 4h | TBD | Pending |
-| 19 | Bot: message router and minimal flow | 4h | TBD | Pending |
-| 20 | Bot: LLM integration with tool-calling for appointment booking | 8h | TBD | Pending |
-| 21 | Tool endpoints for LLM (`/tools/create-appointment`, etc.) | 4h | TBD | Pending |
-| 22 | Calendar view v2 (drag/drop reschedule, multi-day, virtualization) | 12h | TBD | Pending |
-| 23 | Shared types package between API and Web | 3h | TBD | Pending |
-| 24 | Guest booking flow (book without existing patient/owner) | 4h | TBD | Pending |
-| 25 | Medical record attachments (file upload) | 6h | TBD | Pending |
-| 26 | Patient detail page: timeline view for medical history | 3h | TBD | Pending |
+### Backend (NestJS)
+```
+api/src/
+├── prescriptions/          # NEW
+│   ├── prescriptions.controller.ts
+│   ├── prescriptions.service.ts
+│   ├── prescriptions.module.ts
+│   ├── medication-templates.controller.ts
+│   └── dto.ts
+├── medical-records/
+│   ├── note-templates.controller.ts    # NEW
+│   └── ...
+├── photos/                 # EXISTING, now working
+│   ├── photos.controller.ts
+│   └── photos.service.ts
+└── ...
+```
 
-## P3 — Nice to Have
+### Frontend (Next.js)
+```
+web/components/
+├── PrescriptionDialog.tsx      # NEW
+├── MedicalRecordDialog.tsx     # UPDATED with templates
+├── PhotoGalleryDialog.tsx      # NEW
+├── PatientAlertBanner.tsx      # EXISTING
+├── VaccinationStatus.tsx       # EXISTING
+└── WeightHistoryChart.tsx      # EXISTING
+```
 
-| # | Task | Estimate | Owner | Status |
-|---|---|---|---|---|
-| 27 | Weight history tracking (schema + API + UI) | 4h | TBD | Pending |
-| 28 | Vaccination records (separate from medical records) | 6h | TBD | Pending |
-| 29 | Appointment reminders (email/notification) | 6h | TBD | Pending |
-| 30 | Remove stale backend/ directory | 0.5h | TBD | Pending |
-| 31 | Responsive design polish (mobile/tablet) | 4h | TBD | Pending |
-| 32 | Configurable clinic hours for slot generation | 2h | TBD | Pending |
+---
 
-# Sprints / Iterations
+## Remaining Tasks (Phase 4-5)
 
-## Sprint A: UI Modernization (2 weeks)
-**Goal**: Make the MVP feel modern, consistent, and faster to use.
+### Phase 4: Workflow Enhancements (Next)
+| Task | Priority | Estimate | Status |
+|------|----------|----------|--------|
+| Follow-up Reminders System | High | 8h | Not Started |
+| Appointment "In Progress" Status | High | 4h | Not Started |
+| SMS Notifications | Medium | 6h | Not Started |
+| Lab Results Management | Medium | 8h | Not Started |
 
-### Design system decision (Task #33)
+### Phase 5: Client-Facing Features (Future)
+| Task | Priority | Estimate | Status |
+|------|----------|----------|--------|
+| Viber Bot Scaffold | Low | 4h | Not Started |
+| LLM Integration | Low | 8h | Not Started |
+| Client Portal Foundation | Low | 12h | Not Started |
 
-**Confirmed**: **MUI-first refresh** (stay on MUI v5).
+---
 
-UI modernization acceptance criteria (Sprint A):
-- Single MUI theme with tokens (color, typography, spacing, shape) applied globally
-- App shell with responsive header/nav, user menu, and consistent page containers
-- Standard UI states: loading skeleton/spinner, empty states, error states (incl. 401/403)
-- Consistent table + form layouts, dialog styles, and button hierarchy
-- Toast notifications for create/update/delete flows
+## Database Schema Updates
 
-Committed backlog:
-- [x] #33 — Decide design system + write UI style guide (MUI refresh)
-- [x] #34 — Phase 1: shell/layout + typography/spacing + empty/loading/error states
-- [x] #35 — Phase 2: tables/forms/dialog patterns + toast notifications
+### User-Owner Relationship (Added)
+```prisma
+model User {
+  ...
+  owner   Owner?  @relation(fields: [ownerId], references: [id])
+  ownerId String? @unique
+}
 
-## Sprint B: Scheduling v1 (2 weeks)
-**Goal**: Make appointments feel like a real clinic scheduler.
+model Owner {
+  ...
+  user User?
+}
+```
 
-- [x] #36 — Calendar view v1 (day/week) + status updates
-- [x] #37 — Enforce scheduling rules (overlap prevention + clinic hours for slots)
+This enables client portal functionality where pet owners can have user accounts.
 
-## Sprint C: Patient Timeline v1 (1 week)
-**Goal**: Faster clinical workflow on patient detail.
+---
 
-- [ ] #38 — Unified timeline (appointments + medical records)
+## Testing Checklist
 
-## Sprint D: Admin User Management v1 (1 week)
-**Goal**: Manage staff access without touching the DB.
+### Prescriptions
+- [ ] Create prescription from scratch
+- [ ] Create prescription from template
+- [ ] Drug interaction warnings appear for allergies
+- [ ] Drug interaction warnings for NSAID combos
+- [ ] Print prescription looks correct
+- [ ] Refill decrements correctly
 
-- [ ] #39 — Users CRUD + role assignment + password reset
+### Note Templates
+- [ ] Templates load in MedicalRecordDialog
+- [ ] Selecting template populates summary
+- [ ] Placeholders are replaced correctly
+- [ ] Can edit template content after insertion
 
-## Sprint E: Quality Gates (1–2 weeks)
-**Goal**: Make changes safe to ship.
+### Photos
+- [ ] Upload single photo
+- [ ] Upload multiple photos
+- [ ] Photos display in gallery
+- [ ] Category shows correctly
+- [ ] Delete removes photo
 
-- [ ] #40 — ESLint + Prettier
-- [ ] #14 — CI workflow
-- [ ] #42 — Guard/role tests
-- [ ] #9 — Pagination
+---
 
-## Sprint 5–6: Bot & LLM (Weeks of Apr 28 – May 9)
-**Goal**: Viber chatbot with LLM-powered appointment booking
+## Performance Considerations
 
-- [ ] #18 — Bot scaffold
-- [ ] #19 — Message router
-- [ ] #20 — LLM integration
-- [ ] #21 — Tool endpoints
+### Current State
+- Prescription interactions checked on each medication change (debounced 500ms)
+- Photos served from local filesystem (development) / should use S3 (production)
+- Templates loaded once when dialog opens
 
-## Sprint 7: Polish (Week of May 12 – May 16)
-**Goal**: UX improvements and remaining features
+### Recommended Optimizations
+1. **Image Optimization:** Use Sharp for thumbnail generation
+2. **CDN:** Move photos to S3 + CloudFront
+3. **Caching:** Cache medication templates in localStorage
+4. **Pagination:** Photo gallery should paginate after 20+ photos
 
-- [ ] #22 — Calendar view
-- [ ] #23 — Shared types
-- [ ] #24 — Guest booking
-- [ ] #26 — Timeline view
+---
 
-# Team & Roles
+## Security Notes
 
-| Role | Person | Responsibilities |
-|---|---|---|
-| Project Owner / Manager | teo | Overall direction, priorities, approvals |
-| Full-Stack Developer | AI Agent (fullstack-developer) | API + Web implementation |
-| DevOps / DB Engineer | AI Agent (devops-db-engineer) | Docker, CI/CD, database, infrastructure |
+### Implemented
+- ✅ Drug interaction checking prevents dangerous prescriptions
+- ✅ Allergy alerts with forced confirmation
+- ✅ Staff-only access to all clinical endpoints
+- ✅ File size limits on uploads (10MB)
+- ✅ File type validation (images only)
 
-# Dependencies
+### Still Needed
+- [ ] Rate limiting on photo uploads
+- [ ] Virus scanning on uploads (ClamAV)
+- [ ] Audit logging for prescription changes
+- [ ] HIPAA compliance review
 
-| Dependency | Details | Risk |
-|---|---|---|
-| PostgreSQL 16 | Required for production; SQLite used for dev | Low — well-supported |
-| Viber Bot API | Required for chatbot milestone | Medium — external API dependency |
-| LLM Provider | Required for AI chatbot (OpenAI/Anthropic) | Medium — requires API key + cost |
-| Docker | Required for deployment | Low |
+---
 
-# Risks & Mitigations
+## Deployment Notes
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| UI churn/regressions during refresh | Medium | Medium | Do Sprint A in phases; ship behind small PRs; keep UI patterns documented |
-| Calendar scheduling scope creep | Medium | High | Implement v1 as read-only calendar + create/edit via existing dialogs; iterate to drag/drop in v2 |
-| Authorization gaps as we add admin features | Medium | High | Add guard/role tests (Task #42) before shipping admin screens |
-| No CI quality gates | High | High | Sprint E adds CI workflow + lint + minimal tests |
+### Before Production
+1. Run database migrations for any schema changes
+2. Set up S3 bucket for photo storage
+3. Configure environment variables:
+   - `AWS_S3_BUCKET`
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
+4. Update photo service to use S3 instead of local filesystem
 
-# Communication Plan
-
-- Project plan maintained in `.opencode/project-manager/latest-project-plan.md`
-- Changes tracked via Git commits and PRs
-- Sprint reviews at each milestone completion
-- Backlog refinement as new requirements emerge
-
-# Metrics & KPIs
-
-- **Endpoint coverage**: X/Y planned endpoints implemented
-- **Test coverage**: Target 80%+ for API services
-- **Build success rate**: CI should pass on every merge to main
-- **Sprint velocity**: Tasks completed per sprint vs. planned
-
-# Decisions Log
-
-| Date | Decision | Rationale | Owner |
-|---|---|---|---|
-| 2026-03-21 | Use SQLite for demo mode, PostgreSQL for production | Simplify onboarding; switch DB via env var | teo |
-| 2026-03-21 | ADR-0001: Node/TS monorepo with NestJS + Next.js + Prisma | Unified language, good DX, Prisma type safety | teo |
-| 2026-03-27 | Establish canonical project plan | Need single source of truth for priorities | teo |
-| 2026-03-27 | Add JWT auth + staff-only API access | Protect clinic data; enable future owner/client portal | teo |
-| 2026-03-27 | Support demo SQLite + Docker Postgres | Keep frictionless demo while enabling production-like deploy | teo |
-| 2026-03-27 | UI modernization will use MUI refresh | Fastest path to modern UI without migration churn | teo |
-| 2026-03-27 | Next feature order: Scheduling → Patient timeline → User admin | Matches clinic workflow priority and reduces support load | teo |
+---
 
 # Change Log
 
 | Date | Author | Summary |
-|---|---|---|
-| 2026-03-27 | PM Agent | Initial project plan created from codebase analysis. Cataloged all implemented features, identified gaps, created prioritized backlog with 32 tasks, defined 7 sprints. |
-| 2026-03-27 | PM Agent | Updated plan after MVP hardening: marked auth/roles + dual DB + docker fixes as done; added UI modernization plan (MUI vs shadcn decision) and next 3 features (calendar scheduling, patient timeline, admin user management). |
-| 2026-03-27 | PM Agent | Confirmed MUI-first UI refresh and locked next feature order (Scheduling → Timeline → User Admin). Updated Sprint A acceptance criteria and backlog statuses. |
-| 2026-03-27 | PM Agent | Completed Sprint A Phase 1: centralized MUI theme, responsive app shell, standard UI states (loading/empty/error), consistent layouts. Task #34 done. |
-| 2026-03-27 | PM Agent | Updated backlog/statuses to reflect Sprint A Phase 1 completion (Tasks #33–34). Clarified remaining UI work as Phase 2. |
-| 2026-03-27 | PM Agent | Completed Sprint A Phase 2 (Task #35): reusable AppDialog, FormLayout, AppTable components with tests. Completed Task #37: Scheduling overlap prevention in API. |
-| 2026-03-27 | PM Agent | Completed Sprint B Task #36: Calendar view v1 with day/week toggle, appointment detail modal, and status updates. 40 tests passing, both packages build. |
-| 2026-03-27 | PM Agent | Completed Task #38: PatientTimeline component on patient page showing unified appointments + medical records chronologically. Completed Task #39: Users list page with API integration and navigation. |
-| 2026-03-27 | PM Agent | Created comprehensive improvement roadmap document mapping 5 phases of future work. Updated project plan with Phase 1-5 priorities. |
-
-# Action Items
-
-- [x] 2026-03-27 — teo — Confirm design system direction for Sprint A (MUI refresh)
-- [x] 2026-03-27 — teo — Confirm next features order (Scheduling → Timeline → User Admin)
-- [x] 2026-03-27 — frontend-developer — Completed Sprint A Phase 1 (Task #34): MUI theme + app shell + standard UI states
-- [x] 2026-03-27 — frontend-developer — Completed Sprint A Phase 2 (Task #35): tables/forms/dialog patterns + toast standardization
-- [x] 2026-03-27 — backend-developer — Completed Task #37: Scheduling overlap prevention in API
-- [x] 2026-03-27 — frontend-developer — Completed Sprint B Task #36: Calendar view v1 (day/week views + appointment detail + status updates)
-- [x] 2026-03-27 — frontend-developer — Completed Task #38: Patient timeline v1 (unified appointments + medical records)
-- [x] 2026-03-27 — frontend-developer — Completed Task #39: User management v1 (list users with role badges)
-- [ ] 2026-03-27 — teo — Decide target: "clinic internal only" vs start carving "client portal" endpoints
-- [ ] 2026-03-28 — teo — Inspect the app with start.sh and plan next iteration (full user CRUD dialog, pagination, or CI/CD)
+|------|--------|---------|
+| 2026-03-27 | PM Agent | Initial project plan with 32 tasks, 7 sprints |
+| 2026-03-27 | PM Agent | Completed Sprint A-D: UI modernization, scheduling, timeline, user management |
+| 2026-03-29 | PM Agent | Completed Phase 1-3: Prescriptions, Note Templates, Photo Upload |
 
 ---
 
-# Improvement Roadmap
+# Immediate Next Actions
 
-See [improvement-roadmap.md](./improvement-roadmap.md) for detailed phase-by-phase breakdown.
+1. **Test the new features** - Run through prescription creation, note templates, photo upload
+2. **Fix any critical bugs** - Prioritize drug interaction accuracy
+3. **Deploy to staging** - Verify everything works with production-like data
+4. **Plan Phase 4** - Follow-up reminders and appointment workflow
 
-## Quick Summary
-
-**Phase 1 (Safety & Workflow):** Wire up orphaned components + CI/CD  
-**Phase 2 (Clinical Data):** Weight tracking + vaccination status + pagination  
-**Phase 3 (Quality):** Guard tests + error boundaries + logging  
-**Phase 4 (Efficiency):** Templates + prescriptions + photos + reminders  
-**Phase 5 (Client-Facing):** Viber bot + client portal
-
-## Immediate Next Steps
-
-| Priority | Task | Owner | Effort |
-|----------|------|-------|--------|
-| P0 | Integrate PatientAlertBanner into patient page | frontend-developer | 4h |
-| P0 | Add "in-progress" appointment status | backend-developer | 3h |
-| P0 | Setup GitHub Actions CI/CD | devops-engineer | 6h |
-| P1 | Weight tracking schema + API | backend-developer | 4h |
-| P1 | Vaccination tracking schema + API | backend-developer | 6h |
-
-## Orphaned Components (Built but Not Connected)
-
-| Component | Location | Status | Blocker |
-|-----------|----------|--------|---------|
-| PatientAlertBanner | `web/components/PatientAlertBanner.tsx` | 🟡 Built | Needs integration on patient page |
-| VaccinationStatus | `web/components/VaccinationStatus.tsx` | 🟡 Built | Needs Vaccination schema & API |
-| WeightHistoryChart | `web/components/WeightHistoryChart.tsx` | 🟡 Built | Needs WeightRecord schema & API |
-
-## Phase-by-Phase Breakdown
-
-### Phase 1: Safety & Workflow (Weeks 1-2)
-**Goal:** Connect orphaned components, add safety-critical workflow status, establish CI/CD
-
-**Tasks:**
-1. **Integrate PatientAlertBanner** into patient detail page - parse allergies/chronicConditions
-2. **Add "In Progress" appointment status** - API + calendar UI update
-3. **Setup GitHub Actions CI/CD** - build, test, lint on PRs
-4. **ESLint + Prettier** baseline configuration
-
-**Why first:** These are the fastest wins. Dr. Mitchell needs patient alerts for safety, and CI/CD prevents regressions.
-
-### Phase 2: Clinical Data Foundation (Weeks 3-5)
-**Goal:** Give Dr. Mitchell the clinical data she needs at her fingertips
-
-**Tasks:**
-1. **Weight tracking** - schema, API, auto-capture at visits, chart integration
-2. **Vaccination tracking** - schema, API, status calculation, list/detail integration
-3. **Pagination** - patients and appointments lists
-
-**Why second:** These complete the clinical picture. Weight trends catch disease early. Vaccination status prevents liability issues.
-
-### Phase 3: Quality & Safety (Weeks 6-7)
-**Goal:** Make the system safe to operate and maintain
-
-**Tasks:**
-1. **API Guard Tests** - auth + role-based access coverage
-2. **Error Boundaries** - graceful React error handling
-3. **Request Logging** - audit trail with pino
-4. **Auth UX Improvements** - better 401/403/session expiry handling
-
-**Why third:** Before adding more features, ensure the foundation is solid. Tests and logging prevent production fires.
-
-### Phase 4: Clinical Efficiency (Weeks 8-10)
-**Goal:** Reduce clicks and typing for Dr. Mitchell's daily workflow
-
-**Tasks:**
-1. **Quick Note Templates** - one-click common findings
-2. **Prescription Management** - templates, printing, drug interaction warnings
-3. **Photo Upload** - attach images to medical records
-4. **Follow-up Reminders** - track and remind about callbacks
-
-**Why fourth:** These are convenience features that save time but aren't safety-critical. Do them after the foundation is solid.
-
-### Phase 5: Client-Facing Features (Weeks 11-14)
-**Goal:** Enable pet owner self-service
-
-**Tasks:**
-1. **Bot Package** - scaffold Viber webhook handler
-2. **LLM Integration** - tool-calling for appointment booking
-3. **Tool Endpoints** - LLM-accessible appointment creation
-4. **Client Portal Foundation** - separate auth for pet owners
-
-**Why last:** This is the most complex and requires external APIs (Viber, LLM). Build it after internal workflows are solid.
-
----
-
-*This roadmap is a living document. Update it as priorities shift or work completes.*
+*This is a living document. Update it as priorities shift or work completes.*

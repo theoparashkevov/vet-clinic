@@ -375,14 +375,14 @@ async function main() {
     data: {
       patientId: rex.id, ownerId: ivan.id, doctorId: drMaria.id,
       startsAt: todayAt(9, 0), endsAt: todayAt(9, 30),
-      reason: 'Annual vaccination', status: 'scheduled',
+      reason: 'Annual vaccination', status: 'in_progress',
     },
   });
   await prisma.appointment.create({
     data: {
       patientId: whiskers.id, ownerId: ana.id, doctorId: drPetar.id,
       startsAt: todayAt(10, 0), endsAt: todayAt(10, 30),
-      reason: 'Respiratory check-up', status: 'scheduled',
+      reason: 'Respiratory check-up', status: 'checked_in',
     },
   });
   await prisma.appointment.create({
@@ -406,7 +406,7 @@ async function main() {
       reason: 'Skin allergy follow-up', status: 'scheduled',
     },
   });
-  console.log("  Today's appointments: 5");
+  console.log("  Today's appointments: 5 (1 in progress, 1 checked in)");
 
   // ── Past appointments + medical records ───────────────────────────────────
   const pastAppt1 = await prisma.appointment.create({
@@ -530,6 +530,155 @@ async function main() {
 
   console.log('  Past appointments + medical records: 6');
   console.log('  Upcoming appointments: 1 (tomorrow)');
+
+  // ── Prescriptions ─────────────────────────────────────────────────────────
+  // Rex - Active prescriptions
+  await prisma.prescription.create({
+    data: {
+      patientId: rex.id,
+      medication: 'Carprofen 75mg',
+      dosage: '1 tablet',
+      frequency: 'Once daily',
+      duration: '7 days',
+      instructions: 'Give with food for joint pain',
+      expiresAt: new Date(today.getFullYear(), today.getMonth() + 1, today.getDate()),
+      refillsTotal: 2,
+      refillsRemaining: 2,
+      isControlled: false,
+      veterinarian: 'Dr. Maria Ivanova',
+    },
+  });
+
+  // Rex - This should trigger allergy warning (Penicillin allergy)
+  await prisma.prescription.create({
+    data: {
+      patientId: rex.id,
+      medication: 'Amoxicillin 250mg',
+      dosage: '1 tablet',
+      frequency: 'Twice daily',
+      duration: '10 days',
+      instructions: 'For skin infection',
+      expiresAt: new Date(today.getFullYear(), today.getMonth() + 1, today.getDate()),
+      refillsTotal: 0,
+      refillsRemaining: 0,
+      isControlled: false,
+      veterinarian: 'Dr. Petar Dimitrov',
+    },
+  });
+
+  // Buddy - Past prescription (linked to sprain)
+  await prisma.prescription.create({
+    data: {
+      patientId: buddy.id,
+      medication: 'Meloxicam 1.5mg/ml',
+      dosage: '0.1 mg/kg',
+      frequency: 'Once daily',
+      duration: '5 days',
+      instructions: 'Give with food for pain',
+      expiresAt: daysAgo(40),
+      refillsTotal: 0,
+      refillsRemaining: 0,
+      isControlled: false,
+      veterinarian: 'Dr. Elena Georgieva',
+    },
+  });
+
+  // Whiskers - Ongoing asthma medication
+  await prisma.prescription.create({
+    data: {
+      patientId: whiskers.id,
+      medication: 'Bronchodilator (Albuterol)',
+      dosage: '1 puff',
+      frequency: 'As needed',
+      duration: 'Ongoing',
+      instructions: 'Use inhaler with spacer during asthma episodes',
+      expiresAt: new Date(today.getFullYear() + 1, today.getMonth(), today.getDate()),
+      refillsTotal: 5,
+      refillsRemaining: 3,
+      isControlled: false,
+      veterinarian: 'Dr. Petar Dimitrov',
+    },
+  });
+  console.log('  Prescriptions: 4 records created');
+
+  // ── Follow-up Reminders ────────────────────────────────────────────────────
+  // Rex - Lab results due today (high priority)
+  await prisma.followUpReminder.create({
+    data: {
+      patientId: rex.id,
+      type: 'lab_results',
+      title: 'Call with lab results',
+      description: 'Bloodwork from yesterday - discuss with owner',
+      dueDate: todayAt(16, 0),
+      priority: 'high',
+      status: 'pending',
+      assignedTo: drMaria.id,
+      notifyClient: true,
+    },
+  });
+
+  // Buddy - Weight recheck (overdue)
+  await prisma.followUpReminder.create({
+    data: {
+      patientId: buddy.id,
+      type: 'recheck',
+      title: 'Weight loss recheck',
+      description: 'Schedule weight check - continuing weight loss noted',
+      dueDate: daysAgo(2),
+      priority: 'urgent',
+      status: 'pending',
+      assignedTo: drElena.id,
+      notifyClient: true,
+    },
+  });
+
+  // Whiskers - Medication refill (due soon)
+  const tomorrowReminder = new Date();
+  tomorrowReminder.setDate(tomorrowReminder.getDate() + 1);
+  await prisma.followUpReminder.create({
+    data: {
+      patientId: whiskers.id,
+      type: 'medication',
+      title: 'Bronchodilator refill',
+      description: 'Inhaler running low - needs refill',
+      dueDate: tomorrowReminder,
+      priority: 'normal',
+      status: 'pending',
+      assignedTo: drPetar.id,
+      notifyClient: true,
+    },
+  });
+
+  // Luna - Post-vomiting check
+  await prisma.followUpReminder.create({
+    data: {
+      patientId: luna.id,
+      type: 'recheck',
+      title: 'Post-gastritis follow-up',
+      description: 'Check if vomiting has resolved',
+      dueDate: todayAt(18, 0),
+      priority: 'normal',
+      status: 'pending',
+      assignedTo: drMaria.id,
+      notifyClient: false,
+    },
+  });
+
+  // Bella - Surgery follow-up (from recent spay)
+  await prisma.followUpReminder.create({
+    data: {
+      patientId: bella.id,
+      type: 'surgery_followup',
+      title: 'Spay incision check',
+      description: 'Check incision healing, remove sutures if needed',
+      dueDate: daysAgo(1),
+      priority: 'high',
+      status: 'pending',
+      assignedTo: drPetar.id,
+      notifyClient: true,
+    },
+  });
+  console.log('  Follow-up reminders: 5 reminders created');
 
   // ── Medication Templates ─────────────────────────────────────────────────
   await prisma.medicationTemplate.createMany({
@@ -898,8 +1047,7 @@ Sympathies extended to family. {{patientName}} was a wonderful {{species}} and w
         isCommon: false,
       },
     ],
-    skipDuplicates: true,
-  });
+  } as any);
   console.log('  Note templates: 9 templates');
 
   console.log('\nSeeding complete!');

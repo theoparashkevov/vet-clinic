@@ -11,6 +11,9 @@ import { PatientClinicalModule } from './patient-clinical/patient-clinical.modul
 import { VaccinationsModule } from './vaccinations/vaccinations.module';
 import { WeightModule } from './weight/weight.module';
 import { ClientModule } from './client/client.module';
+import { PrescriptionsModule } from './prescriptions/prescriptions.module';
+import { RemindersModule } from './reminders/reminders.module';
+import { SMSModule } from './sms/sms.module';
 
 @Module({
   imports: [
@@ -25,6 +28,9 @@ import { ClientModule } from './client/client.module';
     VaccinationsModule,
     WeightModule,
     ClientModule,
+    PrescriptionsModule,
+    RemindersModule,
+    SMSModule,
   ],
   controllers: [HealthController],
 })

@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Delete, Param, UseInterceptors, UploadedFile, Body } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { PhotosService } from './photos.service';
+import { PhotosService, MulterFile } from './photos.service';
 import { StaffAccess } from '../auth/staff-access.decorator';
 
 /**
@@ -57,9 +57,12 @@ export class PhotosController {
   }))
   async upload(
     @Param('patientId') patientId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: MulterFile | undefined,
     @Body() dto: { category?: string; description?: string; takenAt?: string },
   ) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
     // For development, store in local filesystem
     // In production, this would upload to S3 or similar
     const photo = await this.photosService.upload(patientId, file, dto);

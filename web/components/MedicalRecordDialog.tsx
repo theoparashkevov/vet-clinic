@@ -1,25 +1,54 @@
 "use client";
 
-import { useState } from "react";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import Alert from "@mui/material/Alert";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Alert,
+  Autocomplete,
+  Box,
+  Typography,
+  Chip,
+  Divider,
+} from "@mui/material";
 import { apiJson, AuthError } from "../lib/api";
 import { useToast } from "./ToastProvider";
 
-type Props = {
+interface NoteTemplate {
+  id: string;
+  name: string;
+  category: string;
+  content: string;
+  isCommon: boolean;
+}
+
+interface Props {
   open: boolean;
   patientId: string;
+  patientName?: string;
+  patientSpecies?: string;
   onClose: () => void;
   onCreated: () => void;
-};
+}
 
-export default function MedicalRecordDialog({ open, patientId, onClose, onCreated }: Props) {
+export default function MedicalRecordDialog({
+  open,
+  patientId,
+  patientName,
+  patientSpecies,
+  onClose,
+  onCreated,
+}: Props) {
   const toast = useToast();
+  const [templates, setTemplates] = useState<NoteTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
   const [form, setForm] = useState({
     visitDate: new Date().toISOString().slice(0, 10),
     summary: "",
@@ -27,12 +56,63 @@ export default function MedicalRecordDialog({ open, patientId, onClose, onCreate
     treatments: "",
     prescriptions: "",
   });
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const [selectedTemplate, setSelectedTemplate] = useState<NoteTemplate | null>(null);
+
+  // Load note templates
+  useEffect(() => {
+    if (!open) return;
+
+    const loadTemplates = async () => {
+      setTemplatesLoading(true);
+      try {
+        const res = await apiJson<NoteTemplate[]>("/v1/note-templates");
+        setTemplates(res);
+      } catch (e) {
+        console.error("Failed to load templates:", e);
+      } finally {
+        setTemplatesLoading(false);
+      }
+    };
+
+    loadTemplates();
+  }, [open]);
+
+  const processTemplate = (template: NoteTemplate): string => {
+    let content = template.content;
+
+    // Replace placeholders
+    if (patientName) {
+      content = content.replace(/\{\{patientName\}\}/g, patientName);
+    }
+    if (patientSpecies) {
+      content = content.replace(/\{\{species\}\}/g, patientSpecies);
+    }
+
+    // Replace current date
+    content = content.replace(/\{\{date\}\}/g, new Date().toLocaleDateString());
+
+    // Remove any remaining placeholders
+    content = content.replace(/\{\{[^}]+\}\}/g, "___");
+
+    return content;
+  };
+
+  const handleTemplateSelect = (template: NoteTemplate | null) => {
+    setSelectedTemplate(template);
+    if (template) {
+      const processedContent = processTemplate(template);
+      setForm((prev) => ({
+        ...prev,
+        summary: processedContent,
+      }));
+    }
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
+
     try {
       const body: Record<string, string> = {
         visitDate: new Date(form.visitDate).toISOString(),
@@ -47,7 +127,16 @@ export default function MedicalRecordDialog({ open, patientId, onClose, onCreate
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      setForm({ visitDate: new Date().toISOString().slice(0, 10), summary: "", diagnoses: "", treatments: "", prescriptions: "" });
+
+      setForm({
+        visitDate: new Date().toISOString().slice(0, 10),
+        summary: "",
+        diagnoses: "",
+        treatments: "",
+        prescriptions: "",
+      });
+      setSelectedTemplate(null);
+
       toast.success("Medical record added");
       onCreated();
     } catch (e: unknown) {
@@ -60,11 +149,60 @@ export default function MedicalRecordDialog({ open, patientId, onClose, onCreate
     }
   };
 
+  // Group templates by category
+  const templatesByCategory = templates.reduce((acc, template) => {
+    if (!acc[template.category]) acc[template.category] = [];
+    acc[template.category].push(template);
+    return acc;
+  }, {} as Record<string, NoteTemplate[]>);
+
+  const sortedCategories = Object.keys(templatesByCategory).sort((a, b) => {
+    const aHasCommon = templatesByCategory[a].some((t) => t.isCommon);
+    const bHasCommon = templatesByCategory[b].some((t) => t.isCommon);
+    if (aHasCommon && !bHasCommon) return -1;
+    if (!aHasCommon && bHasCommon) return 1;
+    return a.localeCompare(b);
+  });
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Add Medical Record</DialogTitle>
-      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "16px !important" }}>
+
+      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {error && <Alert severity="error">{error}</Alert>}
+
+        {/* Template Selector */}
+        <Autocomplete
+          options={templates}
+          groupBy={(option) => option.category}
+          getOptionLabel={(option) => option.name}
+          loading={templatesLoading}
+          value={selectedTemplate}
+          onChange={(_, value) => handleTemplateSelect(value)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Select from template (optional)"
+              placeholder="Search templates..."
+            />
+          )}
+          renderOption={(props, option) => (
+            <li {...props}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body1">{option.name}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {option.content.slice(0, 80)}...
+                </Typography>
+              </Box>
+              {option.isCommon && (
+                <Chip label="Common" size="small" color="primary" sx={{ ml: 1 }} />
+              )}
+            </li>
+          )}
+        />
+
+        <Divider />
+
         <TextField
           label="Visit Date"
           type="date"
@@ -73,36 +211,46 @@ export default function MedicalRecordDialog({ open, patientId, onClose, onCreate
           onChange={(e) => setForm({ ...form, visitDate: e.target.value })}
           InputLabelProps={{ shrink: true }}
         />
+
         <TextField
-          label="Summary"
+          label="Summary *"
           required
           multiline
-          rows={3}
+          rows={8}
           value={form.summary}
           onChange={(e) => setForm({ ...form, summary: e.target.value })}
+          placeholder="Enter examination findings, notes, or select a template above..."
         />
-        <TextField
-          label="Diagnoses"
-          multiline
-          rows={2}
-          value={form.diagnoses}
-          onChange={(e) => setForm({ ...form, diagnoses: e.target.value })}
-        />
-        <TextField
-          label="Treatments"
-          multiline
-          rows={2}
-          value={form.treatments}
-          onChange={(e) => setForm({ ...form, treatments: e.target.value })}
-        />
+
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <TextField
+            label="Diagnoses"
+            multiline
+            rows={2}
+            value={form.diagnoses}
+            onChange={(e) => setForm({ ...form, diagnoses: e.target.value })}
+            placeholder="Primary and secondary diagnoses..."
+          />
+          <TextField
+            label="Treatments"
+            multiline
+            rows={2}
+            value={form.treatments}
+            onChange={(e) => setForm({ ...form, treatments: e.target.value })}
+            placeholder="Treatments performed..."
+          />
+        </Box>
+
         <TextField
           label="Prescriptions"
           multiline
           rows={2}
           value={form.prescriptions}
           onChange={(e) => setForm({ ...form, prescriptions: e.target.value })}
+          placeholder="Medications prescribed..."
         />
       </DialogContent>
+
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
         <Button
@@ -110,7 +258,7 @@ export default function MedicalRecordDialog({ open, patientId, onClose, onCreate
           disabled={submitting || !form.summary || !form.visitDate}
           onClick={handleSubmit}
         >
-          {submitting ? "Saving..." : "Save"}
+          {submitting ? "Saving..." : "Save Record"}
         </Button>
       </DialogActions>
     </Dialog>

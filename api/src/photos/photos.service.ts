@@ -3,6 +3,19 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Multer file type definition
+export type MulterFile = {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination?: string;
+  filename?: string;
+  path?: string;
+  buffer?: Buffer;
+};
+
 /**
  * PhotosService
  * 
@@ -58,7 +71,7 @@ export class PhotosService {
    */
   async upload(
     patientId: string,
-    file: Express.Multer.File,
+    file: MulterFile,
     dto: { category?: string; description?: string; takenAt?: string },
   ) {
     // Verify patient exists
@@ -76,7 +89,11 @@ export class PhotosService {
     const filepath = path.join(this.uploadDir, filename);
 
     // Save file to disk (in production, upload to S3)
-    fs.writeFileSync(filepath, file.buffer);
+    if (file.buffer) {
+      fs.writeFileSync(filepath, file.buffer);
+    } else {
+      throw new Error('No file buffer available');
+    }
 
     // Create database record
     const photo = await this.prisma.patientPhoto.create({
