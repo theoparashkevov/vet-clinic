@@ -31,6 +31,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import { useAuth } from "./AuthProvider";
 import FullPageLoading from "./FullPageLoading";
 import { useToast } from "./ToastProvider";
@@ -197,6 +198,21 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 transformOrigin={{ horizontal: "right", vertical: "top" }}
                 anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
               >
+                <Box sx={{ px: 2, py: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={600}>{user?.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">{user?.role}</Typography>
+                </Box>
+                <Divider />
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    router.push("/admin");
+                  }}
+                >
+                  <ListItemIcon><AdminPanelSettingsIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText>Admin Panel</ListItemText>
+                </MenuItem>
+                <Divider />
                 <MenuItem
                   onClick={() => {
                     setMenuAnchor(null);

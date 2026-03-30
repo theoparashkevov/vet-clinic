@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateLabPanelDto, CreateLabTestDto, CreateLabResultDto, UpdateLabResultDto } from './dto';
+import { CreateLabPanelDto, CreateLabTestDto, CreateLabResultDto, UpdateLabResultDto, UpdateLabPanelDto, UpdateLabTestDto } from './dto';
 
 @Injectable()
 export class LabsService {
@@ -65,6 +65,39 @@ export class LabsService {
     });
   }
 
+  async updatePanel(id: string, dto: UpdateLabPanelDto) {
+    const existing = await this.prisma.labPanel.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Lab panel not found');
+    }
+
+    const data: any = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.category !== undefined) data.category = dto.category;
+    if (dto.description !== undefined) data.description = dto.description;
+    if (dto.species !== undefined) data.species = dto.species;
+    if (dto.isCommon !== undefined) data.isCommon = dto.isCommon;
+
+    return this.prisma.labPanel.update({ where: { id }, data });
+  }
+
+  async deletePanel(id: string) {
+    const existing = await this.prisma.labPanel.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Lab panel not found');
+    }
+
+    // Check if there are any tests associated with this panel
+    const testCount = await this.prisma.labTest.count({ where: { panelId: id } });
+    if (testCount > 0) {
+      // Delete all tests first
+      await this.prisma.labTest.deleteMany({ where: { panelId: id } });
+    }
+
+    await this.prisma.labPanel.delete({ where: { id } });
+    return { ok: true };
+  }
+
   // ── Lab Tests ──────────────────────────────────────────────────────────────
 
   async findTestsByPanel(panelId: string) {
@@ -100,6 +133,39 @@ export class LabsService {
         sortOrder: dto.sortOrder ?? 0,
       },
     });
+  }
+
+  async updateTest(id: string, dto: UpdateLabTestDto) {
+    const existing = await this.prisma.labTest.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Lab test not found');
+    }
+
+    const data: any = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.abbreviation !== undefined) data.abbreviation = dto.abbreviation;
+    if (dto.unit !== undefined) data.unit = dto.unit;
+    if (dto.refRangeDogMin !== undefined) data.refRangeDogMin = dto.refRangeDogMin;
+    if (dto.refRangeDogMax !== undefined) data.refRangeDogMax = dto.refRangeDogMax;
+    if (dto.refRangeCatMin !== undefined) data.refRangeCatMin = dto.refRangeCatMin;
+    if (dto.refRangeCatMax !== undefined) data.refRangeCatMax = dto.refRangeCatMax;
+    if (dto.criticalLow !== undefined) data.criticalLow = dto.criticalLow;
+    if (dto.criticalHigh !== undefined) data.criticalHigh = dto.criticalHigh;
+    if (dto.warningLow !== undefined) data.warningLow = dto.warningLow;
+    if (dto.warningHigh !== undefined) data.warningHigh = dto.warningHigh;
+    if (dto.sortOrder !== undefined) data.sortOrder = dto.sortOrder;
+
+    return this.prisma.labTest.update({ where: { id }, data });
+  }
+
+  async deleteTest(id: string) {
+    const existing = await this.prisma.labTest.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Lab test not found');
+    }
+
+    await this.prisma.labTest.delete({ where: { id } });
+    return { ok: true };
   }
 
   // ── Lab Results ────────────────────────────────────────────────────────────

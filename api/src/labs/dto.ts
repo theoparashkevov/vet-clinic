@@ -130,3 +130,74 @@ export class UpdateLabResultDto {
   @IsOptional()
   notes?: string;
 }
+
+export class UpdateLabPanelDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  category?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  species?: string;
+
+  @IsOptional()
+  isCommon?: boolean;
+}
+
+export class UpdateLabTestDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  abbreviation?: string;
+
+  @IsString()
+  @IsOptional()
+  unit?: string;
+
+  @IsNumber()
+  @IsOptional()
+  refRangeDogMin?: number;
+
+  @IsNumber()
+  @IsOptional()
+  refRangeDogMax?: number;
+
+  @IsNumber()
+  @IsOptional()
+  refRangeCatMin?: number;
+
+  @IsNumber()
+  @IsOptional()
+  refRangeCatMax?: number;
+
+  @IsNumber()
+  @IsOptional()
+  criticalLow?: number;
+
+  @IsNumber()
+  @IsOptional()
+  criticalHigh?: number;
+
+  @IsNumber()
+  @IsOptional()
+  warningLow?: number;
+
+  @IsNumber()
+  @IsOptional()
+  warningHigh?: number;
+
+  @IsNumber()
+  @IsOptional()
+  sortOrder?: number;
+}

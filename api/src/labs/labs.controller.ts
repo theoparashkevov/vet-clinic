@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { LabsService } from './labs.service';
-import { CreateLabPanelDto, CreateLabTestDto, CreateLabResultDto, UpdateLabResultDto } from './dto';
+import { CreateLabPanelDto, CreateLabTestDto, CreateLabResultDto, UpdateLabResultDto, UpdateLabPanelDto, UpdateLabTestDto } from './dto';
 import { StaffAccess } from '../auth/staff-access.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthUser } from '../auth/auth.types';
@@ -39,6 +39,16 @@ export class LabsController {
     return this.labsService.createPanel(dto);
   }
 
+  @Put('panels/:id')
+  updatePanel(@Param('id') id: string, @Body() dto: UpdateLabPanelDto) {
+    return this.labsService.updatePanel(id, dto);
+  }
+
+  @Delete('panels/:id')
+  deletePanel(@Param('id') id: string) {
+    return this.labsService.deletePanel(id);
+  }
+
   // ── Lab Tests ──────────────────────────────────────────────────────────────
 
   @Get('panels/:panelId/tests')
@@ -49,6 +59,16 @@ export class LabsController {
   @Post('tests')
   createTest(@Body() dto: CreateLabTestDto) {
     return this.labsService.createTest(dto);
+  }
+
+  @Put('tests/:id')
+  updateTest(@Param('id') id: string, @Body() dto: UpdateLabTestDto) {
+    return this.labsService.updateTest(id, dto);
+  }
+
+  @Delete('tests/:id')
+  deleteTest(@Param('id') id: string) {
+    return this.labsService.deleteTest(id);
   }
 
   // ── Lab Results ────────────────────────────────────────────────────────────

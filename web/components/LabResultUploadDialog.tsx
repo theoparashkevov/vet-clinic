@@ -7,24 +7,20 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   Box,
   Typography,
-  Stepper,
-  Step,
-  StepLabel,
-  TextField,
-  MenuItem,
-  Alert,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Chip,
-  CircularProgress,
+  Grid,
+  Alert,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import { apiJson, AuthError } from "../lib/api";
 import { useToast } from "./ToastProvider";
 
@@ -32,7 +28,8 @@ interface LabPanel {
   id: string;
   name: string;
   category: string;
-  tests: LabTest[];
+  description: string | null;
+  isCommon: boolean;
 }
 
 interface LabTest {
@@ -40,43 +37,36 @@ interface LabTest {
   name: string;
   abbreviation: string | null;
   unit: string;
-  refRangeDogMin: number | null;
-  refRangeDogMax: number | null;
-  refRangeCatMin: number | null;
-  refRangeCatMax: number | null;
 }
 
-interface Props {
+interface LabResultUploadDialogProps {
   open: boolean;
+  onClose: () => void;
   patientId: string;
   patientName: string;
   patientSpecies: string;
-  onClose: () => void;
   onCreated: () => void;
 }
 
 export default function LabResultUploadDialog({
   open,
+  onClose,
   patientId,
   patientName,
   patientSpecies,
-  onClose,
   onCreated,
-}: Props) {
+}: LabResultUploadDialogProps) {
   const toast = useToast();
-  const [activeStep, setActiveStep] = useState(0);
   const [panels, setPanels] = useState<LabPanel[]>([]);
+  const [selectedPanel, setSelectedPanel] = useState<string>("");
+  const [tests, setTests] = useState<LabTest[]>([]);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [notes, setNotes] = useState<string>("");
+  const [testDate, setTestDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [externalLab, setExternalLab] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [loadingPanels, setLoadingPanels] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [selectedPanel, setSelectedPanel] = useState<LabPanel | null>(null);
-  const [testDate, setTestDate] = useState(new Date().toISOString().slice(0, 10));
-  const [externalLab, setExternalLab] = useState("");
-  const [values, setValues] = useState<Record<string, number>>({});
-  const [notes, setNotes] = useState("");
-
-  const steps = ["Select Panel", "Enter Results", "Review & Save"];
 
   useEffect(() => {
     if (open) {
@@ -84,349 +74,251 @@ export default function LabResultUploadDialog({
     }
   }, [open, patientSpecies]);
 
+  useEffect(() => {
+    if (selectedPanel) {
+      loadTests(selectedPanel);
+    } else {
+      setTests([]);
+      setValues({});
+    }
+  }, [selectedPanel]);
+
   const loadPanels = async () => {
-    setLoading(true);
     try {
-      const res = await apiJson<LabPanel[]>(`/v1/labs/panels?species=${patientSpecies}`);
-      setPanels(res);
-    } catch (e: unknown) {
-      if (e instanceof AuthError) return;
+      setLoadingPanels(true);
+      setError(null);
+      const params = patientSpecies ? `?species=${encodeURIComponent(patientSpecies)}` : "";
+      const data = await apiJson<LabPanel[]>(`/labs/panels${params}`);
+      setPanels(data);
+    } catch (err) {
+      console.error("Failed to load lab panels:", err);
+      if (err instanceof AuthError) return;
       setError("Failed to load lab panels");
+    } finally {
+      setLoadingPanels(false);
+    }
+  };
+
+  const loadTests = async (panelId: string) => {
+    try {
+      const data = await apiJson<LabTest[]>(`/labs/panels/${panelId}/tests`);
+      setTests(data);
+      // Initialize values
+      const initialValues: Record<string, string> = {};
+      data.forEach((test) => {
+        initialValues[test.id] = "";
+      });
+      setValues(initialValues);
+    } catch (err) {
+      console.error("Failed to load tests:", err);
+      if (err instanceof AuthError) return;
+      toast.error("Failed to load lab tests");
+    }
+  };
+
+  const handleValueChange = (testId: string, value: string) => {
+    setValues((prev) => ({ ...prev, [testId]: value }));
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Filter out empty values
+      const testValues = Object.entries(values)
+        .filter(([_, value]) => value.trim() !== "")
+        .map(([testId, value]) => ({
+          testId,
+          value: parseFloat(value),
+        }));
+
+      if (testValues.length === 0) {
+        setError("Please enter at least one test value");
+        setLoading(false);
+        return;
+      }
+
+      const body = {
+        panelId: selectedPanel,
+        testDate,
+        externalLab: externalLab || undefined,
+        notes: notes || undefined,
+        values: testValues,
+      };
+
+      await apiJson(`/labs/patients/${patientId}/results`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      toast.success("Lab results uploaded successfully");
+      onCreated();
+      handleClose();
+    } catch (err) {
+      console.error("Failed to upload lab results:", err);
+      if (err instanceof AuthError) return;
+      setError(err instanceof Error ? err.message : "Failed to upload lab results");
     } finally {
       setLoading(false);
     }
   };
 
-  const getRefRange = (test: LabTest) => {
-    if (patientSpecies === "Dog" || patientSpecies === "dog") {
-      return { min: test.refRangeDogMin, max: test.refRangeDogMax };
-    }
-    return { min: test.refRangeCatMin, max: test.refRangeCatMax };
-  };
-
-  const calculateStatus = (value: number, test: LabTest): string => {
-    const { min, max } = getRefRange(test);
-    if (min !== null && value < min) return "low";
-    if (max !== null && value > max) return "high";
-    return "normal";
-  };
-
-  const handleNext = () => {
-    if (activeStep === 0 && !selectedPanel) {
-      setError("Please select a lab panel");
-      return;
-    }
-    setError(null);
-    setActiveStep((prev) => prev + 1);
-  };
-
-  const handleBack = () => {
-    setActiveStep((prev) => prev - 1);
-    setError(null);
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedPanel) return;
-
-    setSubmitting(true);
-    setError(null);
-
-    try {
-      const valuesArray = Object.entries(values)
-        .filter(([_, value]) => !isNaN(value))
-        .map(([testId, value]) => ({
-          testId,
-          value,
-        }));
-
-      if (valuesArray.length === 0) {
-        setError("Please enter at least one test value");
-        setSubmitting(false);
-        return;
-      }
-
-      await apiJson(`/v1/labs/patients/${patientId}/results`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          patientId,
-          panelId: selectedPanel.id,
-          testDate: new Date(testDate).toISOString(),
-          externalLab: externalLab || undefined,
-          notes: notes || undefined,
-          values: valuesArray,
-        }),
-      });
-
-      toast.success("Lab result added successfully");
-      onCreated();
-      handleClose();
-    } catch (e: unknown) {
-      if (e instanceof AuthError) return;
-      setError(e instanceof Error ? e.message : "Failed to save lab result");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleClose = () => {
-    setActiveStep(0);
-    setSelectedPanel(null);
+    setSelectedPanel("");
+    setTests([]);
     setValues({});
     setNotes("");
+    setTestDate(new Date().toISOString().split("T")[0]);
     setExternalLab("");
     setError(null);
     onClose();
   };
 
-  const renderStepContent = () => {
-    switch (activeStep) {
-      case 0:
-        return (
-          <Box sx={{ mt: 2 }}>
-            {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <>
-                <TextField
-                  select
-                  fullWidth
-                  label="Lab Panel"
-                  value={selectedPanel?.id || ""}
-                  onChange={(e) => {
-                    const panel = panels.find((p) => p.id === e.target.value);
-                    setSelectedPanel(panel || null);
-                    // Initialize values object
-                    if (panel) {
-                      const initialValues: Record<string, number> = {};
-                      panel.tests.forEach((test) => {
-                        initialValues[test.id] = 0;
-                      });
-                      setValues(initialValues);
-                    }
-                  }}
-                  sx={{ mb: 3 }}
-                >
-                  {panels.map((panel) => (
-                    <MenuItem key={panel.id} value={panel.id}>
-                      <Box>
-                        <Typography variant="body1">{panel.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {panel.category} • {panel.tests.length} tests
-                        </Typography>
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </TextField>
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6">Upload Lab Results</Typography>
+          <IconButton onClick={handleClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-                {selectedPanel && (
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    <strong>{selectedPanel.name}</strong> includes {selectedPanel.tests.length} tests:
-                    <br />
-                    {selectedPanel.tests.map((t) => t.name).join(", ")}
-                  </Alert>
-                )}
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth margin="normal" disabled={loadingPanels}>
+              <InputLabel>Lab Panel *</InputLabel>
+              <Select
+                value={selectedPanel}
+                onChange={(e) => setSelectedPanel(e.target.value)}
+                label="Lab Panel *"
+              >
+                <MenuItem value="">
+                  <em>Select a panel</em>
+                </MenuItem>
+                {panels.map((panel) => (
+                  <MenuItem key={panel.id} value={panel.id}>
+                    <Box>
+                      {panel.name}
+                      <Chip
+                        label={panel.category}
+                        size="small"
+                        sx={{ ml: 1 }}
+                      />
+                      {panel.isCommon && (
+                        <Chip
+                          label="Common"
+                          size="small"
+                          color="primary"
+                          sx={{ ml: 0.5 }}
+                        />
+                      )}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
 
-                <TextField
-                  fullWidth
-                  type="date"
-                  label="Test Date"
-                  value={testDate}
-                  onChange={(e) => setTestDate(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ mb: 2 }}
-                />
-
-                <TextField
-                  fullWidth
-                  label="External Lab (optional)"
-                  placeholder="e.g., IDEXX, Antech"
-                  value={externalLab}
-                  onChange={(e) => setExternalLab(e.target.value)}
-                />
-              </>
-            )}
-          </Box>
-        );
-
-      case 1:
-        if (!selectedPanel) return null;
-        return (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Enter test values for {patientName}
-            </Typography>
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Test</TableCell>
-                    <TableCell align="right">Value</TableCell>
-                    <TableCell>Unit</TableCell>
-                    <TableCell>Reference Range</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {selectedPanel.tests.map((test) => {
-                    const { min, max } = getRefRange(test);
-                    const value = values[test.id] || 0;
-                    const status = value > 0 ? calculateStatus(value, test) : "normal";
-
-                    return (
-                      <TableRow key={test.id}>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight={500}>
-                            {test.name}
-                          </Typography>
-                          {test.abbreviation && (
-                            <Typography variant="caption" color="text.secondary">
-                              {test.abbreviation}
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell align="right">
-                          <TextField
-                            type="number"
-                            size="small"
-                            value={values[test.id] || ""}
-                            onChange={(e) => {
-                              const val = parseFloat(e.target.value);
-                              setValues((prev) => ({ ...prev, [test.id]: isNaN(val) ? 0 : val }));
-                            }}
-                            inputProps={{ step: "0.01" }}
-                            sx={{ width: 100 }}
-                          />
-                        </TableCell>
-                        <TableCell>{test.unit}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {min !== null && max !== null
-                              ? `${min} - ${max}`
-                              : min !== null
-                              ? `> ${min}`
-                              : max !== null
-                              ? `< ${max}`
-                              : "—"}
-                          </Typography>
-                          {value > 0 && status !== "normal" && (
-                            <Chip
-                              size="small"
-                              label={status}
-                              color={status === "high" ? "warning" : "info"}
-                              sx={{ ml: 1 }}
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
+          <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              multiline
-              rows={2}
+              margin="normal"
+              label="Test Date *"
+              type="date"
+              value={testDate}
+              onChange={(e) => setTestDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              margin="normal"
+              label="External Lab (optional)"
+              value={externalLab}
+              onChange={(e) => setExternalLab(e.target.value)}
+              placeholder="e.g., Antech, Idexx"
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              margin="normal"
               label="Notes (optional)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              sx={{ mt: 2 }}
+              multiline
+              rows={1}
+              placeholder="Additional notes about these results"
             />
-          </Box>
-        );
+          </Grid>
 
-      case 2:
-        if (!selectedPanel) return null;
-        const enteredValues = Object.entries(values).filter(([_, v]) => v !== 0);
-        const abnormalCount = enteredValues.filter(([testId, value]) => {
-          const test = selectedPanel.tests.find((t) => t.id === testId);
-          if (!test) return false;
-          return calculateStatus(value, test) !== "normal";
-        }).length;
-
-        return (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Review Lab Result
-            </Typography>
-
-            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Panel
+          {tests.length > 0 && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
+                Test Values
               </Typography>
-              <Typography variant="body1" fontWeight={500}>
-                {selectedPanel.name}
-              </Typography>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                  gap: 2,
+                }}
+              >
+                {tests.map((test) => (
+                  <TextField
+                    key={test.id}
+                    label={test.name}
+                    placeholder={test.abbreviation || ""}
+                    value={values[test.id] || ""}
+                    onChange={(e) => handleValueChange(test.id, e.target.value)}
+                    type="number"
+                    size="small"
+                    InputProps={{
+                      endAdornment: test.unit ? (
+                        <Typography variant="caption" color="text.secondary">
+                          {test.unit}
+                        </Typography>
+                      ) : null,
+                    }}
+                  />
+                ))}
+              </Box>
+            </Grid>
+          )}
 
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Test Date
-              </Typography>
-              <Typography variant="body1">{new Date(testDate).toLocaleDateString()}</Typography>
-
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Results Entered
-              </Typography>
-              <Typography variant="body1">
-                {enteredValues.length} of {selectedPanel.tests.length} tests
-              </Typography>
-
-              {abnormalCount > 0 && (
-                <Alert severity="warning" sx={{ mt: 2 }}>
-                  {abnormalCount} value{abnormalCount !== 1 ? "s" : ""} outside reference range
-                </Alert>
-              )}
-            </Paper>
-
-            <Typography variant="body2" color="text.secondary">
-              Click "Save" to add this lab result to {patientName}'s record.
-            </Typography>
-          </Box>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Add Lab Result</DialogTitle>
-
-      <DialogContent>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-        <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-
-        {renderStepContent()}
+          {tests.length === 0 && selectedPanel && (
+            <Grid item xs={12}>
+              <Alert severity="info">
+                No tests found for this panel. The panel may be empty or still being configured.
+              </Alert>
+            </Grid>
+          )}
+        </Grid>
       </DialogContent>
-
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        {activeStep > 0 && (
-          <Button onClick={handleBack}>Back</Button>
-        )}
-        {activeStep < steps.length - 1 ? (
-          <Button variant="contained" onClick={handleNext}>
-            Next
-          </Button>
-        ) : (
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {submitting ? "Saving..." : "Save Lab Result"}
-          </Button>
-        )}
+        <Button onClick={handleClose} disabled={loading}>
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={loading || !selectedPanel}
+        >
+          {loading ? "Uploading..." : "Upload Results"}
+        </Button>
       </DialogActions>
     </Dialog>
   );

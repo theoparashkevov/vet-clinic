@@ -32,8 +32,11 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { apiJson } from "../../../lib/api";
 import { useToast } from "../../../components/ToastProvider";
+import CsvUploadDialog from "../../../components/CsvUploadDialog";
+import type { CsvColumn } from "../../../components/CsvUploadDialog";
 
 interface LabTest {
   id: string;
@@ -96,6 +99,52 @@ export default function LabPanelsAdminPage() {
     criticalHigh: "",
     sortOrder: "0",
   });
+
+  // CSV Upload states
+  const [csvPanelOpen, setCsvPanelOpen] = useState(false);
+  const [csvTestOpen, setCsvTestOpen] = useState(false);
+
+  const panelColumns: CsvColumn[] = [
+    { key: "name", label: "Name", required: true, description: "Panel name (e.g., Complete Blood Count)" },
+    { key: "category", label: "Category", description: "Hematology, Chemistry, Urinalysis, Endocrine, Microbiology, Other" },
+    { key: "description", label: "Description" },
+    { key: "species", label: "Species", description: "dog, cat, or leave blank for both" },
+    { key: "isCommon", label: "Common", type: "boolean", description: "true/false" },
+  ];
+
+  const testColumns: CsvColumn[] = [
+    { key: "panelName", label: "Panel Name", required: true, description: "Must match an existing panel name" },
+    { key: "name", label: "Test Name", required: true },
+    { key: "abbreviation", label: "Abbreviation" },
+    { key: "unit", label: "Unit", description: "e.g., mg/dL, K/µL" },
+    { key: "refRangeDogMin", label: "Dog Min", type: "number" },
+    { key: "refRangeDogMax", label: "Dog Max", type: "number" },
+    { key: "refRangeCatMin", label: "Cat Min", type: "number" },
+    { key: "refRangeCatMax", label: "Cat Max", type: "number" },
+    { key: "criticalLow", label: "Critical Low", type: "number" },
+    { key: "criticalHigh", label: "Critical High", type: "number" },
+    { key: "sortOrder", label: "Sort Order", type: "number", description: "Display order within panel" },
+  ];
+
+  const handleUploadPanels = async (data: Record<string, any>[]) => {
+    const res = await apiJson("/v1/import/lab-panels", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data }),
+    });
+    loadPanels();
+    return res as { success: number; errors: number; messages: string[] };
+  };
+
+  const handleUploadTests = async (data: Record<string, any>[]) => {
+    const res = await apiJson("/v1/import/lab-tests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data }),
+    });
+    loadPanels();
+    return res as { success: number; errors: number; messages: string[] };
+  };
 
   useEffect(() => {
     loadPanels();
@@ -272,14 +321,28 @@ export default function LabPanelsAdminPage() {
         </Typography>
       </Alert>
 
-      {/* Add Panel Button */}
-      <Box sx={{ mb: 3 }}>
+      {/* Add Panel & CSV Upload Buttons */}
+      <Box sx={{ mb: 3, display: "flex", gap: 2 }}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => openPanelDialog()}
         >
           Add New Lab Panel
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<CloudUploadIcon />}
+          onClick={() => setCsvPanelOpen(true)}
+        >
+          Import Panels (CSV)
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<CloudUploadIcon />}
+          onClick={() => setCsvTestOpen(true)}
+        >
+          Import Tests (CSV)
         </Button>
       </Box>
 
@@ -568,6 +631,28 @@ export default function LabPanelsAdminPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* CSV Upload Dialogs */}
+      <CsvUploadDialog
+        open={csvPanelOpen}
+        onClose={() => setCsvPanelOpen(false)}
+        title="Import Lab Panels"
+        description="Upload a CSV file with lab panel definitions. The panel will be created if it doesn't exist, or updated if it does."
+        columns={panelColumns}
+        onUpload={handleUploadPanels}
+        onSuccess={loadPanels}
+        templateFileName="lab-panels-template.csv"
+      />
+      <CsvUploadDialog
+        open={csvTestOpen}
+        onClose={() => setCsvTestOpen(false)}
+        title="Import Lab Tests"
+        description="Upload a CSV file with lab tests. Each test must reference an existing panel by name. Tests will be matched by panel + test name."
+        columns={testColumns}
+        onUpload={handleUploadTests}
+        onSuccess={loadPanels}
+        templateFileName="lab-tests-template.csv"
+      />
     </Box>
   );
 }
