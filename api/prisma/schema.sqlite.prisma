@@ -38,6 +38,7 @@ model Patient {
   prescriptions     Prescription[]
   photos            PatientPhoto[]
   followUpReminders FollowUpReminder[]
+  labResults        LabResult[]
   createdAt         DateTime           @default(now())
 }
 
@@ -248,4 +249,126 @@ model PatientAlert {
 
   @@index([patientId])
   @@index([severity])
+}
+
+// ── Lab Results ──────────────────────────────────────────────────────────────
+
+model LabPanel {
+  id            String     @id @default(cuid())
+  name          String     // e.g., "Complete Blood Count", "Chemistry Panel"
+  category      String     // "Hematology", "Chemistry", "Urinalysis", "Endocrine"
+  description   String?
+  tests         LabTest[]
+  labResults    LabResult[]
+  isCommon      Boolean    @default(false)
+  species       String?    // "dog", "cat", or null for all
+  createdAt     DateTime   @default(now())
+  
+  @@index([category])
+  @@index([isCommon])
+  @@index([species])
+}
+
+model LabTest {
+  id                String     @id @default(cuid())
+  panel             LabPanel   @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  panelId           String
+  name              String     // e.g., "White Blood Cell Count"
+  abbreviation      String?    // e.g., "WBC"
+  unit              String     // e.g., "K/µL", "mg/dL"
+  
+  // Reference ranges by species
+  refRangeDogMin    Float?
+  refRangeDogMax    Float?
+  refRangeCatMin    Float?
+  refRangeCatMax    Float?
+  
+  // Critical values
+  criticalLow       Float?     // Below this is critically low
+  criticalHigh      Float?     // Above this is critically high
+  
+  // Severity thresholds
+  warningLow        Float?     // Below this is mildly low
+  warningHigh       Float?     // Above this is mildly high
+  
+  resultValues      LabResultValue[]
+  sortOrder         Int        @default(0)
+  createdAt         DateTime   @default(now())
+  
+  @@index([panelId])
+  @@index([sortOrder])
+}
+
+model LabResult {
+  id              String           @id @default(cuid())
+  patient         Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId       String
+  appointment     Appointment?     @relation(fields: [appointmentId], references: [id])
+  appointmentId   String?
+  
+  // Panel information
+  panel           LabPanel         @relation(fields: [panelId], references: [id])
+  panelId         String
+  
+  // Result details
+  testDate        DateTime
+  receivedDate    DateTime?        // When results came back
+  reviewedDate    DateTime?        // When vet reviewed
+  reviewedBy      String?          // Veterinarian name
+  
+  // Status
+  status          String           @default("pending") // "pending", "complete", "reviewed", "abnormal"
+  
+  // Individual test values
+  values          LabResultValue[]
+  
+  // Summary
+  abnormalCount   Int              @default(0)
+  criticalCount   Int              @default(0)
+  
+  // Notes
+  notes           String?
+  interpretation  String?          // Veterinarian's interpretation
+  
+  // File attachment
+  pdfUrl          String?          // URL to lab report PDF
+  externalLab     String?          // e.g., "IDEXX", "Antech", "In-house"
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([patientId])
+  @@index([testDate])
+  @@index([status])
+  @@index([panelId])
+}
+
+model LabResultValue {
+  id              String      @id @default(cuid())
+  labResult       LabResult   @relation(fields: [labResultId], references: [id], onDelete: Cascade)
+  labResultId     String
+  
+  test            LabTest     @relation(fields: [testId], references: [id])
+  testId          String
+  
+  // The actual value
+  value           Float
+  displayValue    String      // Formatted for display
+  
+  // Status flags (calculated automatically)
+  status          String      @default("normal") // "normal", "low", "high", "critical_low", "critical_high"
+  
+  // Reference range used (based on species)
+  refRangeMin     Float?
+  refRangeMax     Float?
+  
+  // Previous value for comparison
+  previousValue   Float?
+  trend           String?     // "up", "down", "stable" - calculated from previous
+  
+  notes           String?
+  
+  @@index([labResultId])
+  @@index([testId])
+  @@index([status])
 }

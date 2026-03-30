@@ -25,6 +25,7 @@ import WeightRecordDialog from "../../../components/WeightRecordDialog";
 import WeightHistoryChart from "../../../components/WeightHistoryChart";
 import PrescriptionDialog from "../../../components/PrescriptionDialog";
 import PhotoGalleryDialog from "../../../components/PhotoGalleryDialog";
+import LabResultsList from "../../../components/LabResultsList";
 import PageHeader from "../../../components/PageHeader";
 import InlineLoading from "../../../components/InlineLoading";
 import { apiJson, AuthError } from "../../../lib/api";
@@ -454,6 +455,17 @@ export default function PatientDetailPage() {
             </Button>
           </Paper>
         )}
+      </Box>
+
+      <Divider sx={{ mb: 3 }} />
+
+      {/* Lab Results Section */}
+      <Box sx={{ mb: 4 }}>
+        <LabResultsList
+          patientId={id}
+          patientName={patient.name}
+          patientSpecies={patient.species}
+        />
       </Box>
 
       <Divider sx={{ mb: 3 }} />

@@ -14,6 +14,7 @@ import { ClientModule } from './client/client.module';
 import { PrescriptionsModule } from './prescriptions/prescriptions.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { SMSModule } from './sms/sms.module';
+import { LabsModule } from './labs/labs.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SMSModule } from './sms/sms.module';
     PrescriptionsModule,
     RemindersModule,
     SMSModule,
+    LabsModule,
   ],
   controllers: [HealthController],
 })
