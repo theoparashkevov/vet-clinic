@@ -186,6 +186,8 @@ cd web && npm run dev          # Web on port 3001
 | 2026-03-30 | PM Agent | Commit: f4247bb - Phase 1 UX improvements complete |
 | 2026-03-30 | PM Agent | Integrated UX components: PageTransition wrapper, TableSkeleton, EmptyStates in all pages |
 | 2026-03-30 | PM Agent | Commit: b354031 - feat: integrate UX components into all pages, pushed to remote |
+| 2026-03-30 | PM Agent | Enhanced PatientTimeline with period filters (last month/3m/6m/year/custom) and search functionality |
+| 2026-03-30 | PM Agent | Commit: ca2b3b8 - feat: enhanced PatientTimeline with period filters and search, pushed to remote |
 
 ---
 
