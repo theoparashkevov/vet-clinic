@@ -110,9 +110,11 @@ if [ ! -f "$DB_FILE" ] || [ "$RESET" -eq 1 ]; then
   info "Running migrations..."
   npm run api:prisma:push --silent
   
+  info "Regenerating Prisma client after migration..."
+  npm run api:prisma:generate --silent
+  
   info "Seeding demo data..."
-  cd api
-  npx ts-node prisma/seed.ts
+  cd api && npx ts-node prisma/seed.ts
   cd ..
   
   success "Database ready with demo data."
