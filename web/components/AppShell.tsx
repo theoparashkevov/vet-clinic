@@ -36,6 +36,7 @@ import { useAuth } from "./AuthProvider";
 import FullPageLoading from "./FullPageLoading";
 import { useToast } from "./ToastProvider";
 import MyRemindersDialog from "./MyRemindersDialog";
+import { PageTransition } from "./animations";
 
 const PUBLIC_PATHS = new Set(["/login"]);
 
@@ -280,7 +281,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
         }}
       >
         <Container maxWidth="lg" sx={{ py: 4 }}>
-          {children}
+          <PageTransition>
+            {children}
+          </PageTransition>
         </Container>
       </Box>
 

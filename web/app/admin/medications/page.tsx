@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Alert, CircularProgress } from "@mui/material";
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Alert } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -10,6 +10,8 @@ import { apiJson } from "../../../lib/api";
 import { useToast } from "../../../components/ToastProvider";
 import CsvUploadDialog from "../../../components/CsvUploadDialog";
 import type { CsvColumn } from "../../../components/CsvUploadDialog";
+import { EmptyMedications } from "../../../components/EmptyStates";
+import { TableSkeleton } from "../../../components/skeletons";
 
 interface MedicationTemplate {
   id: string;
@@ -139,9 +141,9 @@ export default function MedicationsAdminPage() {
       </Box>
 
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-          <CircularProgress />
-        </Box>
+        <TableSkeleton rows={5} columns={6} />
+      ) : medications.length === 0 ? (
+        <EmptyMedications onAdd={() => { setEditingMed(null); setDialogOpen(true); }} />
       ) : (
         <TableContainer component={Paper}>
           <Table>

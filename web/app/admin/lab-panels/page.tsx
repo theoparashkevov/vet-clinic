@@ -37,6 +37,8 @@ import { apiJson } from "../../../lib/api";
 import { useToast } from "../../../components/ToastProvider";
 import CsvUploadDialog from "../../../components/CsvUploadDialog";
 import type { CsvColumn } from "../../../components/CsvUploadDialog";
+import { EmptyLabPanels } from "../../../components/EmptyStates";
+import { TableSkeleton } from "../../../components/skeletons";
 
 interface LabTest {
   id: string;
@@ -348,13 +350,9 @@ export default function LabPanelsAdminPage() {
 
       {/* Panels List */}
       {loading ? (
-        <Typography>Loading...</Typography>
+        <TableSkeleton rows={5} columns={4} />
       ) : panels.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: "center" }}>
-          <Typography color="text.secondary">
-            No lab panels configured yet. Click "Add New Lab Panel" to get started.
-          </Typography>
-        </Paper>
+        <EmptyLabPanels onAdd={() => openPanelDialog()} />
       ) : (
         <Box>
           {panels.map((panel) => (
