@@ -56,6 +56,7 @@ model Appointment {
   status         String             @default("scheduled")
   medicalRecords MedicalRecord[]
   followUps      FollowUpReminder[]
+  labResults     LabResult[]
   createdAt      DateTime           @default(now())
 }
 

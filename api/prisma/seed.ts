@@ -1050,6 +1050,60 @@ Sympathies extended to family. {{patientName}} was a wonderful {{species}} and w
   } as any);
   console.log('  Note templates: 9 templates');
 
+  // ── Lab Panels & Tests ─────────────────────────────────────────────────────
+  
+  // Complete Blood Count (CBC)
+  const cbcPanel = await prisma.labPanel.create({
+    data: {
+      name: 'Complete Blood Count (CBC)',
+      category: 'Hematology',
+      description: 'Measures red blood cells, white blood cells, and platelets',
+      isCommon: true,
+    },
+  });
+
+  await prisma.labTest.createMany({
+    data: [
+      { panelId: cbcPanel.id, name: 'White Blood Cell Count', abbreviation: 'WBC', unit: 'K/µL', refRangeDogMin: 6.0, refRangeDogMax: 17.0, refRangeCatMin: 5.5, refRangeCatMax: 19.5, criticalLow: 2.0, criticalHigh: 30.0, sortOrder: 1 },
+      { panelId: cbcPanel.id, name: 'Red Blood Cell Count', abbreviation: 'RBC', unit: 'M/µL', refRangeDogMin: 5.5, refRangeDogMax: 8.5, refRangeCatMin: 5.0, refRangeCatMax: 10.0, criticalLow: 3.0, criticalHigh: 12.0, sortOrder: 2 },
+      { panelId: cbcPanel.id, name: 'Hemoglobin', abbreviation: 'HGB', unit: 'g/dL', refRangeDogMin: 12.0, refRangeDogMax: 18.0, refRangeCatMin: 8.0, refRangeCatMax: 15.0, criticalLow: 6.0, criticalHigh: 20.0, sortOrder: 3 },
+      { panelId: cbcPanel.id, name: 'Hematocrit', abbreviation: 'HCT', unit: '%', refRangeDogMin: 37.0, refRangeDogMax: 55.0, refRangeCatMin: 24.0, refRangeCatMax: 45.0, criticalLow: 18.0, criticalHigh: 60.0, sortOrder: 4 },
+      { panelId: cbcPanel.id, name: 'Platelet Count', abbreviation: 'PLT', unit: 'K/µL', refRangeDogMin: 150, refRangeDogMax: 400, refRangeCatMin: 150, refRangeCatMax: 500, criticalLow: 50, criticalHigh: 800, sortOrder: 5 },
+      { panelId: cbcPanel.id, name: 'Mean Corpuscular Volume', abbreviation: 'MCV', unit: 'fL', refRangeDogMin: 60.0, refRangeDogMax: 77.0, refRangeCatMin: 39.0, refRangeCatMax: 55.0, sortOrder: 6 },
+      { panelId: cbcPanel.id, name: 'Mean Corpuscular Hemoglobin', abbreviation: 'MCH', unit: 'pg', refRangeDogMin: 19.5, refRangeDogMax: 24.5, refRangeCatMin: 12.5, refRangeCatMax: 17.5, sortOrder: 7 },
+      { panelId: cbcPanel.id, name: 'Neutrophils', abbreviation: 'NEU', unit: 'K/µL', refRangeDogMin: 3.0, refRangeDogMax: 11.5, refRangeCatMin: 2.5, refRangeCatMax: 12.5, criticalLow: 1.0, sortOrder: 8 },
+      { panelId: cbcPanel.id, name: 'Lymphocytes', abbreviation: 'LYM', unit: 'K/µL', refRangeDogMin: 1.0, refRangeDogMax: 4.8, refRangeCatMin: 1.5, refRangeCatMax: 7.0, sortOrder: 9 },
+      { panelId: cbcPanel.id, name: 'Monocytes', abbreviation: 'MONO', unit: 'K/µL', refRangeDogMin: 0.15, refRangeDogMax: 1.35, refRangeCatMin: 0.05, refRangeCatMax: 0.8, sortOrder: 10 },
+    ],
+  });
+
+  // Chemistry Panel
+  const chemPanel = await prisma.labPanel.create({
+    data: {
+      name: 'Chemistry Panel (Chem 10)',
+      category: 'Chemistry',
+      description: 'Measures kidney, liver, and electrolyte values',
+      isCommon: true,
+    },
+  });
+
+  await prisma.labTest.createMany({
+    data: [
+      { panelId: chemPanel.id, name: 'Blood Urea Nitrogen', abbreviation: 'BUN', unit: 'mg/dL', refRangeDogMin: 7, refRangeDogMax: 27, refRangeCatMin: 16, refRangeCatMax: 36, criticalLow: 5, criticalHigh: 80, warningHigh: 40, sortOrder: 1 },
+      { panelId: chemPanel.id, name: 'Creatinine', abbreviation: 'CREA', unit: 'mg/dL', refRangeDogMin: 0.5, refRangeDogMax: 1.6, refRangeCatMin: 0.8, refRangeCatMax: 2.4, criticalLow: 0.3, criticalHigh: 5.0, warningHigh: 2.5, sortOrder: 2 },
+      { panelId: chemPanel.id, name: 'Alanine Aminotransferase', abbreviation: 'ALT', unit: 'U/L', refRangeDogMin: 10, refRangeDogMax: 125, refRangeCatMin: 20, refRangeCatMax: 100, criticalHigh: 500, warningHigh: 200, sortOrder: 3 },
+      { panelId: chemPanel.id, name: 'Alkaline Phosphatase', abbreviation: 'ALP', unit: 'U/L', refRangeDogMin: 20, refRangeDogMax: 150, refRangeCatMin: 10, refRangeCatMax: 90, criticalHigh: 500, warningHigh: 250, sortOrder: 4 },
+      { panelId: chemPanel.id, name: 'Total Bilirubin', abbreviation: 'TBIL', unit: 'mg/dL', refRangeDogMin: 0.1, refRangeDogMax: 0.6, refRangeCatMin: 0.1, refRangeCatMax: 0.6, criticalHigh: 3.0, warningHigh: 1.5, sortOrder: 5 },
+      { panelId: chemPanel.id, name: 'Total Protein', abbreviation: 'TP', unit: 'g/dL', refRangeDogMin: 5.4, refRangeDogMax: 7.6, refRangeCatMin: 5.7, refRangeCatMax: 8.0, criticalLow: 4.0, criticalHigh: 10.0, sortOrder: 6 },
+      { panelId: chemPanel.id, name: 'Albumin', abbreviation: 'ALB', unit: 'g/dL', refRangeDogMin: 2.6, refRangeDogMax: 4.0, refRangeCatMin: 2.2, refRangeCatMax: 3.8, criticalLow: 1.5, sortOrder: 7 },
+      { panelId: chemPanel.id, name: 'Globulin', abbreviation: 'GLOB', unit: 'g/dL', refRangeDogMin: 2.0, refRangeDogMax: 4.0, refRangeCatMin: 2.0, refRangeCatMax: 5.0, sortOrder: 8 },
+      { panelId: chemPanel.id, name: 'Glucose', abbreviation: 'GLU', unit: 'mg/dL', refRangeDogMin: 70, refRangeDogMax: 110, refRangeCatMin: 70, refRangeCatMax: 140, criticalLow: 40, criticalHigh: 300, warningLow: 60, warningHigh: 180, sortOrder: 9 },
+      { panelId: chemPanel.id, name: 'Calcium', abbreviation: 'CA', unit: 'mg/dL', refRangeDogMin: 8.8, refRangeDogMax: 11.6, refRangeCatMin: 8.4, refRangeCatMax: 10.6, criticalLow: 6.0, criticalHigh: 14.0, sortOrder: 10 },
+    ],
+  });
+
+  console.log('  Lab panels: CBC, Chemistry with 20 reference ranges');
+
   console.log('\nSeeding complete!');
 }
 
