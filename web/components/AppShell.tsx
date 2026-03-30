@@ -37,6 +37,7 @@ import FullPageLoading from "./FullPageLoading";
 import { useToast } from "./ToastProvider";
 import MyRemindersDialog from "./MyRemindersDialog";
 import { PageTransition } from "./animations";
+import { useGlobalShortcuts } from "./KeyboardShortcuts";
 
 const PUBLIC_PATHS = new Set(["/login"]);
 
@@ -61,6 +62,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(menuAnchor);
 
+
+  // Register global keyboard shortcuts
+  useGlobalShortcuts();
   useEffect(() => {
     if (loading) {
       return;
