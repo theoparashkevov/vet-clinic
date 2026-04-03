@@ -22,11 +22,11 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import WarningIcon from "@mui/icons-material/Warning";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import Link from "next/link";
-import { apiJson } from "../../../lib/api";
-import type { Invoice, RevenueReport } from "../../../lib/billing/types";
-import RevenueChart from "../../../components/billing/RevenueChart";
-import InvoiceStatusBadge from "../../../components/billing/InvoiceStatusBadge";
-import PageHeader from "../../../components/PageHeader";
+import { apiJson } from "../../../../lib/api";
+import type { Invoice, RevenueReport } from "../../../../lib/billing/types";
+import RevenueChart from "../../../../components/billing/RevenueChart";
+import InvoiceStatusBadge from "../../../../components/billing/InvoiceStatusBadge";
+import PageHeader from "../../../../components/PageHeader";
 
 interface DashboardData {
   todayRevenue: number;
@@ -165,7 +165,9 @@ export default function BillingDashboardPage() {
             {
               id: "1",
               invoiceNumber: "INV-2024-001",
+              patientId: "p1",
               patient: { id: "p1", name: "Max", species: "Dog", breed: "Golden Retriever" },
+              ownerId: "o1",
               owner: { id: "o1", name: "John Smith", email: "john@example.com" },
               issueDate: "2024-01-15",
               dueDate: "2024-02-15",
@@ -186,7 +188,9 @@ export default function BillingDashboardPage() {
             {
               id: "2",
               invoiceNumber: "INV-2024-002",
+              patientId: "p2",
               patient: { id: "p2", name: "Luna", species: "Cat", breed: "Siamese" },
+              ownerId: "o2",
               owner: { id: "o2", name: "Jane Doe", email: "jane@example.com" },
               issueDate: "2024-01-20",
               dueDate: "2024-02-20",
