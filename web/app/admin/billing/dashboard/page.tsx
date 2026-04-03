@@ -14,6 +14,7 @@ import {
   Chip,
   Divider,
   Skeleton,
+  Avatar,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -21,6 +22,8 @@ import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import WarningIcon from "@mui/icons-material/Warning";
 import ReceiptIcon from "@mui/icons-material/Receipt";
+import PaymentIcon from "@mui/icons-material/Payment";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import Link from "next/link";
 import { apiJson } from "../../../../lib/api";
 import type { Invoice, RevenueReport } from "../../../../lib/billing/types";
@@ -75,54 +78,104 @@ function KPICard({
   trend?: { value: number; isPositive: boolean };
 }) {
   const colorMap = {
-    primary: { bg: "rgba(31, 111, 120, 0.1)", icon: "primary.main" },
-    success: { bg: "rgba(46, 125, 50, 0.1)", icon: "success.main" },
-    warning: { bg: "rgba(237, 108, 2, 0.1)", icon: "warning.main" },
-    error: { bg: "rgba(211, 47, 47, 0.1)", icon: "error.main" },
-    info: { bg: "rgba(2, 136, 209, 0.1)", icon: "info.main" },
+    primary: { bg: "rgba(13, 115, 119, 0.08)", icon: "#0D7377", border: "rgba(13, 115, 119, 0.15)" },
+    success: { bg: "rgba(5, 150, 105, 0.08)", icon: "#059669", border: "rgba(5, 150, 105, 0.15)" },
+    warning: { bg: "rgba(217, 119, 6, 0.08)", icon: "#D97706", border: "rgba(217, 119, 6, 0.15)" },
+    error: { bg: "rgba(220, 38, 38, 0.08)", icon: "#DC2626", border: "rgba(220, 38, 38, 0.15)" },
+    info: { bg: "rgba(2, 132, 199, 0.08)", icon: "#0284C7", border: "rgba(2, 132, 199, 0.15)" },
   };
 
   return (
-    <Card sx={{ height: "100%" }}>
-      <CardContent>
+    <Card
+      sx={{
+        height: "100%",
+        borderRadius: 4,
+        border: `1px solid ${colorMap[color].border}`,
+        transition: "all 0.2s ease-in-out",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+        },
+      }}
+    >
+      <CardContent sx={{ p: 3 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#57534E",
+                fontWeight: 500,
+                mb: 1,
+                letterSpacing: "0.01em",
+              }}
+            >
               {title}
             </Typography>
-            <Typography variant="h4" fontWeight={700}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                color: "#1C1917",
+                letterSpacing: "-0.02em",
+                mb: 0.5,
+              }}
+            >
               {value}
             </Typography>
             {subtitle && (
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: "#78716C", fontWeight: 500 }}>
                 {subtitle}
               </Typography>
             )}
             {trend && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 1 }}>
-                {trend.isPositive ? (
-                  <TrendingUpIcon fontSize="small" color="success" />
-                ) : (
-                  <TrendingDownIcon fontSize="small" color="error" />
-                )}
-                <Typography
-                  variant="caption"
-                  color={trend.isPositive ? "success.main" : "error.main"}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 1.5 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.25,
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 1,
+                    backgroundColor: trend.isPositive ? "rgba(5, 150, 105, 0.1)" : "rgba(220, 38, 38, 0.1)",
+                  }}
                 >
-                  {trend.isPositive ? "+" : ""}
-                  {trend.value}%
+                  {trend.isPositive ? (
+                    <TrendingUpIcon sx={{ fontSize: 14, color: "#059669" }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ fontSize: 14, color: "#DC2626" }} />
+                  )}
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 600,
+                      color: trend.isPositive ? "#059669" : "#DC2626",
+                    }}
+                  >
+                    {trend.isPositive ? "+" : ""}
+                    {trend.value}%
+                  </Typography>
+                </Box>
+                <Typography variant="caption" sx={{ color: "#A8A29E" }}>
+                  vs last week
                 </Typography>
               </Box>
             )}
           </Box>
           <Box
             sx={{
-              p: 1.5,
-              borderRadius: 2,
+              width: 52,
+              height: 52,
+              borderRadius: 3,
               backgroundColor: colorMap[color].bg,
+              border: `1px solid ${colorMap[color].border}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Icon sx={{ color: colorMap[color].icon, fontSize: 28 }} />
+            <Icon sx={{ color: colorMap[color].icon, fontSize: 26 }} />
           </Box>
         </Box>
       </CardContent>
@@ -140,8 +193,6 @@ export default function BillingDashboardPage() {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        // In a real implementation, these would be actual API calls
-        // For now, using mock data
         const mockData: DashboardData = {
           todayRevenue: 1250.0,
           outstandingAmount: 8750.5,
@@ -229,7 +280,6 @@ export default function BillingDashboardPage() {
           ],
         };
 
-        // Simulate API delay
         await new Promise((resolve) => setTimeout(resolve, 500));
         setData(mockData);
       } catch (err) {
@@ -248,6 +298,12 @@ export default function BillingDashboardPage() {
       startIcon={<AddIcon />}
       component={Link}
       href="/admin/billing/invoices/new"
+      sx={{
+        backgroundColor: "#0D7377",
+        "&:hover": {
+          backgroundColor: "#0A5A5D",
+        },
+      }}
     >
       Create Invoice
     </Button>
@@ -267,11 +323,10 @@ export default function BillingDashboardPage() {
         </Typography>
       )}
 
-      {/* KPI Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           {loading ? (
-            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 4 }} />
           ) : (
             <KPICard
               title="Today's Revenue"
@@ -285,7 +340,7 @@ export default function BillingDashboardPage() {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           {loading ? (
-            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 4 }} />
           ) : (
             <KPICard
               title="Outstanding"
@@ -298,7 +353,7 @@ export default function BillingDashboardPage() {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           {loading ? (
-            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 4 }} />
           ) : (
             <KPICard
               title="Overdue"
@@ -312,23 +367,22 @@ export default function BillingDashboardPage() {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           {loading ? (
-            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 4 }} />
           ) : (
             <KPICard
               title="Today's Payments"
               value={formatCurrency(data?.todayPayments || 0)}
               subtitle="Payments received today"
-              icon={TrendingUpIcon}
+              icon={PaymentIcon}
               color="info"
             />
           )}
         </Grid>
       </Grid>
 
-      {/* Revenue Chart */}
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 4 }}>
         {loading ? (
-          <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 2 }} />
+          <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 4 }} />
         ) : (
           <RevenueChart
             data={data?.revenueReport.breakdown || []}
@@ -338,61 +392,103 @@ export default function BillingDashboardPage() {
         )}
       </Box>
 
-      {/* Outstanding Invoices & Recent Payments */}
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
+          <Card sx={{ borderRadius: 4, height: "100%" }}>
+            <CardContent sx={{ p: 3 }}>
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  mb: 2,
+                  mb: 3,
                 }}
               >
-                <Typography variant="h6" fontWeight={600}>
-                  Outstanding Invoices
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Avatar
+                    sx={{
+                      bgcolor: "rgba(217, 119, 6, 0.1)",
+                      color: "#D97706",
+                      width: 40,
+                      height: 40,
+                    }}
+                  >
+                    <ReceiptIcon fontSize="small" />
+                  </Avatar>
+                  <Typography variant="h6" fontWeight={700} color="#1C1917">
+                    Outstanding Invoices
+                  </Typography>
+                </Box>
                 <Button
                   size="small"
                   component={Link}
                   href="/admin/billing/invoices?status=SENT"
+                  sx={{
+                    color: "#0D7377",
+                    fontWeight: 600,
+                    "&:hover": {
+                      backgroundColor: "rgba(13, 115, 119, 0.08)",
+                    },
+                  }}
                 >
                   View All
                 </Button>
               </Box>
               {loading ? (
-                <Skeleton variant="rectangular" height={200} />
+                <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
               ) : (
-                <List>
+                <List sx={{ p: 0 }}>
                   {data?.outstandingInvoices.slice(0, 5).map((invoice, index) => (
                     <Box key={invoice.id}>
                       <ListItem
-                        sx={{ px: 0 }}
+                        sx={{
+                          px: 0,
+                          py: 2,
+                          borderRadius: 2,
+                          transition: "background-color 0.15s ease",
+                          "&:hover": {
+                            backgroundColor: "#FAFAF9",
+                          },
+                        }}
                         secondaryAction={
-                          <Typography variant="body2" fontWeight={600}>
+                          <Typography variant="body2" fontWeight={700} color="#1C1917">
                             {formatCurrency(invoice.balanceDue)}
                           </Typography>
                         }
                       >
                         <ListItemText
                           primary={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Typography variant="body2" fontWeight={600}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.5 }}>
+                              <Typography variant="body2" fontWeight={600} color="#1C1917">
                                 {invoice.invoiceNumber}
                               </Typography>
                               <InvoiceStatusBadge status={invoice.status} size="small" />
                             </Box>
                           }
                           secondary={
-                            <Typography variant="caption" color="text.secondary">
-                              {invoice.patient.name} • Due {formatDate(invoice.dueDate)}
-                            </Typography>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography variant="caption" color="#78716C">
+                                {invoice.patient.name}
+                              </Typography>
+                              <Box
+                                component="span"
+                                sx={{
+                                  width: 4,
+                                  height: 4,
+                                  borderRadius: "50%",
+                                  backgroundColor: "#D6D3D1",
+                                }}
+                              />
+                              <Typography variant="caption" color="#A8A29E">
+                                Due {formatDate(invoice.dueDate)}
+                              </Typography>
+                            </Box>
                           }
                         />
                       </ListItem>
-                      {index < (data?.outstandingInvoices.length || 0) - 1 && <Divider />}
+                      {index < (data?.outstandingInvoices.length || 0) - 1 && (
+                        <Divider sx={{ borderColor: "#F5F5F4" }} />
+                      )}
                     </Box>
                   ))}
                 </List>
@@ -402,40 +498,80 @@ export default function BillingDashboardPage() {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Recent Payments
-              </Typography>
+          <Card sx={{ borderRadius: 4, height: "100%" }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+                <Avatar
+                  sx={{
+                    bgcolor: "rgba(5, 150, 105, 0.1)",
+                    color: "#059669",
+                    width: 40,
+                    height: 40,
+                  }}
+                >
+                  <PaymentIcon fontSize="small" />
+                </Avatar>
+                <Typography variant="h6" fontWeight={700} color="#1C1917">
+                  Recent Payments
+                </Typography>
+              </Box>
               {loading ? (
-                <Skeleton variant="rectangular" height={200} />
+                <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
               ) : (
-                <List>
+                <List sx={{ p: 0 }}>
                   {data?.recentPayments.map((payment, index) => (
                     <Box key={payment.id}>
                       <ListItem
-                        sx={{ px: 0 }}
+                        sx={{
+                          px: 0,
+                          py: 2,
+                          borderRadius: 2,
+                          transition: "background-color 0.15s ease",
+                          "&:hover": {
+                            backgroundColor: "#FAFAF9",
+                          },
+                        }}
                         secondaryAction={
-                          <Typography variant="body2" fontWeight={600} color="success.main">
-                            +{formatCurrency(payment.amount)}
-                          </Typography>
+                          <Box sx={{ textAlign: "right" }}>
+                            <Typography variant="body2" fontWeight={700} color="#059669">
+                              +{formatCurrency(payment.amount)}
+                            </Typography>
+                            <Typography variant="caption" color="#A8A29E">
+                              {formatDate(payment.createdAt)}
+                            </Typography>
+                          </Box>
                         }
                       >
                         <ListItemText
                           primary={
-                            <Typography variant="body2" fontWeight={600}>
+                            <Typography variant="body2" fontWeight={600} color="#1C1917">
                               {payment.invoiceNumber}
                             </Typography>
                           }
                           secondary={
-                            <Typography variant="caption" color="text.secondary">
-                              {payment.patientName} • {payment.method.replace("_", " ")} •{" "}
-                              {formatDate(payment.createdAt)}
-                            </Typography>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography variant="caption" color="#78716C">
+                                {payment.patientName}
+                              </Typography>
+                              <Box
+                                component="span"
+                                sx={{
+                                  width: 4,
+                                  height: 4,
+                                  borderRadius: "50%",
+                                  backgroundColor: "#D6D3D1",
+                                }}
+                              />
+                              <Typography variant="caption" color="#A8A29E">
+                                {payment.method.replace("_", " ")}
+                              </Typography>
+                            </Box>
                           }
                         />
                       </ListItem>
-                      {index < (data?.recentPayments.length || 0) - 1 && <Divider />}
+                      {index < (data?.recentPayments.length || 0) - 1 && (
+                        <Divider sx={{ borderColor: "#F5F5F4" }} />
+                      )}
                     </Box>
                   ))}
                 </List>

@@ -16,8 +16,8 @@ import PersonIcon from "@mui/icons-material/Person";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import WarningIcon from "@mui/icons-material/Warning";
-import { apiJson, AuthError } from "../../../../lib/api";
-import { VaccinationBadge } from "../../../../components/client/VaccinationBadge";
+import { apiJson, AuthError } from "../../../../../lib/api";
+import { VaccinationBadge } from "../../../../../components/client/VaccinationBadge";
 
 interface Vaccination {
   id: string;

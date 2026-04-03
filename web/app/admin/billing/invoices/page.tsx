@@ -19,6 +19,16 @@ import {
   IconButton,
   Tooltip,
   Pagination,
+  Card,
+  CardContent,
+  Avatar,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -27,13 +37,14 @@ import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
 import PaymentIcon from "@mui/icons-material/Payment";
 import WarningIcon from "@mui/icons-material/Warning";
+import SearchIcon from "@mui/icons-material/Search";
+import ReceiptIcon from "@mui/icons-material/Receipt";
 import { format } from "date-fns";
 import { apiJson, AuthError } from "../../../../lib/api";
 import type {
   Invoice,
   InvoiceStatus,
   InvoiceListResponse,
-  InvoiceFilters,
 } from "../../../../lib/billing/types";
 import InvoiceStatusBadge from "../../../../components/billing/InvoiceStatusBadge";
 import RecordPaymentModal from "../../../../components/billing/RecordPaymentModal";
@@ -221,6 +232,15 @@ export default function InvoicesListPage() {
         startIcon={<FileDownloadIcon />}
         onClick={() => exportToCSV(invoices)}
         disabled={invoices.length === 0 || loading}
+        sx={{
+          borderColor: "#E7E5E4",
+          color: "#57534E",
+          fontWeight: 600,
+          "&:hover": {
+            borderColor: "#D6D3D1",
+            backgroundColor: "#FAFAF9",
+          },
+        }}
       >
         Export CSV
       </Button>
@@ -229,6 +249,13 @@ export default function InvoicesListPage() {
         startIcon={<AddIcon />}
         component={Link}
         href="/admin/billing/invoices/new"
+        sx={{
+          backgroundColor: "#0D7377",
+          fontWeight: 600,
+          "&:hover": {
+            backgroundColor: "#0A5A5D",
+          },
+        }}
       >
         Create Invoice
       </Button>
@@ -243,101 +270,151 @@ export default function InvoicesListPage() {
         actions={actions}
       />
 
-      <Box sx={{ mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Search patient or owner"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Search..."
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={status}
-                label="Status"
+      <Card
+        sx={{
+          mb: 3,
+          borderRadius: 4,
+          border: "1px solid #E7E5E4",
+        }}
+      >
+        <CardContent sx={{ p: 3 }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Search patient or owner"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="Search..."
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ color: "#A8A29E", mr: 1, fontSize: 20 }} />,
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={status}
+                  label="Status"
+                  onChange={(e) => {
+                    setStatus(e.target.value as InvoiceStatus | "");
+                    setPage(1);
+                  }}
+                >
+                  {statusOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <TextField
+                fullWidth
+                size="small"
+                label="From Date"
+                type="date"
+                value={startDate}
                 onChange={(e) => {
-                  setStatus(e.target.value as InvoiceStatus | "");
+                  setStartDate(e.target.value);
                   setPage(1);
                 }}
-              >
-                {statusOptions.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <TextField
-              fullWidth
-              size="small"
-              label="From Date"
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setPage(1);
-              }}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <TextField
-              fullWidth
-              size="small"
-              label="To Date"
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setPage(1);
-              }}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <ToggleButtonGroup
-              value={overdueOnly}
-              exclusive
-              onChange={(_, value) => {
-                setOverdueOnly(value);
-                setPage(1);
-              }}
-              size="small"
-              fullWidth
-            >
-              <ToggleButton value={false} sx={{ flex: 1 }}>
-                All
-              </ToggleButton>
-              <ToggleButton
-                value={true}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <TextField
+                fullWidth
+                size="small"
+                label="To Date"
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setPage(1);
+                }}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <ToggleButtonGroup
+                value={overdueOnly}
+                exclusive
+                onChange={(_, value) => {
+                  setOverdueOnly(value);
+                  setPage(1);
+                }}
+                size="small"
+                fullWidth
                 sx={{
-                  flex: 1,
-                  color: overdueOnly ? "error.main" : "inherit",
+                  backgroundColor: "#F5F5F4",
+                  borderRadius: 2,
+                  p: 0.5,
                 }}
               >
-                <WarningIcon fontSize="small" sx={{ mr: 0.5 }} />
-                Overdue
-              </ToggleButton>
-            </ToggleButtonGroup>
+                <ToggleButton
+                  value={false}
+                  sx={{
+                    flex: 1,
+                    border: "none",
+                    borderRadius: 1.5,
+                    fontWeight: 600,
+                    fontSize: "0.8125rem",
+                    "&.Mui-selected": {
+                      backgroundColor: "#FFFFFF",
+                      color: "#1C1917",
+                      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                    },
+                  }}
+                >
+                  All
+                </ToggleButton>
+                <ToggleButton
+                  value={true}
+                  sx={{
+                    flex: 1,
+                    border: "none",
+                    borderRadius: 1.5,
+                    fontWeight: 600,
+                    fontSize: "0.8125rem",
+                    color: overdueOnly ? "#DC2626" : "#57534E",
+                    "&.Mui-selected": {
+                      backgroundColor: "rgba(220, 38, 38, 0.1)",
+                      color: "#DC2626",
+                    },
+                  }}
+                >
+                  <WarningIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  Overdue
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Grid>
+            <Grid item xs={12} sm={6} md={1}>
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={handleSearch}
+                sx={{
+                  borderColor: "#0D7377",
+                  color: "#0D7377",
+                  fontWeight: 600,
+                  "&:hover": {
+                    borderColor: "#0A5A5D",
+                    backgroundColor: "rgba(13, 115, 119, 0.04)",
+                  },
+                }}
+              >
+                Search
+              </Button>
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={6} md={1}>
-            <Button variant="outlined" fullWidth onClick={handleSearch}>
-              Search
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
+        </CardContent>
+      </Card>
 
-      {/* Content */}
       {loading ? (
         <TableSkeleton
           columns={7}
@@ -360,6 +437,12 @@ export default function InvoicesListPage() {
               startIcon={<AddIcon />}
               component={Link}
               href="/admin/billing/invoices/new"
+              sx={{
+                backgroundColor: "#0D7377",
+                "&:hover": {
+                  backgroundColor: "#0A5A5D",
+                },
+              }}
             >
               Create Invoice
             </Button>
@@ -367,233 +450,225 @@ export default function InvoicesListPage() {
         />
       ) : (
         <>
-          <Box sx={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid #e0e0e0" }}>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 16px",
-                      fontWeight: 600,
-                      color: "#666",
-                    }}
-                  >
-                    Invoice #
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 16px",
-                      fontWeight: 600,
-                      color: "#666",
-                    }}
-                  >
-                    Patient
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 16px",
-                      fontWeight: 600,
-                      color: "#666",
-                    }}
-                  >
-                    Owner
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 16px",
-                      fontWeight: 600,
-                      color: "#666",
-                    }}
-                  >
-                    Date
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "right",
-                      padding: "12px 16px",
-                      fontWeight: 600,
-                      color: "#666",
-                    }}
-                  >
-                    Total
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 16px",
-                      fontWeight: 600,
-                      color: "#666",
-                    }}
-                  >
-                    Status
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "center",
-                      padding: "12px 16px",
-                      fontWeight: 600,
-                      color: "#666",
-                    }}
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((invoice) => (
-                  <tr
-                    key={invoice.id}
-                    style={{
-                      borderBottom: "1px solid #f0f0f0",
-                      cursor: "pointer",
-                      transition: "background-color 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
-                    onClick={() =>
-                      router.push(`/admin/billing/invoices/${invoice.id}`)
-                    }
-                  >
-                    <td style={{ padding: "12px 16px" }}>
-                      <Typography variant="body2" fontWeight={600}>
-                        {invoice.invoiceNumber}
-                      </Typography>
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <Box>
-                        <Typography variant="body2">
-                          {invoice.patient.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {invoice.patient.species}
-                          {invoice.patient.breed && ` • ${invoice.patient.breed}`}
-                        </Typography>
-                      </Box>
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <Box>
-                        <Typography variant="body2">
-                          {invoice.owner.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {invoice.owner.email}
-                        </Typography>
-                      </Box>
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <Box>
-                        <Typography variant="body2">
-                          {format(new Date(invoice.issueDate), "MMM d, yyyy")}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Due: {format(new Date(invoice.dueDate), "MMM d, yyyy")}
-                        </Typography>
-                      </Box>
-                    </td>
-                    <td style={{ padding: "12px 16px", textAlign: "right" }}>
-                      <Box>
-                        <Typography variant="body2" fontWeight={600}>
-                          {formatCurrency(invoice.total)}
-                        </Typography>
-                        {invoice.balanceDue > 0 &&
-                          invoice.status !== "CANCELLED" && (
+          <Card
+            sx={{
+              borderRadius: 4,
+              border: "1px solid #E7E5E4",
+              overflow: "hidden",
+            }}
+          >
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#FAFAF9" }}>
+                    <TableCell sx={{ fontWeight: 700, color: "#57534E", fontSize: "0.75rem", letterSpacing: "0.025em", textTransform: "uppercase" }}>
+                      Invoice #
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#57534E", fontSize: "0.75rem", letterSpacing: "0.025em", textTransform: "uppercase" }}>
+                      Patient
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#57534E", fontSize: "0.75rem", letterSpacing: "0.025em", textTransform: "uppercase" }}>
+                      Owner
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#57534E", fontSize: "0.75rem", letterSpacing: "0.025em", textTransform: "uppercase" }}>
+                      Date
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, color: "#57534E", fontSize: "0.75rem", letterSpacing: "0.025em", textTransform: "uppercase" }}>
+                      Total
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#57534E", fontSize: "0.75rem", letterSpacing: "0.025em", textTransform: "uppercase" }}>
+                      Status
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: "#57534E", fontSize: "0.75rem", letterSpacing: "0.025em", textTransform: "uppercase" }}>
+                      Actions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {invoices.map((invoice) => (
+                    <TableRow
+                      key={invoice.id}
+                      hover
+                      onClick={() => router.push(`/admin/billing/invoices/${invoice.id}`)}
+                      sx={{
+                        cursor: "pointer",
+                        transition: "background-color 0.15s ease",
+                        "&:hover": {
+                          backgroundColor: "#FAFAF9",
+                        },
+                      }}
+                    >
+                      <TableCell>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <Avatar
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              bgcolor: "rgba(13, 115, 119, 0.1)",
+                              color: "#0D7377",
+                              fontSize: "0.875rem",
+                              fontWeight: 600,
+                            }}
+                          >
+                            <ReceiptIcon fontSize="small" />
+                          </Avatar>
+                          <Typography variant="body2" fontWeight={600} color="#1C1917">
+                            {invoice.invoiceNumber}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography variant="body2" fontWeight={500} color="#1C1917">
+                            {invoice.patient.name}
+                          </Typography>
+                          <Typography variant="caption" color="#78716C">
+                            {invoice.patient.species}
+                            {invoice.patient.breed && ` • ${invoice.patient.breed}`}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography variant="body2" fontWeight={500} color="#1C1917">
+                            {invoice.owner.name}
+                          </Typography>
+                          <Typography variant="caption" color="#78716C">
+                            {invoice.owner.email}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography variant="body2" color="#1C1917">
+                            {format(new Date(invoice.issueDate), "MMM d, yyyy")}
+                          </Typography>
+                          <Typography variant="caption" color="#A8A29E">
+                            Due: {format(new Date(invoice.dueDate), "MMM d, yyyy")}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Box>
+                          <Typography variant="body2" fontWeight={600} color="#1C1917">
+                            {formatCurrency(invoice.total)}
+                          </Typography>
+                          {invoice.balanceDue > 0 && invoice.status !== "CANCELLED" && (
                             <Chip
                               label={`Due: ${formatCurrency(invoice.balanceDue)}`}
                               size="small"
-                              color="warning"
-                              variant="outlined"
-                              sx={{ mt: 0.5 }}
+                              sx={{
+                                mt: 0.5,
+                                backgroundColor: "rgba(217, 119, 6, 0.1)",
+                                color: "#D97706",
+                                fontWeight: 600,
+                                fontSize: "0.6875rem",
+                              }}
                             />
                           )}
-                      </Box>
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <InvoiceStatusBadge status={invoice.status} />
-                    </td>
-                    <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "center",
-                          gap: 0.5,
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Tooltip title="View">
-                          <IconButton
-                            size="small"
-                            onClick={() =>
-                              router.push(`/admin/billing/invoices/${invoice.id}`)
-                            }
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        {invoice.status === "DRAFT" && (
-                          <Tooltip title="Edit">
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <InvoiceStatusBadge status={invoice.status} />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            gap: 0.5,
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Tooltip title="View">
                             <IconButton
                               size="small"
-                              onClick={() =>
-                                router.push(
-                                  `/admin/billing/invoices/${invoice.id}/edit`
-                                )
-                              }
+                              onClick={() => router.push(`/admin/billing/invoices/${invoice.id}`)}
+                              sx={{
+                                color: "#57534E",
+                                "&:hover": {
+                                  backgroundColor: "rgba(13, 115, 119, 0.08)",
+                                  color: "#0D7377",
+                                },
+                              }}
                             >
-                              <EditIcon fontSize="small" />
+                              <VisibilityIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                        )}
-                        {invoice.status === "DRAFT" && (
-                          <Tooltip title="Send to Client">
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => handleSendInvoice(invoice)}
-                              disabled={processingAction}
-                            >
-                              <SendIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {(invoice.status === "SENT" ||
-                          invoice.status === "PARTIAL" ||
-                          invoice.status === "OVERDUE") && (
-                          <Tooltip title="Record Payment">
-                            <IconButton
-                              size="small"
-                              color="success"
-                              onClick={() => handleRecordPayment(invoice)}
-                              disabled={processingAction}
-                            >
-                              <PaymentIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Box>
+                          {invoice.status === "DRAFT" && (
+                            <Tooltip title="Edit">
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  router.push(`/admin/billing/invoices/${invoice.id}/edit`)
+                                }
+                                sx={{
+                                  color: "#57534E",
+                                  "&:hover": {
+                                    backgroundColor: "rgba(13, 115, 119, 0.08)",
+                                    color: "#0D7377",
+                                  },
+                                }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {invoice.status === "DRAFT" && (
+                            <Tooltip title="Send to Client">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleSendInvoice(invoice)}
+                                disabled={processingAction}
+                                sx={{
+                                  color: "#0D7377",
+                                  "&:hover": {
+                                    backgroundColor: "rgba(13, 115, 119, 0.12)",
+                                  },
+                                }}
+                              >
+                                <SendIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {(invoice.status === "SENT" ||
+                            invoice.status === "PARTIAL" ||
+                            invoice.status === "OVERDUE") && (
+                            <Tooltip title="Record Payment">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleRecordPayment(invoice)}
+                                disabled={processingAction}
+                                sx={{
+                                  color: "#059669",
+                                  "&:hover": {
+                                    backgroundColor: "rgba(5, 150, 105, 0.12)",
+                                  },
+                                }}
+                              >
+                                <PaymentIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
 
           <Box
             sx={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              mt: 2,
+              mt: 3,
+              px: 1,
             }}
           >
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="#78716C" fontWeight={500}>
               Showing {invoices.length} of {total} invoices
             </Typography>
             <Pagination
@@ -602,12 +677,21 @@ export default function InvoicesListPage() {
               onChange={handlePageChange}
               color="primary"
               disabled={loading}
+              sx={{
+                "& .MuiPaginationItem-root": {
+                  borderRadius: 2,
+                  fontWeight: 600,
+                },
+                "& .Mui-selected": {
+                  backgroundColor: "#0D7377",
+                  color: "#FFFFFF",
+                },
+              }}
             />
           </Box>
         </>
       )}
 
-      {/* Payment Modal */}
       <RecordPaymentModal
         open={paymentModalOpen}
         invoice={selectedInvoice}

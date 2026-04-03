@@ -60,7 +60,14 @@ export default function RevenueChart({
   };
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper
+      sx={{
+        p: 3,
+        borderRadius: 4,
+        border: "1px solid #E7E5E4",
+        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03)",
+      }}
+    >
       <Box
         sx={{
           display: "flex",
@@ -69,14 +76,38 @@ export default function RevenueChart({
           mb: 3,
         }}
       >
-        <Typography variant="h6" fontWeight={600}>
-          Revenue Overview
-        </Typography>
+        <Box>
+          <Typography variant="h6" fontWeight={700} color="#1C1917">
+            Revenue Overview
+          </Typography>
+          <Typography variant="body2" color="#78716C" sx={{ mt: 0.5 }}>
+            Track your clinic's financial performance
+          </Typography>
+        </Box>
         <ToggleButtonGroup
           value={groupBy}
           exclusive
           onChange={handleGroupByChange}
           size="small"
+          sx={{
+            backgroundColor: "#F5F5F4",
+            p: 0.5,
+            borderRadius: 2,
+            "& .MuiToggleButton-root": {
+              border: "none",
+              borderRadius: 1.5,
+              px: 2,
+              py: 0.75,
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              color: "#57534E",
+              "&.Mui-selected": {
+                backgroundColor: "#FFFFFF",
+                color: "#0D7377",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+              },
+            },
+          }}
         >
           <ToggleButton value="day">Day</ToggleButton>
           <ToggleButton value="week">Week</ToggleButton>
@@ -84,49 +115,62 @@ export default function RevenueChart({
         </ToggleButtonGroup>
       </Box>
 
-      <Box sx={{ height: 300 }}>
+      <Box sx={{ height: 320 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
             margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="#E7E5E4"
+            />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 12, fill: "#78716C" }}
               tickLine={false}
-              axisLine={{ stroke: "rgba(0,0,0,0.1)" }}
+              axisLine={{ stroke: "#E7E5E4" }}
             />
             <YAxis
               tickFormatter={formatCurrency}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 12, fill: "#78716C" }}
               tickLine={false}
               axisLine={false}
               width={60}
             />
             <Tooltip
-              formatter={(value) =>
-                formatCurrency(Number(value) || 0)
-              }
+              formatter={(value) => formatCurrency(Number(value) || 0)}
               contentStyle={{
-                borderRadius: 8,
-                border: "none",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                borderRadius: 12,
+                border: "1px solid #E7E5E4",
+                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+                backgroundColor: "#FFFFFF",
+              }}
+              labelStyle={{
+                color: "#1C1917",
+                fontWeight: 600,
+                marginBottom: 8,
               }}
             />
-            <Legend />
+            <Legend
+              wrapperStyle={{
+                paddingTop: 20,
+              }}
+              iconType="circle"
+            />
             <Bar
               dataKey="collected"
               name="Collected"
               stackId="a"
-              fill="#2E7D32"
+              fill="#059669"
               radius={[0, 0, 4, 4]}
             />
             <Bar
               dataKey="outstanding"
               name="Outstanding"
               stackId="a"
-              fill="#ED6C02"
+              fill="#D97706"
               radius={[4, 4, 0, 0]}
             />
           </BarChart>
