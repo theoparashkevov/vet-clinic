@@ -16,6 +16,7 @@ import { RemindersModule } from './reminders/reminders.module';
 import { SMSModule } from './sms/sms.module';
 import { LabsModule } from './labs/labs.module';
 import { ImportModule } from './import/import.module';
+import { InventoryModule } from './inventory/inventory.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ImportModule } from './import/import.module';
     SMSModule,
     LabsModule,
     ImportModule,
+    InventoryModule,
   ],
   controllers: [HealthController],
 })
