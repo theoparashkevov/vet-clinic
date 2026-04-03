@@ -137,38 +137,45 @@ model Task {
 }
 
 model Prescription {
-  id               String   @id @default(cuid())
-  patient          Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id               String                @id @default(cuid())
+  patient          Patient               @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId        String
   medication       String
   dosage           String
   frequency        String
   duration         String
   instructions     String?
-  prescribedAt     DateTime @default(now())
+  prescribedAt     DateTime              @default(now())
   expiresAt        DateTime
-  refillsTotal     Int      @default(0)
-  refillsRemaining Int      @default(0)
-  isControlled     Boolean  @default(false)
+  refillsTotal     Int                   @default(0)
+  refillsRemaining Int                   @default(0)
+  isControlled     Boolean               @default(false)
   veterinarian     String
   notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  // Inventory relation
+  transactions     InventoryTransaction[]
+  refillRequests   RefillRequest[]
 
   @@index([patientId])
   @@index([prescribedAt])
 }
 
 model MedicationTemplate {
-  id           String   @id @default(cuid())
+  id           String          @id @default(cuid())
   name         String
   category     String
   dosage       String
   frequency    String
   duration     String
   instructions String?
-  isCommon     Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  isCommon     Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+
+  // Inventory relation
+  inventoryItem InventoryItem?
 
   @@index([category])
   @@index([isCommon])
@@ -348,28 +355,123 @@ model LabResultValue {
   id              String      @id @default(cuid())
   labResult       LabResult   @relation(fields: [labResultId], references: [id], onDelete: Cascade)
   labResultId     String
-  
+
   test            LabTest     @relation(fields: [testId], references: [id])
   testId          String
-  
+
   // The actual value
   value           Float
   displayValue    String      // Formatted for display
-  
+
   // Status flags (calculated automatically)
   status          String      @default("normal") // "normal", "low", "high", "critical_low", "critical_high"
-  
+
   // Reference range used (based on species)
   refRangeMin     Float?
   refRangeMax     Float?
-  
+
   // Previous value for comparison
   previousValue   Float?
   trend           String?     // "up", "down", "stable" - calculated from previous
-  
+
   notes           String?
-  
+
   @@index([labResultId])
   @@index([testId])
   @@index([status])
+}
+
+// ── Client Portal ────────────────────────────────────────────────────────────
+
+model ClientPortalUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  phone     String?
+  ownerId   String   @unique
+  owner     Owner    @relation(fields: [ownerId], references: [id])
+  password  String   // hashed
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  lastLogin DateTime?
+
+  @@index([ownerId])
+}
+
+model RefillRequest {
+  id              String       @id @default(cuid())
+  prescriptionId  String
+  prescription    Prescription @relation(fields: [prescriptionId], references: [id])
+  clientId        String       // ClientPortalUser id
+  status          String       @default("pending") // pending, approved, denied
+  requestedAt     DateTime     @default(now())
+  respondedAt     DateTime?
+  notes           String?
+  respondedBy     String?      // Staff user who responded
+
+  @@index([prescriptionId])
+  @@index([clientId])
+  @@index([status])
+}
+
+// ── Inventory Management ─────────────────────────────────────────────────────
+
+model InventoryItem {
+  id              String   @id @default(cuid())
+  name            String
+  category        String   // VACCINE, MEDICATION, SUPPLY, FOOD, EQUIPMENT
+  sku             String?  @unique
+  description     String?
+  
+  // Stock tracking
+  quantity        Int      @default(0)
+  minQuantity     Int      @default(10)
+  unit            String   // vial, tablet, bottle, ml
+  
+  // Expiration
+  expirationDate  DateTime?
+  lotNumber       String?
+  
+  // Supplier info
+  supplier        String?
+  supplierSku     String?
+  costPerUnit     Float?
+  
+  // Link to medication template (optional)
+  medicationTemplateId String? @unique
+  medicationTemplate   MedicationTemplate? @relation(fields: [medicationTemplateId], references: [id])
+  
+  // Tracking
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  transactions    InventoryTransaction[]
+  
+  @@index([category])
+  @@index([quantity])
+  @@index([expirationDate])
+}
+
+model InventoryTransaction {
+  id              String   @id @default(cuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  
+  type            String   // RECEIVED, DISPENSED, ADJUSTED, EXPIRED, RETURNED
+  quantity        Int              // positive for received, negative for dispensed
+  
+  // Context
+  prescriptionId  String?  // if dispensed via prescription
+  prescription    Prescription? @relation(fields: [prescriptionId], references: [id])
+  
+  notes           String?
+  performedById   String   // staff user
+  performedBy     User     @relation(fields: [performedById], references: [id])
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([inventoryItemId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([prescriptionId])
 }

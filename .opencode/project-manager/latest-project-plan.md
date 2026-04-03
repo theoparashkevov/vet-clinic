@@ -1,172 +1,312 @@
 ---
-title: "Latest Project Plan"
+title: "Vet Clinic Platform - Next Phase Project Plan"
 project: "Vet Clinic Platform"
-version: "1.4"
-status: "Complete"
+version: "2.0"
+status: "In Progress"
 owner: "teo"
 stakeholders:
   - "teo"
-last_updated: "2026-03-30T13:00:00Z"
+  - "veterinary-doctor"
+last_updated: "2026-03-30T14:00:00Z"
 ---
 
-# Executive Summary
+# Goal
 
-The Vet Clinic Platform is now **FEATURE COMPLETE** as a comprehensive veterinary clinic management system. All planned clinical and administrative features have been implemented and tested.
+Transform the feature-complete vet clinic MVP into a production-ready, maintainable system with proper CI/CD, testing, documentation, and critical missing features.
 
-## ✅ All Features Complete
-
-### Clinical Features (Phases 1-6)
-- ✅ **Prescription Management** - Drug interaction checking, 60+ templates, print-ready
-- ✅ **Note Templates** - 9 templates with placeholder replacement
-- ✅ **Photo Upload & Gallery** - Clinical documentation with categories
-- ✅ **Lab Results Management** - 40+ tests, reference ranges, trend tracking
-- ✅ **Follow-up Reminders** - Dashboard with SMS integration
-- ✅ **Appointment Workflow** - Full status tracking (scheduled → completed)
-- ✅ **SMS Notifications** - Twilio integration with console fallback
-- ✅ **Patient Alerts** - Critical allergy warnings
-- ✅ **Vaccination Status** - Traffic light indicators
-- ✅ **Weight History** - Trend charts with alerts
-
-### Administration Panel (Phase 6)
-- ✅ **Admin Dashboard** - Overview with stats cards
-- ✅ **Lab Panels Management** - Full CRUD for panels and tests
-- ✅ **Vaccination Types** - Manage vaccine schedules
-- ✅ **Medication Templates** - Prescription template management
-- ✅ **Note Templates** - Medical record templates
-- ✅ **User Management** - Doctor/staff management
-- ✅ **Clinic Settings** - Configuration page
+**Current Reality Check:**
+- ✅ Features are complete (15+ models, 20 controllers, 16 pages)
+- ❌ Documentation is outdated (says features are "not implemented")
+- ❌ No CI/CD pipeline (risky deployments)
+- ❌ No automated testing (Playwright just added, needs verification)
+- ❌ No production deployment config
+- ❌ Client portal incomplete
+- ❌ No inventory tracking
 
 ---
 
-# Build Status
+# Now / Next / Later
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| API | ✅ Compiles | TypeScript build successful |
-| Web | ✅ Compiles | All 16 pages generated |
-| Database | ✅ Seeded | Demo data with examples |
+## Now (This Week)
+- [ ] **P0:** Update documentation to reflect reality (features are DONE)
+- [ ] **P0:** Set up CI/CD pipeline with GitHub Actions
+- [ ] **P0:** Verify Playwright E2E tests pass and add to CI
+- [ ] **P0:** Create production Docker Compose setup
 
-**New Feature: CSV Import (March 30, 2026)**
+## Next (Weeks 2-4)
+- [ ] **P1:** Complete Client Portal (pet owner access)
+- [ ] **P1:** Add Inventory Management module
+- [ ] **P1:** Implement error boundaries and request logging
+- [ ] **P1:** Add API pagination where missing
 
-Bulk upload clinic data via CSV files:
-- ✅ Lab Panels - Import with category, description, species, common flag
-- ✅ Lab Tests - Import with full reference ranges (dog/cat), critical values
-- ✅ Medication Templates - Import with dosages, frequencies, instructions
-- ✅ Note Templates - Import with placeholder support ({{patientName}}, etc.)
-- ✅ Template downloads for each data type
-- ✅ Step-by-step wizard: Upload → Preview → Import
-- ✅ Validation with clear error messages
-- ✅ Updates existing records by name
-
-**Admin Panel Beautification (March 30, 2026):**
-1. ✅ Dark themed sidebar header (`#1f2937`) with logo and "Back to Clinic" link
-2. ✅ Modern menu styling with rounded corners, hover effects, and tooltips
-3. ✅ Active item highlighting with primary color and shadow
-4. ✅ Simplified navigation labels (Vaccinations, Medications, Users, Settings)
-5. ✅ Menu descriptions in tooltips (Dashboard: "Overview & stats", etc.)
-6. ✅ Version footer showing "Vet Clinic v1.4 - Administration Panel"
-7. ✅ Access via user profile menu only (simplified from dual navigation)
-8. ✅ Light gray sidebar background (`#f8fafc`) for modern contrast
-
-**Recent Fixes (March 30, 2026):**
-1. Fixed TypeScript error in `web/app/admin/note-templates/page.tsx` (removed stray text)
-2. Added missing lab service methods: `updatePanel`, `deletePanel`, `updateTest`, `deleteTest`
-3. Added corresponding API endpoints for panel/test management
-4. Added `UpdateLabPanelDto` and `UpdateLabTestDto` DTOs
+## Later (Month 2+)
+- [ ] **P2:** Mobile/tablet responsiveness improvements
+- [ ] **P2:** Performance optimization (React Query, API consolidation)
+- [ ] **P2:** Business intelligence & reporting dashboard
+- [ ] **P2:** Multi-location support foundation
 
 ---
 
-# Architecture
+# Backlog
 
-## Backend (NestJS)
-```
-api/src/
-├── labs/
-│   ├── labs.controller.ts      # Lab panels, tests, results
-│   ├── labs.service.ts         # Business logic with CRUD
-│   └── dto.ts                  # Create/update DTOs
-├── import/
-│   ├── import.controller.ts    # CSV upload endpoints
-│   ├── csv-import.service.ts   # CSV processing logic
-│   └── import.module.ts        # Import module
-├── prescriptions/
-│   ├── prescriptions.controller.ts
-│   ├── prescriptions.service.ts
-│   └── medication-templates.controller.ts
-├── appointments/
-│   └── appointments.service.ts
-├── reminders/
-│   └── reminders.service.ts
-├── photos/
-│   └── photos.controller.ts
-└── medical-records/
-    └── note-templates.controller.ts
-```
+## P0 - Critical (Safety & Operations)
 
-## Frontend (Next.js)
-```
-web/app/
-├── admin/
-│   ├── layout.tsx              # Admin sidebar layout
-│   ├── page.tsx                # Dashboard overview
-│   ├── lab-panels/page.tsx     # Lab management
-│   ├── vaccinations/page.tsx   # Vaccine types
-│   ├── medications/page.tsx    # Medication templates
-│   ├── note-templates/page.tsx # Note templates
-│   ├── users/page.tsx          # User management
-│   └── settings/page.tsx       # Clinic settings
-├── patients/
-│   └── [id]/page.tsx           # Patient detail with all features
-├── appointments/
-│   └── page.tsx                # Calendar scheduling
-└── page.tsx                    # Home dashboard
+### 1. Update Documentation Drift
+**Priority:** P0 | **Estimate:** 4h | **Owner:** PM Agent  
+**Acceptance Criteria:**
+- [ ] Update `.opencode/veterinary-doctor/improvements.md` - mark features as complete
+- [ ] Update `.opencode/project-manager/improvement-roadmap.md` - remove completed items
+- [ ] Create feature documentation for staff training
+- [ ] Document what IS working vs what roadmap says
 
-web/components/
-├── CsvUploadDialog.tsx          # CSV import wizard
-├── PrescriptionDialog.tsx
-├── MedicalRecordDialog.tsx
-├── PhotoGalleryDialog.tsx
-├── LabResultsDialog.tsx
-├── RemindersPanel.tsx
-├── PatientAlertBanner.tsx
-├── VaccinationStatus.tsx
-└── WeightHistoryChart.tsx
+**Why:** Team thinks features don't exist. Risk of duplicate work.
+
+---
+
+### 2. CI/CD Pipeline Setup
+**Priority:** P0 | **Estimate:** 6h | **Owner:** devops-engineer  
+**Acceptance Criteria:**
+- [ ] GitHub Actions workflow for API build + type check
+- [ ] GitHub Actions workflow for Web build + type check
+- [ ] ESLint + Prettier checks in CI
+- [ ] Block PRs that fail checks
+- [ ] Status badges in README
+
+**Why:** Cannot safely deploy patient-facing software without automated checks.
+
+---
+
+### 3. Verify & Stabilize E2E Tests
+**Priority:** P0 | **Estimate:** 6h | **Owner:** qa-engineer  
+**Acceptance Criteria:**
+- [ ] Run `npm run test:e2e` - verify all tests pass
+- [ ] Fix any failing tests
+- [ ] Add E2E tests to CI pipeline
+- [ ] Generate HTML report artifact
+- [ ] Document test strategy
+
+**Files:**
+- `web/e2e/home.spec.ts`
+- `web/e2e/patients.spec.ts`
+- `web/e2e/navigation.spec.ts`
+- `web/e2e/auth.spec.ts`
+- `web/playwright.config.ts`
+
+---
+
+### 4. Production Deployment Configuration
+**Priority:** P0 | **Estimate:** 8h | **Owner:** devops-engineer  
+**Acceptance Criteria:**
+- [ ] Production-ready `docker-compose.prod.yml`
+- [ ] Environment-specific config (dev/staging/prod)
+- [ ] Database migration strategy for production
+- [ ] SSL/HTTPS configuration
+- [ ] Health checks and monitoring endpoints
+- [ ] Secrets management (.env.example complete)
+
+**Files:**
+- `docker-compose.prod.yml` (new)
+- `docker-compose.yml` (update for dev)
+- `api/.env.example` (verify complete)
+- `web/.env.example` (create)
+
+---
+
+## P1 - High Priority (Clinical Impact)
+
+### 5. Complete Client Portal
+**Priority:** P1 | **Estimate:** 3 days | **Owner:** frontend-developer + backend-developer  
+**Acceptance Criteria:**
+- [ ] Pet owners can view their pets' vaccine history
+- [ ] Pet owners can download vaccine certificates
+- [ ] Pet owners can request prescription refills
+- [ ] Pet owners can view upcoming appointments
+- [ ] Separate auth flow for pet owners (not staff login)
+- [ ] Mobile-friendly design
+
+**Files:**
+- `web/app/client/page.tsx` (enhance)
+- `api/src/client/` (create endpoints)
+- New: Client auth middleware
+
+**API Endpoints Needed:**
+- `GET /v1/client/pets` - List my pets
+- `GET /v1/client/pets/:id/vaccinations` - Vaccine history
+- `GET /v1/client/pets/:id/vaccine-certificate` - PDF certificate
+- `POST /v1/client/refill-requests` - Request refill
+- `GET /v1/client/appointments` - Upcoming appointments
+
+---
+
+### 6. Inventory Management Module
+**Priority:** P1 | **Estimate:** 4 days | **Owner:** backend-developer + frontend-developer  
+**Acceptance Criteria:**
+- [ ] Database schema for medications inventory
+- [ ] Track stock levels for all medications/vaccines
+- [ ] Low stock alerts (< 10 units)
+- [ ] Expiration date tracking with warnings (30 days before expiry)
+- [ ] Link dispensed prescriptions to inventory
+- [ ] Admin panel for inventory management
+- [ ] Usage reports
+
+**Files:**
+- `api/prisma/schema.prisma` (add Inventory model)
+- `api/src/inventory/` (new module)
+- `web/app/admin/inventory/page.tsx` (new)
+
+**Database Schema:**
+```prisma
+model InventoryItem {
+  id              String   @id @default(cuid())
+  name            String
+  category        String   // vaccine, medication, supply
+  sku             String?  @unique
+  quantity        Int      @default(0)
+  minQuantity     Int      @default(10)
+  unit            String   // vial, tablet, bottle
+  expirationDate  DateTime?
+  lotNumber       String?
+  supplier        String?
+  costPerUnit     Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
 ```
 
 ---
 
-# Database Schema
+### 7. Error Boundaries & Graceful Degradation
+**Priority:** P1 | **Estimate:** 1 day | **Owner:** frontend-developer  
+**Acceptance Criteria:**
+- [ ] React Error Boundaries around major page sections
+- [ ] Fallback UI when patient data fails to load
+- [ ] Graceful handling of API 500 errors
+- [ ] Retry mechanisms for failed requests
+- [ ] User-friendly error messages (not raw JSON)
 
-**Core Models:**
-- `Owner` → `Patient` → `Appointment`, `MedicalRecord`
-- `LabPanel` → `LabTest` → `LabResult` → `LabResultValue`
-- `Prescription` with refill tracking
-- `Reminder` with SMS notifications
-- `Vaccination` with schedules
-- `Photo` with categories
-
-**Admin Models:**
-- `MedicationTemplate` - Prescription templates
-- `NoteTemplate` - Medical record templates
-- `User` - Staff accounts with roles
+**Files:**
+- `web/components/ErrorBoundary.tsx` (new)
+- Update `web/app/layout.tsx` to wrap with ErrorBoundary
+- Update data fetching hooks with error handling
 
 ---
 
-# Quick Start
+### 8. API Request Logging
+**Priority:** P1 | **Estimate:** 4h | **Owner:** backend-developer  
+**Acceptance Criteria:**
+- [ ] Add Pino logger to API
+- [ ] Log all requests (method, path, user, timestamp)
+- [ ] Log errors with stack traces
+- [ ] Rotating log files
+- [ ] Exclude sensitive data from logs
 
-```bash
-# One-command startup
-./start.sh
+**Files:**
+- `api/src/logger/` (new module)
+- Update `api/src/main.ts` to use logging middleware
 
-# Or manually:
-cd api && npm run start:dev   # API on port 3000
-cd web && npm run dev          # Web on port 3001
-```
+---
 
-**Access Points:**
-- Main App: http://localhost:3001
-- API: http://localhost:3000/v1
-- Admin Panel: http://localhost:3001/admin
+### 9. API Pagination Audit
+**Priority:** P1 | **Estimate:** 1 day | **Owner:** backend-developer + frontend-developer  
+**Acceptance Criteria:**
+- [ ] Audit all list endpoints for pagination
+- [ ] Add pagination to endpoints missing it
+- [ ] Frontend uses pagination consistently
+- [ ] Test with large datasets (1000+ records)
+
+**Files to Check:**
+- `api/src/owners/owners.controller.ts`
+- `api/src/patients/patients.controller.ts`
+- `api/src/appointments/appointments.controller.ts`
+- `api/src/medical-records/`
+- `api/src/prescriptions/`
+
+---
+
+## P2 - Medium Priority (Quality of Life)
+
+### 10. Mobile/Tablet Responsiveness
+**Priority:** P2 | **Estimate:** 2 days | **Owner:** frontend-developer  
+**Acceptance Criteria:**
+- [ ] Appointment calendar usable on 10" tablets
+- [ ] Medical record dialog responsive
+- [ ] Weight chart resizes properly
+- [ ] Touch-friendly targets (min 44px)
+- [ ] Test on iPad and Android tablet
+
+**Files:**
+- `web/app/appointments/page.tsx` (calendar)
+- `web/components/MedicalRecordDialog.tsx`
+- `web/components/WeightHistoryChart.tsx`
+
+---
+
+### 11. Performance Optimization
+**Priority:** P2 | **Estimate:** 3 days | **Owner:** frontend-developer  
+**Acceptance Criteria:**
+- [ ] Implement React Query for caching
+- [ ] Consolidate patient detail API calls (currently 6+)
+- [ ] Add image thumbnails for faster loading
+- [ ] Lazy load heavy components
+- [ ] Lighthouse score > 90
+
+**Files:**
+- `web/lib/api.ts` (add React Query)
+- `api/src/patients/patients.controller.ts` (add `GET /v1/patients/:id/full`)
+- `web/components/PhotoGalleryDialog.tsx` (thumbnails)
+
+---
+
+### 12. Business Intelligence Dashboard
+**Priority:** P2 | **Estimate:** 3 days | **Owner:** frontend-developer + backend-developer  
+**Acceptance Criteria:**
+- [ ] Monthly appointment stats
+- [ ] Revenue tracking (if billing added)
+- [ ] Vaccination compliance reports
+- [ ] Patient demographics charts
+- [ ] Export reports to PDF/CSV
+
+**Files:**
+- `web/app/admin/reports/page.tsx` (new)
+- `api/src/reports/` (new module)
+
+---
+
+### 13. Multi-Location Foundation
+**Priority:** P2 | **Estimate:** 5 days | **Owner:** software-architect + backend-developer  
+**Acceptance Criteria:**
+- [ ] Database schema supports multiple clinics
+- [ ] Location filter on all queries
+- [ ] User-location association
+- [ ] Location switcher in UI
+- [ ] Data isolation between locations
+
+**Files:**
+- `api/prisma/schema.prisma` (add Location model)
+- Update all queries with location filter
+
+---
+
+# Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| Documentation remains outdated | High | High | PM Agent task P0 #1, daily check-ins |
+| CI/CD delays deployment | High | Medium | DevOps starts immediately, use GitHub Actions templates |
+| E2E tests flaky | Medium | Medium | QA Engineer to stabilize before CI integration |
+| Client Portal security issues | High | Medium | Security review, proper auth separation |
+| Inventory feature creep | Medium | Medium | Strict MVP scope (stock tracking only) |
+
+---
+
+# Decisions
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-03-30 | Prioritize documentation update over new features | Team unaware of existing capabilities |
+| 2026-03-30 | CI/CD before Client Portal | Safety first - can't deploy portal without tests |
+| 2026-03-30 | SQLite for dev, PostgreSQL for prod | Keep dev simple, prod robust |
+| 2026-03-30 | Inventory starts with medications only | Scope control - expand later |
 
 ---
 
@@ -174,51 +314,49 @@ cd web && npm run dev          # Web on port 3001
 
 | Date | Author | Summary |
 |------|--------|---------|
-| 2026-03-27 | PM Agent | Initial project plan with 32 tasks, 7 sprints |
-| 2026-03-27 | PM Agent | Completed Sprint A-D: UI modernization, scheduling, timeline |
-| 2026-03-29 | PM Agent | Completed Phase 1-3: Prescriptions, Note Templates, Photo Upload |
-| 2026-03-30 | PM Agent | Fixed TypeScript errors, added lab service methods, updated project plan |
-| 2026-03-30 | PM Agent | Beautified admin sidebar with dark header, modern menu styling, tooltips, and version footer |
-| 2026-03-30 | PM Agent | Improved Admin navigation - simplified to user menu only, Back to Clinic button in admin |
-| 2026-03-30 | PM Agent | Added CSV Import feature for bulk data upload (lab panels, tests, medications, note templates) |
-| 2026-03-30 | PM Agent | Commit: c0670c3 - feat: add CSV import and beautify admin panel |
-| 2026-03-30 | PM Agent | Phase 1 UX Improvements: loading skeletons, page animations, enhanced toast notifications, empty states |
-| 2026-03-30 | PM Agent | Commit: f4247bb - Phase 1 UX improvements complete |
-| 2026-03-30 | PM Agent | Integrated UX components: PageTransition wrapper, TableSkeleton, EmptyStates in all pages |
-| 2026-03-30 | PM Agent | Commit: b354031 - feat: integrate UX components into all pages, pushed to remote |
-| 2026-03-30 | PM Agent | Phase 2 Power User Features: keyboard shortcuts (Cmd+K, Cmd+N, Cmd+A) and Command Palette |
-| 2026-03-30 | PM Agent | Commit: 2d1958e - Phase 2 keyboard shortcuts and command palette complete, pushed to remote |
-| 2026-03-30 | PM Agent | Phase 3 Complete: Advanced Search, Bulk Actions, and Dark Mode |
-| 2026-03-30 | PM Agent | Commit: e7fa2b6 - Phase 3 features (Advanced Search, Bulk Actions, Dark Mode), pushed to remote |
-| 2026-03-30 | PM Agent | Enhanced PatientTimeline with period filters (last month/3m/6m/year/custom) and search functionality |
-| 2026-03-30 | PM Agent | Commit: ca2b3b8 - feat: enhanced PatientTimeline with period filters and search, pushed to remote |
+| 2026-03-30 | PM Agent | Created v2.0 project plan - addressing documentation drift, CI/CD, testing, and production readiness |
 
 ---
 
-# Next Steps
+# Delegation Summary
 
-The Vet Clinic Platform is now **COMPLETE**. All features have been implemented, tested, and verified.
+## Ready to Assign Now
 
-**Recommended Actions:**
-1. 🎉 **Celebrate** - The platform is feature complete!
-2. 📊 **Demo** - Showcase the full feature set to stakeholders
-3. 🚀 **Deploy** - Ready for production deployment
-4. 📝 **Documentation** - Update user guides for staff training
-5. 🔧 **Enhancements** - Consider future features (Viber bot, LLM integration)
+1. **devops-engineer**: CI/CD Pipeline (Task #2) + Production Docker (Task #4)
+2. **qa-engineer**: E2E Test Verification (Task #3)
+3. **PM Agent**: Documentation Update (Task #1) - I'll do this
 
-**Status: PHASE 1 UX COMPLETE** ✅
+## Next Wave (After P0 Complete)
 
-### Phase 1 UX Improvements Completed:
-- ✅ Loading skeletons with wave animation (TableSkeleton, CardSkeleton, etc.)
-- ✅ Page transitions with Framer Motion (fade + slide)
-- ✅ Enhanced toast notifications with stacking, progress bars, action buttons
-- ✅ 14 pre-built empty states with icons and CTAs
-- ✅ Integrated into all pages (patients, appointments, admin)
-- ✅ Smooth animations throughout the application
+4. **frontend-developer + backend-developer**: Client Portal (Task #5) + Inventory (Task #6)
+5. **frontend-developer**: Error Boundaries (Task #7) + Mobile (Task #10)
+6. **backend-developer**: Request Logging (Task #8) + Pagination (Task #9)
 
-### Build Status:
-- ✅ All 16 pages compiled successfully
-- ✅ No TypeScript errors
-- ✅ Pushed to remote: `b354031`
+## Future (P2)
 
-*Last updated: March 30, 2026*
+7. **software-architect**: Multi-location design (Task #13)
+8. **frontend-developer**: Performance optimization (Task #11)
+9. **frontend-developer + backend-developer**: BI Dashboard (Task #12)
+
+---
+
+# Immediate Action Items
+
+**Today:**
+1. ✅ Project plan created (this document)
+2. ⏳ Delegate CI/CD task to devops-engineer
+3. ⏳ Delegate E2E verification to qa-engineer
+4. ⏳ Start documentation update
+
+**This Week:**
+- Complete P0 tasks (documentation, CI/CD, testing, production config)
+- Verify all Playwright tests pass
+- Merge PRs with passing CI
+
+**Next Week:**
+- Start Client Portal (P1)
+- Begin Inventory Management (P1)
+
+---
+
+**Status:** P0 Tasks Ready for Delegation | **Next Review:** Daily standups

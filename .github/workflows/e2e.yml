@@ -1,0 +1,109 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'api/**'
+      - 'package*.json'
+      - '.github/workflows/e2e.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vet
+          POSTGRES_PASSWORD: vet
+          POSTGRES_DB: vet_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Setup test database
+        working-directory: ./api
+        env:
+          DATABASE_URL: postgresql://vet:vet@localhost:5432/vet_test?schema=public
+        run: |
+          npm run prisma:use:postgres
+          npm run prisma:generate
+          npx prisma migrate deploy
+          npm run prisma:seed
+
+      - name: Build Web
+        working-directory: ./web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3000
+        run: npm run build
+
+      - name: Start API server
+        working-directory: ./api
+        env:
+          NODE_ENV: production
+          PORT: 3000
+          DATABASE_URL: postgresql://vet:vet@localhost:5432/vet_test?schema=public
+          JWT_SECRET: test-secret-for-e2e
+          JWT_EXPIRES_IN: 8h
+          CORS_ORIGIN: http://localhost:3000
+        run: |
+          npm start &
+          npx wait-on http://localhost:3000/health --timeout 60000
+
+      - name: Start Web server
+        working-directory: ./web
+        env:
+          PORT: 3000
+        run: |
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 30
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-test-results
+          path: |
+            web/test-results/
+            web/playwright-report/
+          retention-days: 7
