@@ -22,11 +22,31 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import ReceiptIcon from "@mui/icons-material/Receipt";
 
 const DRAWER_WIDTH = 260;
 
-const menuItems = [
+interface MenuItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  description: string;
+  children?: { href: string; label: string; icon: React.ElementType }[];
+}
+
+const menuItems: MenuItem[] = [
   { href: "/admin", label: "Dashboard", icon: DashboardIcon, description: "Overview & stats" },
+  {
+    href: "/admin/billing",
+    label: "Billing",
+    icon: AttachMoneyIcon,
+    description: "Invoices & payments",
+    children: [
+      { href: "/admin/billing/dashboard", label: "Dashboard", icon: DashboardIcon },
+      { href: "/admin/billing/invoices", label: "Invoices", icon: ReceiptIcon },
+    ],
+  },
   { href: "/admin/lab-panels", label: "Lab Panels", icon: ScienceIcon, description: "Test panels & ranges" },
   { href: "/admin/vaccinations", label: "Vaccinations", icon: VaccinesIcon, description: "Vaccine types" },
   { href: "/admin/medications", label: "Medications", icon: MedicationIcon, description: "Prescription templates" },
@@ -119,53 +139,110 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {menuItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
             const IconComponent = item.icon;
-            
+            const hasChildren = item.children && item.children.length > 0;
+
             return (
-              <ListItem key={item.href} disablePadding sx={{ mb: 0.5 }}>
-                <Tooltip title={item.description} placement="right" arrow>
-                  <ListItemButton
-                    selected={isActive}
-                    onClick={() => router.push(item.href)}
-                    sx={{
-                      borderRadius: 2,
-                      py: 1.25,
-                      px: 2,
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        backgroundColor: "rgba(31, 111, 120, 0.08)",
-                      },
-                      "&.Mui-selected": {
-                        backgroundColor: "primary.main",
-                        color: "white",
-                        boxShadow: "0 2px 8px rgba(31, 111, 120, 0.25)",
-                        "&:hover": {
-                          backgroundColor: "primary.dark",
-                        },
-                      },
-                    }}
-                  >
-                    <ListItemIcon
+              <Box key={item.href}>
+                <ListItem disablePadding sx={{ mb: 0.5 }}>
+                  <Tooltip title={item.description} placement="right" arrow>
+                    <ListItemButton
+                      selected={isActive && !hasChildren}
+                      onClick={() => router.push(hasChildren ? item.children![0].href : item.href)}
                       sx={{
-                        minWidth: 36,
-                        color: isActive ? "white" : "text.secondary",
+                        borderRadius: 2,
+                        py: 1.25,
+                        px: 2,
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          backgroundColor: "rgba(31, 111, 120, 0.08)",
+                        },
+                        "&.Mui-selected": {
+                          backgroundColor: "primary.main",
+                          color: "white",
+                          boxShadow: "0 2px 8px rgba(31, 111, 120, 0.25)",
+                          "&:hover": {
+                            backgroundColor: "primary.dark",
+                          },
+                        },
                       }}
                     >
-                      <IconComponent sx={{ fontSize: 20 }} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Typography
-                          variant="body2"
-                          fontWeight={isActive ? 600 : 500}
-                          sx={{ color: isActive ? "white" : "text.primary" }}
-                        >
-                          {item.label}
-                        </Typography>
-                      }
-                    />
-                  </ListItemButton>
-                </Tooltip>
-              </ListItem>
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 36,
+                          color: isActive ? "white" : "text.secondary",
+                        }}
+                      >
+                        <IconComponent sx={{ fontSize: 20 }} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={
+                          <Typography
+                            variant="body2"
+                            fontWeight={isActive ? 600 : 500}
+                            sx={{ color: isActive ? "white" : "text.primary" }}
+                          >
+                            {item.label}
+                          </Typography>
+                        }
+                      />
+                    </ListItemButton>
+                  </Tooltip>
+                </ListItem>
+
+                {hasChildren && isActive && (
+                  <List sx={{ pl: 4, mb: 0.5 }}>
+                    {item.children!.map((child) => {
+                      const isChildActive = pathname === child.href;
+                      const ChildIcon = child.icon;
+                      return (
+                        <ListItem key={child.href} disablePadding sx={{ mb: 0.25 }}>
+                          <ListItemButton
+                            selected={isChildActive}
+                            onClick={() => router.push(child.href)}
+                            sx={{
+                              borderRadius: 2,
+                              py: 0.75,
+                              px: 2,
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                backgroundColor: "rgba(31, 111, 120, 0.08)",
+                              },
+                              "&.Mui-selected": {
+                                backgroundColor: "primary.main",
+                                color: "white",
+                                boxShadow: "0 2px 8px rgba(31, 111, 120, 0.25)",
+                                "&:hover": {
+                                  backgroundColor: "primary.dark",
+                                },
+                              },
+                            }}
+                          >
+                            <ListItemIcon
+                              sx={{
+                                minWidth: 28,
+                                color: isChildActive ? "white" : "text.secondary",
+                              }}
+                            >
+                              <ChildIcon sx={{ fontSize: 16 }} />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={isChildActive ? 600 : 500}
+                                  sx={{ color: isChildActive ? "white" : "text.primary" }}
+                                >
+                                  {child.label}
+                                </Typography>
+                              }
+                            />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                )}
+              </Box>
             );
           })}
         </List>
