@@ -17,6 +17,7 @@ import { SMSModule } from './sms/sms.module';
 import { LabsModule } from './labs/labs.module';
 import { ImportModule } from './import/import.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { InventoryModule } from './inventory/inventory.module';
     LabsModule,
     ImportModule,
     InventoryModule,
+    LoggerModule,
   ],
   controllers: [HealthController],
 })
