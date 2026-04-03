@@ -15,6 +15,7 @@ model Owner {
   patients     Patient[]
   appointments Appointment[]
   user         User?
+  invoices     Invoice[]
   createdAt    DateTime      @default(now())
 }
 
@@ -39,6 +40,7 @@ model Patient {
   photos            PatientPhoto[]
   followUpReminders FollowUpReminder[]
   labResults        LabResult[]
+  invoices          Invoice[]
   createdAt         DateTime           @default(now())
 }
 
@@ -57,6 +59,7 @@ model Appointment {
   medicalRecords MedicalRecord[]
   followUps      FollowUpReminder[]
   labResults     LabResult[]
+  invoice        Invoice?
   createdAt      DateTime           @default(now())
 }
 
@@ -84,6 +87,8 @@ model User {
   appointments Appointment[]
   owner        Owner?        @relation(fields: [ownerId], references: [id])
   ownerId      String?       @unique
+  invoices     Invoice[]
+  payments     Payment[]
 }
 
 model FollowUpReminder {
@@ -137,45 +142,38 @@ model Task {
 }
 
 model Prescription {
-  id               String                @id @default(cuid())
-  patient          Patient               @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  patient          Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId        String
   medication       String
   dosage           String
   frequency        String
   duration         String
   instructions     String?
-  prescribedAt     DateTime              @default(now())
+  prescribedAt     DateTime @default(now())
   expiresAt        DateTime
-  refillsTotal     Int                   @default(0)
-  refillsRemaining Int                   @default(0)
-  isControlled     Boolean               @default(false)
+  refillsTotal     Int      @default(0)
+  refillsRemaining Int      @default(0)
+  isControlled     Boolean  @default(false)
   veterinarian     String
   notes            String?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-
-  // Inventory relation
-  transactions     InventoryTransaction[]
-  refillRequests   RefillRequest[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([patientId])
   @@index([prescribedAt])
 }
 
 model MedicationTemplate {
-  id           String          @id @default(cuid())
+  id           String   @id @default(cuid())
   name         String
   category     String
   dosage       String
   frequency    String
   duration     String
   instructions String?
-  isCommon     Boolean         @default(false)
-  createdAt    DateTime        @default(now())
-
-  // Inventory relation
-  inventoryItem InventoryItem?
+  isCommon     Boolean  @default(false)
+  createdAt    DateTime @default(now())
 
   @@index([category])
   @@index([isCommon])
@@ -381,97 +379,107 @@ model LabResultValue {
   @@index([status])
 }
 
-// ── Client Portal ────────────────────────────────────────────────────────────
+// ── Billing & Invoicing ─────────────────────────────────────────────────────
+// Note: Using String instead of enums for SQLite compatibility
 
-model ClientPortalUser {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  phone     String?
-  ownerId   String   @unique
-  owner     Owner    @relation(fields: [ownerId], references: [id])
-  password  String   // hashed
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  lastLogin DateTime?
+model Invoice {
+  id              String        @id @default(cuid())
+  invoiceNumber   String        @unique
+
+  // Relations
+  appointmentId   String?       @unique
+  appointment     Appointment?  @relation(fields: [appointmentId], references: [id])
+  patientId       String
+  patient         Patient       @relation(fields: [patientId], references: [id])
+  ownerId         String
+  owner           Owner         @relation(fields: [ownerId], references: [id])
+
+  // Invoice details
+  issueDate       DateTime      @default(now())
+  dueDate         DateTime
+  status          String        @default("DRAFT") // DRAFT, SENT, PAID, PARTIAL, OVERDUE, CANCELLED, REFUNDED
+
+  // Totals
+  subtotal        Float
+  taxRate         Float         @default(0)
+  taxAmount       Float         @default(0)
+  total           Float
+  amountPaid      Float         @default(0)
+  balanceDue      Float
+
+  // Metadata
+  notes           String?
+  terms           String?
+
+  // Relations
+  items           InvoiceItem[]
+  payments        Payment[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  createdById     String
+  createdBy       User          @relation(fields: [createdById], references: [id])
 
   @@index([ownerId])
-}
-
-model RefillRequest {
-  id              String       @id @default(cuid())
-  prescriptionId  String
-  prescription    Prescription @relation(fields: [prescriptionId], references: [id])
-  clientId        String       // ClientPortalUser id
-  status          String       @default("pending") // pending, approved, denied
-  requestedAt     DateTime     @default(now())
-  respondedAt     DateTime?
-  notes           String?
-  respondedBy     String?      // Staff user who responded
-
-  @@index([prescriptionId])
-  @@index([clientId])
+  @@index([patientId])
   @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
 }
 
-// ── Inventory Management ─────────────────────────────────────────────────────
+model InvoiceItem {
+  id              String      @id @default(cuid())
+  invoiceId       String
+  invoice         Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-model InventoryItem {
-  id              String   @id @default(cuid())
-  name            String
-  category        String   // VACCINE, MEDICATION, SUPPLY, FOOD, EQUIPMENT
-  sku             String?  @unique
-  description     String?
-  
-  // Stock tracking
-  quantity        Int      @default(0)
-  minQuantity     Int      @default(10)
-  unit            String   // vial, tablet, bottle, ml
-  
-  // Expiration
-  expirationDate  DateTime?
-  lotNumber       String?
-  
-  // Supplier info
-  supplier        String?
-  supplierSku     String?
-  costPerUnit     Float?
-  
-  // Link to medication template (optional)
-  medicationTemplateId String? @unique
-  medicationTemplate   MedicationTemplate? @relation(fields: [medicationTemplateId], references: [id])
-  
-  // Tracking
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Relations
-  transactions    InventoryTransaction[]
-  
-  @@index([category])
-  @@index([quantity])
-  @@index([expirationDate])
+  // Item details
+  serviceType     String      // CONSULTATION, PROCEDURE, MEDICATION, VACCINATION, LAB_TEST, SUPPLY, BOARDING, OTHER
+  description     String
+  quantity        Float       @default(1)
+  unitPrice       Float
+  total           Float       // quantity * unitPrice
+
+  // Source tracking (for auto-generated items)
+  inventoryItemId String?
+  prescriptionId  String?
+
+  createdAt       DateTime    @default(now())
+
+  @@index([invoiceId])
+  @@index([serviceType])
 }
 
-model InventoryTransaction {
-  id              String   @id @default(cuid())
-  inventoryItemId String
-  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
-  
-  type            String   // RECEIVED, DISPENSED, ADJUSTED, EXPIRED, RETURNED
-  quantity        Int              // positive for received, negative for dispensed
-  
-  // Context
-  prescriptionId  String?  // if dispensed via prescription
-  prescription    Prescription? @relation(fields: [prescriptionId], references: [id])
-  
-  notes           String?
-  performedById   String   // staff user
-  performedBy     User     @relation(fields: [performedById], references: [id])
-  
-  createdAt       DateTime @default(now())
-  
-  @@index([inventoryItemId])
-  @@index([type])
-  @@index([createdAt])
-  @@index([prescriptionId])
+model Payment {
+  id                    String        @id @default(cuid())
+  invoiceId             String
+  invoice               Invoice       @relation(fields: [invoiceId], references: [id])
+
+  // Payment details
+  amount                Float
+  method                String        // CREDIT_CARD, DEBIT_CARD, CASH, CHECK, BANK_TRANSFER, STRIPE
+  status                String        @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, REFUNDED
+
+  // Stripe integration
+  stripePaymentIntentId String?       @unique
+  stripeChargeId        String?
+
+  // Metadata
+  processedAt           DateTime?
+  receiptUrl            String?
+  failureMessage        String?
+
+  // Refund tracking
+  refundedAmount        Float         @default(0)
+  isRefunded            Boolean       @default(false)
+
+  // Who processed
+  processedById         String?
+  processedBy           User?         @relation(fields: [processedById], references: [id])
+
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
 }
