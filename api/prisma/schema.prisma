@@ -15,7 +15,6 @@ model Owner {
   patients     Patient[]
   appointments Appointment[]
   user         User?
-  invoices     Invoice[]
   createdAt    DateTime      @default(now())
 }
 
@@ -40,7 +39,6 @@ model Patient {
   photos            PatientPhoto[]
   followUpReminders FollowUpReminder[]
   labResults        LabResult[]
-  invoices          Invoice[]
   createdAt         DateTime           @default(now())
 }
 
@@ -59,7 +57,6 @@ model Appointment {
   medicalRecords MedicalRecord[]
   followUps      FollowUpReminder[]
   labResults     LabResult[]
-  invoice        Invoice?
   createdAt      DateTime           @default(now())
 }
 
@@ -87,8 +84,6 @@ model User {
   appointments Appointment[]
   owner        Owner?        @relation(fields: [ownerId], references: [id])
   ownerId      String?       @unique
-  invoices     Invoice[]
-  payments     Payment[]
 }
 
 model FollowUpReminder {
@@ -353,133 +348,28 @@ model LabResultValue {
   id              String      @id @default(cuid())
   labResult       LabResult   @relation(fields: [labResultId], references: [id], onDelete: Cascade)
   labResultId     String
-
+  
   test            LabTest     @relation(fields: [testId], references: [id])
   testId          String
-
+  
   // The actual value
   value           Float
   displayValue    String      // Formatted for display
-
+  
   // Status flags (calculated automatically)
   status          String      @default("normal") // "normal", "low", "high", "critical_low", "critical_high"
-
+  
   // Reference range used (based on species)
   refRangeMin     Float?
   refRangeMax     Float?
-
+  
   // Previous value for comparison
   previousValue   Float?
   trend           String?     // "up", "down", "stable" - calculated from previous
-
+  
   notes           String?
-
+  
   @@index([labResultId])
   @@index([testId])
   @@index([status])
-}
-
-// ── Billing & Invoicing ─────────────────────────────────────────────────────
-// Note: Using String instead of enums for SQLite compatibility
-
-model Invoice {
-  id              String        @id @default(cuid())
-  invoiceNumber   String        @unique
-
-  // Relations
-  appointmentId   String?       @unique
-  appointment     Appointment?  @relation(fields: [appointmentId], references: [id])
-  patientId       String
-  patient         Patient       @relation(fields: [patientId], references: [id])
-  ownerId         String
-  owner           Owner         @relation(fields: [ownerId], references: [id])
-
-  // Invoice details
-  issueDate       DateTime      @default(now())
-  dueDate         DateTime
-  status          String        @default("DRAFT") // DRAFT, SENT, PAID, PARTIAL, OVERDUE, CANCELLED, REFUNDED
-
-  // Totals
-  subtotal        Float
-  taxRate         Float         @default(0)
-  taxAmount       Float         @default(0)
-  total           Float
-  amountPaid      Float         @default(0)
-  balanceDue      Float
-
-  // Metadata
-  notes           String?
-  terms           String?
-
-  // Relations
-  items           InvoiceItem[]
-  payments        Payment[]
-
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  createdById     String
-  createdBy       User          @relation(fields: [createdById], references: [id])
-
-  @@index([ownerId])
-  @@index([patientId])
-  @@index([status])
-  @@index([issueDate])
-  @@index([dueDate])
-}
-
-model InvoiceItem {
-  id              String      @id @default(cuid())
-  invoiceId       String
-  invoice         Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  // Item details
-  serviceType     String      // CONSULTATION, PROCEDURE, MEDICATION, VACCINATION, LAB_TEST, SUPPLY, BOARDING, OTHER
-  description     String
-  quantity        Float       @default(1)
-  unitPrice       Float
-  total           Float       // quantity * unitPrice
-
-  // Source tracking (for auto-generated items)
-  inventoryItemId String?
-  prescriptionId  String?
-
-  createdAt       DateTime    @default(now())
-
-  @@index([invoiceId])
-  @@index([serviceType])
-}
-
-model Payment {
-  id                    String        @id @default(cuid())
-  invoiceId             String
-  invoice               Invoice       @relation(fields: [invoiceId], references: [id])
-
-  // Payment details
-  amount                Float
-  method                String        // CREDIT_CARD, DEBIT_CARD, CASH, CHECK, BANK_TRANSFER, STRIPE
-  status                String        @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, REFUNDED
-
-  // Stripe integration
-  stripePaymentIntentId String?       @unique
-  stripeChargeId        String?
-
-  // Metadata
-  processedAt           DateTime?
-  receiptUrl            String?
-  failureMessage        String?
-
-  // Refund tracking
-  refundedAmount        Float         @default(0)
-  isRefunded            Boolean       @default(false)
-
-  // Who processed
-  processedById         String?
-  processedBy           User?         @relation(fields: [processedById], references: [id])
-
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-
-  @@index([invoiceId])
-  @@index([status])
-  @@index([stripePaymentIntentId])
 }

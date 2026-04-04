@@ -1,0 +1,56 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - link "Vet Clinic" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]:
+            - img [ref=e9]
+            - generic [ref=e11]: Vet Clinic
+        - navigation "Primary" [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - text: Home
+          - link "Patients" [ref=e17] [cursor=pointer]:
+            - /url: /patients
+            - img [ref=e19]
+            - text: Patients
+          - link "Appointments" [ref=e25] [cursor=pointer]:
+            - /url: /appointments
+            - img [ref=e27]
+            - text: Appointments
+          - link "Users" [ref=e29] [cursor=pointer]:
+            - /url: /users
+            - img [ref=e31]
+            - text: Users
+      - generic [ref=e33]:
+        - button "My Reminders" [ref=e34] [cursor=pointer]:
+          - img [ref=e35]
+        - button "Switch to dark mode" [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+        - button "TU Test User staff" [ref=e40] [cursor=pointer]:
+          - generic [ref=e42]: TU
+          - generic [ref=e43]:
+            - paragraph [ref=e44]: Test User
+            - text: staff
+  - generic [ref=e48]:
+    - generic [ref=e50]:
+      - heading "Home" [level=1] [ref=e51]
+      - paragraph [ref=e52]: Today at a glance
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - heading "0" [level=3] [ref=e55]
+        - paragraph [ref=e56]: Appointments Today
+      - generic [ref=e57]:
+        - heading "0" [level=3] [ref=e58]
+        - paragraph [ref=e59]: Total Patients
+    - heading "Today's Appointments" [level=5] [ref=e60]
+    - generic [ref=e62]:
+      - heading "No appointments scheduled" [level=6] [ref=e63]
+      - paragraph [ref=e64]: Your schedule is clear for today.
+  - alert [ref=e65]
+```

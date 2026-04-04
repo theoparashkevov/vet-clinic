@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "vet-clinic-session",
+          "value": "{\"accessToken\":\"mock-token\",\"user\":{\"id\":\"test-user-id\",\"name\":\"Test User\",\"email\":\"test@example.com\",\"role\":\"staff\"}}"
+        }
+      ]
+    }
+  ]
+}
