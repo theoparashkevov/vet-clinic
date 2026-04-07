@@ -1,20 +1,47 @@
 import { useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { motion } from "framer-motion"
-import { Stethoscope, Loader2 } from "lucide-react"
+import { Stethoscope, Loader2, Sparkles } from "lucide-react"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
 import { useAuthStore } from "../stores/authStore"
 
+const DEMO_EMAIL = "admin@vetclinic.com"
+const DEMO_PASSWORD = "admin123"
+
 export function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isDemoLoading, setIsDemoLoading] = useState(false)
   const [error, setError] = useState("")
   const navigate = useNavigate()
   const { login } = useAuthStore()
+
+  const performLogin = async (email: string, password: string) => {
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // Mock authentication
+    if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
+      login(
+        {
+          id: "1",
+          name: "Dr. Maria Ivanova",
+          email: DEMO_EMAIL,
+          role: "doctor",
+        },
+        "mock-jwt-token"
+      )
+      navigate({ to: "/admin" })
+      return true
+    } else {
+      setError("Invalid email or password")
+      return false
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,28 +49,26 @@ export function LoginPage() {
     setError("")
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Mock authentication
-      if (email === "admin@vetclinic.com" && password === "admin123") {
-        login(
-          {
-            id: "1",
-            name: "Dr. Maria Ivanova",
-            email: "admin@vetclinic.com",
-            role: "doctor",
-          },
-          "mock-jwt-token"
-        )
-        navigate({ to: "/admin" })
-      } else {
-        setError("Invalid email or password")
-      }
+      await performLogin(email, password)
     } catch (err) {
       setError("An error occurred. Please try again.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleDemoLogin = async () => {
+    setIsDemoLoading(true)
+    setError("")
+    setEmail(DEMO_EMAIL)
+    setPassword(DEMO_PASSWORD)
+
+    try {
+      await performLogin(DEMO_EMAIL, DEMO_PASSWORD)
+    } catch (err) {
+      setError("An error occurred. Please try again.")
+    } finally {
+      setIsDemoLoading(false)
     }
   }
 
@@ -98,7 +123,7 @@ export function LoginPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || isDemoLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -108,9 +133,35 @@ export function LoginPage() {
                   "Sign in"
                 )}
               </Button>
-              <p className="text-sm text-muted-foreground text-center">
-                Demo credentials: admin@vetclinic.com / admin123
-              </p>
+              
+              <div className="relative w-full">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or</span>
+                </div>
+              </div>
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full border-primary/50 hover:bg-primary/5" 
+                onClick={handleDemoLogin}
+                disabled={isLoading || isDemoLoading}
+              >
+                {isDemoLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4 text-primary" />
+                    Log in with demo credentials
+                  </>
+                )}
+              </Button>
             </CardFooter>
           </form>
         </Card>
