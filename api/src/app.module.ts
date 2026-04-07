@@ -17,9 +17,7 @@ import { RemindersModule } from './reminders/reminders.module';
 import { SMSModule } from './sms/sms.module';
 import { LabsModule } from './labs/labs.module';
 import { ImportModule } from './import/import.module';
-import { InventoryModule } from './inventory/inventory.module';
 import { LoggerModule } from './logger/logger.module';
-import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -40,9 +38,7 @@ import { BillingModule } from './billing/billing.module';
     SMSModule,
     LabsModule,
     ImportModule,
-    InventoryModule,
     LoggerModule,
-    BillingModule,
   ],
   controllers: [HealthController],
 })
