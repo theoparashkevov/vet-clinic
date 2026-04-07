@@ -1,36 +1,92 @@
 services:
   db:
     image: postgres:16-alpine
+    container_name: vet-clinic-db
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: vet
-      POSTGRES_PASSWORD: vet
-      POSTGRES_DB: vet
+      POSTGRES_USER: ${POSTGRES_USER:-vet}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vet}
+      POSTGRES_DB: ${POSTGRES_DB:-vet}
     ports:
-      - "${POSTGRES_PORT:-5433}:5432"
+      - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vet} -d ${POSTGRES_DB:-vet}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   api:
-    build: ./api
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: vet-clinic-api
+    restart: unless-stopped
     environment:
-      - NODE_ENV=development
-      - PORT=3000
-      - DATABASE_URL=postgresql://vet:vet@db:5432/vet?schema=public
-      - CORS_ORIGIN=http://localhost:3001,http://localhost:3000
-      - JWT_SECRET=change-me-in-production
-      - JWT_EXPIRES_IN=8h
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vet}:${POSTGRES_PASSWORD:-vet}@db:5432/${POSTGRES_DB:-vet}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-demo-secret-do-not-use-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      DEMO_MAX_OPERATIONS_PER_HOUR: ${DEMO_MAX_OPERATIONS_PER_HOUR:-100}
+      DEMO_DATA_SEED_ON_STARTUP: ${DEMO_DATA_SEED_ON_STARTUP:-true}
+      DEMO_RATE_LIMIT_WINDOW_MS: ${DEMO_RATE_LIMIT_WINDOW_MS:-60000}
+      DEMO_RATE_LIMIT_MAX_REQUESTS: ${DEMO_RATE_LIMIT_MAX_REQUESTS:-30}
+      CLINIC_NAME: ${CLINIC_NAME:-Vet Clinic}
+      CLINIC_PHONE: ${CLINIC_PHONE:-}
     ports:
       - "3000:3000"
     depends_on:
-      - db
-    command: sh -c "npm run prisma:use:postgres && npm run prisma:generate && npx prisma db push && npm start"
-  web:
-    build: ./web
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  web-modern:
+    build:
+      context: ./web-modern
+      dockerfile: Dockerfile
+    container_name: vet-clinic-web
+    restart: unless-stopped
     environment:
-      - PORT=3001
-      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+      VITE_DEMO_MODE: ${DEMO_MODE:-false}
     ports:
-      - "3001:3001"
+      - "80:80"
     depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  nginx:
+    image: nginx:alpine
+    container_name: vet-clinic-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - web-modern
       - api
+    profiles:
+      - nginx
+
 volumes:
-  db_data:
+  postgres_data:
+    driver: local

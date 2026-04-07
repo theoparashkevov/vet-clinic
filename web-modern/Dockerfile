@@ -1,0 +1,67 @@
+# Vet Clinic Web Modern Dockerfile
+# Production build for Vite + React + TanStack Router
+
+# ============================================
+# Stage 1: Dependencies
+# ============================================
+FROM node:20-alpine AS dependencies
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# ============================================
+# Stage 2: Builder
+# ============================================
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install all dependencies (including devDependencies)
+COPY package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Generate TanStack Router routes
+RUN npx @tanstack/router-cli generate
+
+# Build the application
+RUN npm run build
+
+# ============================================
+# Stage 3: Production
+# ============================================
+FROM nginx:alpine AS production
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy built application from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+
+# Change ownership
+RUN chown -R nodejs:nodejs /usr/share/nginx/html
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 1
+
+# Expose port
+EXPOSE 80
+
+# Start nginx
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["nginx", "-g", "daemon off;"]

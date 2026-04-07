@@ -1,12 +1,13 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { Sidebar } from "./Sidebar"
 import { TopNav } from "./TopNav"
 import { cn } from "../../lib/utils"
 import { useUIStore } from "../../stores/uiStore"
 
 interface AppLayoutProps {
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export function AppLayout({ children }: AppLayoutProps) {

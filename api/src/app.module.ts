@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { HealthController } from './health.controller';
 import { PrismaModule } from './prisma/prisma.module';
+import { DemoModule, DemoRateLimitMiddleware } from './demo';
 import { OwnersModule } from './owners/owners.module';
 import { PatientsModule } from './patients/patients.module';
 import { AppointmentsModule } from './appointments/appointments.module';
@@ -23,6 +24,7 @@ import { BillingModule } from './billing/billing.module';
 @Module({
   imports: [
     PrismaModule,
+    DemoModule,
     OwnersModule,
     PatientsModule,
     AppointmentsModule,
@@ -44,4 +46,10 @@ import { BillingModule } from './billing/billing.module';
   ],
   controllers: [HealthController],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(DemoRateLimitMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}

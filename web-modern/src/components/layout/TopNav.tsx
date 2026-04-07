@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import { Link } from "@tanstack/react-router"
 import {
   Bell,
@@ -132,6 +131,9 @@ export function TopNav({ className }: TopNavProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <Link to="/profile">
+              <DropdownMenuItem>My Profile</DropdownMenuItem>
+            </Link>
             <Link to="/admin">
               <DropdownMenuItem>Admin Panel</DropdownMenuItem>
             </Link>

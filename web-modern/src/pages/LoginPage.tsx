@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useNavigate } from "@tanstack/react-router"
+import { useNavigate } from "@tanstack/react-router"
 import { motion } from "framer-motion"
 import { Stethoscope, Loader2 } from "lucide-react"
 import { Button } from "../components/ui/button"

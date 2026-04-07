@@ -1,18 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { motion } from "framer-motion"
 import { Plus, Search, Filter, Download, MoreHorizontal, FileText, Eye, Send, Trash2 } from "lucide-react"
-import { Card, CardContent, CardHeader } from "../../../components/ui/card"
-import { Button } from "../../../components/ui/button"
-import { Input } from "../../../components/ui/input"
+import { Card, CardContent, CardHeader } from "../../../../components/ui/card"
+import { Button } from "../../../../components/ui/button"
+import { Input } from "../../../../components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu"
+} from "../../../../components/ui/dropdown-menu"
 import { useState } from "react"
 
-export const Route = createFileRoute("/_authenticated/billing/invoices")({
+export const Route = createFileRoute("/_authenticated/admin/billing/invoices")({
   component: InvoicesPage,
 })
 

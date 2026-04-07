@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { motion } from "framer-motion"
 import { DollarSign, TrendingUp, CreditCard, AlertCircle, Plus, ArrowRight } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card"
-import { Button } from "../../../components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card"
+import { Button } from "../../../../components/ui/button"
 
-export const Route = createFileRoute("/_authenticated/billing/dashboard")({
+export const Route = createFileRoute("/_authenticated/admin/billing/dashboard")({
   component: BillingDashboard,
 })
 

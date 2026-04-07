@@ -32,7 +32,7 @@ export function useKeyboardShortcuts() {
             break
           case "b":
             e.preventDefault()
-            navigate({ to: "/admin/billing" })
+            navigate({ to: "/admin/billing/dashboard" })
             break
           case "i":
             e.preventDefault()
