@@ -14,6 +14,7 @@ model Owner {
   email        String?
   patients     Patient[]
   appointments Appointment[]
+  invoices     Invoice[]
   user         User?
   createdAt    DateTime      @default(now())
 }
@@ -372,4 +373,158 @@ model LabResultValue {
   @@index([labResultId])
   @@index([testId])
   @@index([status])
+}
+
+// ── Billing & Invoicing ─────────────────────────────────────────────────────
+
+model Invoice {
+  id              String        @id @default(cuid())
+  invoiceNumber   String        @unique
+  patient         Patient       @relation(fields: [patientId], references: [id])
+  patientId       String
+  owner           Owner         @relation(fields: [ownerId], references: [id])
+  ownerId         String
+  
+  // Invoice dates
+  issueDate       DateTime      @default(now())
+  dueDate         DateTime
+  paidDate        DateTime?
+  
+  // Status
+  status          String        @default("draft") // "draft", "sent", "paid", "overdue", "cancelled"
+  
+  // Line items
+  items           InvoiceItem[]
+  
+  // Totals
+  subtotal        Float
+  taxRate         Float         @default(0)
+  taxAmount       Float         @default(0)
+  discountAmount  Float         @default(0)
+  total           Float
+  
+  // Payments
+  payments        Payment[]
+  amountPaid      Float         @default(0)
+  amountDue       Float
+  
+  // Notes
+  notes           String?
+  terms           String?
+  
+  // Metadata
+  createdBy       String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([patientId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model InvoiceItem {
+  id          String    @id @default(cuid())
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId   String
+  
+  description String
+  quantity    Float     @default(1)
+  unitPrice   Float
+  total       Float
+  
+  // Optional references
+  serviceId   String?
+  productId   String?
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([invoiceId])
+}
+
+model Payment {
+  id          String    @id @default(cuid())
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId   String
+  
+  amount      Float
+  method      String    // "cash", "card", "check", "bank_transfer", "other"
+  
+  // Transaction details
+  reference   String?   // Check number, transaction ID, etc.
+  processedAt DateTime  @default(now())
+  processedBy String
+  
+  notes       String?
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([invoiceId])
+  @@index([processedAt])
+}
+
+// ── Inventory Management ─────────────────────────────────────────────────────
+
+model InventoryItem {
+  id              String                @id @default(cuid())
+  name            String
+  category        String                // "medication", "supply", "food", "equipment"
+  sku             String?               @unique
+  
+  // Stock levels
+  quantity        Float                 @default(0)
+  unitOfMeasure   String                // "tablets", "ml", "kg", "units", etc.
+  reorderPoint    Float                 @default(0)
+  reorderQuantity Float                 @default(0)
+  
+  // Location
+  location        String?
+  
+  // Pricing
+  unitCost        Float?
+  sellingPrice    Float?
+  
+  // Supplier info
+  supplier        String?
+  supplierSku     String?
+  
+  // Tracking
+  transactions    InventoryTransaction[]
+  
+  // Status
+  isActive        Boolean               @default(true)
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  
+  @@index([category])
+  @@index([sku])
+  @@index([isActive])
+}
+
+model InventoryTransaction {
+  id              String        @id @default(cuid())
+  item            InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId          String
+  
+  type            String        // "purchase", "sale", "adjustment", "waste", "return"
+  quantity        Float         // Positive for additions, negative for removals
+  
+  // Reference
+  referenceId     String?       // Invoice ID, Purchase Order ID, etc.
+  referenceType   String?       // "invoice", "purchase_order", "adjustment"
+  
+  // Cost tracking
+  unitCost        Float?
+  totalCost       Float?
+  
+  notes           String?
+  performedBy     String
+  performedAt     DateTime      @default(now())
+  
+  createdAt       DateTime      @default(now())
+  
+  @@index([itemId])
+  @@index([type])
+  @@index([performedAt])
 }
