@@ -4,6 +4,7 @@ import { USER_ROLES } from '../src/auth/roles.constants';
 
 const prisma = new PrismaClient();
 const demoDoctorPassword = 'demo12345';
+const adminPassword = 'admin123';
 
 function daysAgo(n: number): Date {
   const d = new Date();
