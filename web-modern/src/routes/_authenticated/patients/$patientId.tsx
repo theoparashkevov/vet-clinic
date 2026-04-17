@@ -24,15 +24,18 @@ import {
   PawPrint,
   Activity,
   Loader2,
-  ImageIcon,
   Camera,
   Plus
 } from "lucide-react"
 import { usePatient } from "../../../lib/queries/patients"
 import { useLabResults } from "../../../lib/queries/labs"
+import { usePatientPhotos, useUploadPhoto, useDeletePhoto } from "../../../lib/queries/photos"
 import type { LabResult } from "../../../lib/api/labs"
 import { downloadPatientRecordPDF } from "../../../lib/pdf/patientRecord"
 import { LabResultsList } from "../../../components/labs/LabResultsList"
+import { PhotoGallery } from "../../../components/photos/PhotoGallery"
+import { ImageUpload } from "../../../components/photos/ImageUpload"
+import { toast } from "sonner"
 
 export const Route = createFileRoute("/_authenticated/patients/\$patientId")({
   component: PatientDetailPage,
@@ -42,10 +45,14 @@ function PatientDetailPage() {
   const { patientId } = useParams({ from: "/_authenticated/patients/\$patientId" })
   const { data: patient, isLoading, error } = usePatient(patientId)
   const { data: labResults, isLoading: isLoadingLabs } = useLabResults(patientId)
+  const { data: photos, isLoading: isLoadingPhotos } = usePatientPhotos(patientId)
+  const uploadPhoto = useUploadPhoto()
+  const deletePhoto = useDeletePhoto()
 
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false)
   const [selectedLabResult, setSelectedLabResult] = useState<LabResult | null>(null)
   const [isAddLabResultOpen, setIsAddLabResultOpen] = useState(false)
+  const [isUploadPhotosOpen, setIsUploadPhotosOpen] = useState(false)
 
   if (isLoading) {
     return (
@@ -287,17 +294,25 @@ function PatientDetailPage() {
               <div>
                 <CardTitle>Patient Photos</CardTitle>
               </div>
-              <Button>
+              <Button onClick={() => setIsUploadPhotosOpen(true)}>
                 <Camera className="mr-2 h-4 w-4" />
                 Upload Photos
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <ImageIcon className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                <p>No photos yet</p>
-                <p className="text-sm">Upload photos to see them here</p>
-              </div>
+              <PhotoGallery
+                photos={photos || []}
+                isLoading={isLoadingPhotos}
+                onDelete={(id) => {
+                  deletePhoto.mutate(
+                    { id, patientId },
+                    {
+                      onSuccess: () => toast.success("Photo deleted"),
+                      onError: () => toast.error("Failed to delete photo"),
+                    }
+                  )
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -327,6 +342,31 @@ function PatientDetailPage() {
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground">Add lab result form coming soon...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isUploadPhotosOpen} onOpenChange={setIsUploadPhotosOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Upload Photos</DialogTitle>
+            <DialogDescription>Upload photos for {patient.name}.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <ImageUpload
+              onUpload={async (files) => {
+                for (const file of files) {
+                  await uploadPhoto.mutateAsync({
+                    patientId,
+                    file,
+                    metadata: { category: "Other" },
+                  })
+                }
+                toast.success(`${files.length} photo${files.length === 1 ? "" : "s"} uploaded`)
+                setIsUploadPhotosOpen(false)
+              }}
+              onCancel={() => setIsUploadPhotosOpen(false)}
+            />
           </div>
         </DialogContent>
       </Dialog>
