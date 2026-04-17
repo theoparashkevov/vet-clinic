@@ -14,18 +14,21 @@ export class OwnersController {
   }
 
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.owners.get(id);
+  async get(@Param('id') id: string) {
+    const owner = await this.owners.get(id);
+    return { data: owner };
   }
 
   @Post()
-  create(@Body() dto: CreateOwnerDto) {
-    return this.owners.create(dto);
+  async create(@Body() dto: CreateOwnerDto) {
+    const owner = await this.owners.create(dto);
+    return { data: owner };
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateOwnerDto) {
-    return this.owners.update(id, dto);
+  async update(@Param('id') id: string, @Body() dto: UpdateOwnerDto) {
+    const owner = await this.owners.update(id, dto);
+    return { data: owner };
   }
 
   @Delete(':id')

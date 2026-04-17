@@ -31,18 +31,21 @@ export class AppointmentsController {
   }
 
   @Post()
-  create(@Body() dto: CreateAppointmentDto) {
-    return this.appointments.create(dto);
+  async create(@Body() dto: CreateAppointmentDto) {
+    const appointment = await this.appointments.create(dto);
+    return { data: appointment };
   }
 
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.appointments.get(id);
+  async get(@Param('id') id: string) {
+    const appointment = await this.appointments.get(id);
+    return { data: appointment };
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateAppointmentDto) {
-    return this.appointments.update(id, dto);
+  async update(@Param('id') id: string, @Body() dto: UpdateAppointmentDto) {
+    const appointment = await this.appointments.update(id, dto);
+    return { data: appointment };
   }
 
   @Delete(':id')

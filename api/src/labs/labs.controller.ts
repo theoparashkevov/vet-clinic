@@ -1,19 +1,7 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Express } from 'express';
 import { LabsService } from './labs.service';
-import { CreateLabPanelDto, CreateLabTestDto, CreateLabResultDto, UpdateLabResultDto, UpdateLabPanelDto, UpdateLabTestDto } from './dto';
+import { CreateLabPanelDto, CreateLabTestDto, CreateLabResultDto, UpdateLabResultDto } from './dto';
 import { StaffAccess } from '../auth/staff-access.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthUser } from '../auth/auth.types';
@@ -36,13 +24,15 @@ export class LabsController {
   }
 
   @Post('panels')
-  createPanel(@Body() dto: CreateLabPanelDto) {
-    return this.labsService.createPanel(dto);
+  async createPanel(@Body() dto: CreateLabPanelDto) {
+    const panel = await this.labsService.createPanel(dto);
+    return { data: panel };
   }
 
   @Put('panels/:id')
-  updatePanel(@Param('id') id: string, @Body() dto: UpdateLabPanelDto) {
-    return this.labsService.updatePanel(id, dto);
+  async updatePanel(@Param('id') id: string, @Body() dto: CreateLabPanelDto) {
+    const panel = await this.labsService.updatePanel(id, dto);
+    return { data: panel };
   }
 
   @Delete('panels/:id')
@@ -58,13 +48,15 @@ export class LabsController {
   }
 
   @Post('tests')
-  createTest(@Body() dto: CreateLabTestDto) {
-    return this.labsService.createTest(dto);
+  async createTest(@Body() dto: CreateLabTestDto) {
+    const test = await this.labsService.createTest(dto);
+    return { data: test };
   }
 
   @Put('tests/:id')
-  updateTest(@Param('id') id: string, @Body() dto: UpdateLabTestDto) {
-    return this.labsService.updateTest(id, dto);
+  async updateTest(@Param('id') id: string, @Body() dto: CreateLabTestDto) {
+    const test = await this.labsService.updateTest(id, dto);
+    return { data: test };
   }
 
   @Delete('tests/:id')
@@ -85,23 +77,25 @@ export class LabsController {
   }
 
   @Get('results/:id')
-  findOne(@Param('id') id: string) {
-    return this.labsService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const result = await this.labsService.findOne(id);
+    return { data: result };
   }
 
   @Post('patients/:patientId/results')
-  create(
+  async create(
     @Param('patientId') patientId: string,
     @Body() dto: CreateLabResultDto,
     @CurrentUser() user: AuthUser,
   ) {
-    // Get user name for reviewedBy field
-    return this.labsService.create(patientId, dto, 'Dr. ' + user.name);
+    const result = await this.labsService.create(patientId, dto, 'Dr. ' + user.name);
+    return { data: result };
   }
 
   @Put('results/:id')
-  update(@Param('id') id: string, @Body() dto: UpdateLabResultDto) {
-    return this.labsService.update(id, dto);
+  async update(@Param('id') id: string, @Body() dto: UpdateLabResultDto) {
+    const result = await this.labsService.update(id, dto);
+    return { data: result };
   }
 
   @Delete('results/:id')
@@ -124,7 +118,7 @@ export class LabsController {
 
   @Post('results/:id/upload')
   @UseInterceptors(FileInterceptor('file', {
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, callback) => {
       if (file.mimetype !== 'application/pdf') {
         return callback(new Error('Only PDF files are allowed'), false);
@@ -136,8 +130,6 @@ export class LabsController {
     @Param('id') id: string,
     @UploadedFile() file: any,
   ) {
-    // In a real implementation, upload to S3 and save URL
-    // For demo, we'll just acknowledge
     return {
       success: true,
       message: 'PDF upload endpoint ready - implement S3 integration for production',

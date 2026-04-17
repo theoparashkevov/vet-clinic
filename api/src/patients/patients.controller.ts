@@ -62,8 +62,9 @@ export class PatientsController {
    * Response: { id: "...", name: "Rex", species: "Dog", owner: {...} }
    */
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.patients.get(id);
+  async get(@Param('id') id: string) {
+    const patient = await this.patients.get(id);
+    return { data: patient };
   }
 
   /**
@@ -81,8 +82,9 @@ export class PatientsController {
    * Body: { name: "Buddy", species: "Dog", breed: "Golden Retriever", ownerId: "..." }
    */
   @Post()
-  create(@Body() dto: CreatePatientDto) {
-    return this.patients.create(dto);
+  async create(@Body() dto: CreatePatientDto) {
+    const patient = await this.patients.create(dto);
+    return { data: patient };
   }
 
   /**
@@ -101,8 +103,9 @@ export class PatientsController {
    * Body: { name: "Rex Updated", allergies: "Penicillin" }
    */
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdatePatientDto) {
-    return this.patients.update(id, dto);
+  async update(@Param('id') id: string, @Body() dto: UpdatePatientDto) {
+    const patient = await this.patients.update(id, dto);
+    return { data: patient };
   }
 
   /**

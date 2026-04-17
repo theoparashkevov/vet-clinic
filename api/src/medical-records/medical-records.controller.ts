@@ -14,15 +14,17 @@ export class MedicalRecordsController {
   }
 
   @Post('patients/:patientId/medical-records')
-  create(
+  async create(
     @Param('patientId') patientId: string,
     @Body() dto: CreateMedicalRecordDto,
   ) {
-    return this.records.create(patientId, dto);
+    const record = await this.records.create(patientId, dto);
+    return { data: record };
   }
 
   @Put('medical-records/:id')
-  update(@Param('id') id: string, @Body() dto: UpdateMedicalRecordDto) {
-    return this.records.update(id, dto);
+  async update(@Param('id') id: string, @Body() dto: UpdateMedicalRecordDto) {
+    const record = await this.records.update(id, dto);
+    return { data: record };
   }
 }
