@@ -6,14 +6,20 @@ import { UsersModule } from '../users/users.module';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 
-const jwtExpiresIn = (process.env.JWT_EXPIRES_IN ?? '8h') as any;
+const isProduction = process.env.NODE_ENV === 'production';
+const jwtSecret = process.env.JWT_SECRET ?? (isProduction ? undefined : 'dev-only-secret');
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET environment variable is required in production');
+}
+
+const jwtExpiresIn = (process.env.JWT_EXPIRES_IN || '8h') as `${number}h` | `${number}d` | `${number}s` | number;
 
 @Global()
 @Module({
   imports: [
     UsersModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET ?? 'dev-only-secret',
+      secret: jwtSecret,
       signOptions: { expiresIn: jwtExpiresIn },
     }),
   ],

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePrescriptionDto, UpdatePrescriptionDto, CreateFromTemplateDto } from './dto';
 
@@ -112,7 +113,7 @@ export class PrescriptionsService {
       throw new NotFoundException('Prescription not found');
     }
 
-    const data: any = {};
+    const data: Prisma.PrescriptionUpdateInput = {};
 
     if (dto.medication !== undefined) data.medication = dto.medication;
     if (dto.dosage !== undefined) data.dosage = dto.dosage;

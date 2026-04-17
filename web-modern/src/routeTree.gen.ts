@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedPatientsIndexRouteImport } from './routes/_authenticated/patients/index'
+import { Route as AuthenticatedCalendarIndexRouteImport } from './routes/_authenticated/calendar/index'
 import { Route as AuthenticatedAppointmentsIndexRouteImport } from './routes/_authenticated/appointments/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedPatientsPatientIdRouteImport } from './routes/_authenticated/patients/$patientId'
@@ -55,6 +56,12 @@ const AuthenticatedPatientsIndexRoute =
   AuthenticatedPatientsIndexRouteImport.update({
     id: '/patients/',
     path: '/patients/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCalendarIndexRoute =
+  AuthenticatedCalendarIndexRouteImport.update({
+    id: '/calendar/',
+    path: '/calendar/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAppointmentsIndexRoute =
@@ -131,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/appointments/': typeof AuthenticatedAppointmentsIndexRoute
+  '/calendar/': typeof AuthenticatedCalendarIndexRoute
   '/patients/': typeof AuthenticatedPatientsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/admin/billing/dashboard': typeof AuthenticatedAdminBillingDashboardRoute
@@ -149,6 +157,7 @@ export interface FileRoutesByTo {
   '/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/appointments': typeof AuthenticatedAppointmentsIndexRoute
+  '/calendar': typeof AuthenticatedCalendarIndexRoute
   '/patients': typeof AuthenticatedPatientsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/admin/billing/dashboard': typeof AuthenticatedAdminBillingDashboardRoute
@@ -169,6 +178,7 @@ export interface FileRoutesById {
   '/_authenticated/patients/$patientId': typeof AuthenticatedPatientsPatientIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/appointments/': typeof AuthenticatedAppointmentsIndexRoute
+  '/_authenticated/calendar/': typeof AuthenticatedCalendarIndexRoute
   '/_authenticated/patients/': typeof AuthenticatedPatientsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/admin/billing/dashboard': typeof AuthenticatedAdminBillingDashboardRoute
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/patients/$patientId'
     | '/admin/'
     | '/appointments/'
+    | '/calendar/'
     | '/patients/'
     | '/users/'
     | '/admin/billing/dashboard'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/patients/$patientId'
     | '/admin'
     | '/appointments'
+    | '/calendar'
     | '/patients'
     | '/users'
     | '/admin/billing/dashboard'
@@ -226,6 +238,7 @@ export interface FileRouteTypes {
     | '/_authenticated/patients/$patientId'
     | '/_authenticated/admin/'
     | '/_authenticated/appointments/'
+    | '/_authenticated/calendar/'
     | '/_authenticated/patients/'
     | '/_authenticated/users/'
     | '/_authenticated/admin/billing/dashboard'
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/patients'
       fullPath: '/patients/'
       preLoaderRoute: typeof AuthenticatedPatientsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/calendar/': {
+      id: '/_authenticated/calendar/'
+      path: '/calendar'
+      fullPath: '/calendar/'
+      preLoaderRoute: typeof AuthenticatedCalendarIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/appointments/': {
@@ -373,6 +393,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPatientsPatientIdRoute: typeof AuthenticatedPatientsPatientIdRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAppointmentsIndexRoute: typeof AuthenticatedAppointmentsIndexRoute
+  AuthenticatedCalendarIndexRoute: typeof AuthenticatedCalendarIndexRoute
   AuthenticatedPatientsIndexRoute: typeof AuthenticatedPatientsIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedAdminBillingDashboardRoute: typeof AuthenticatedAdminBillingDashboardRoute
@@ -390,6 +411,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPatientsPatientIdRoute: AuthenticatedPatientsPatientIdRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAppointmentsIndexRoute: AuthenticatedAppointmentsIndexRoute,
+  AuthenticatedCalendarIndexRoute: AuthenticatedCalendarIndexRoute,
   AuthenticatedPatientsIndexRoute: AuthenticatedPatientsIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedAdminBillingDashboardRoute:

@@ -3,17 +3,16 @@
   "private": true,
   "workspaces": [
     "api",
-    "web",
+    "web-modern",
     "bot"
   ],
   "scripts": {
-    "dev": "concurrently --names api,web --prefix-colors blue,green \"npm --workspace api run start:dev\" \"npm --workspace web run dev -- -p 3001\"",
-    "lint": "echo 'lint TBD'",
+    "dev": "concurrently --names api,web --prefix-colors blue,green \"npm --workspace api run start:dev\" \"npm --workspace web-modern run dev\"",    "lint": "echo 'lint TBD'",
     "build": "echo 'build TBD'",
     "test": "echo 'test TBD'",
-    "test:e2e": "npm --workspace web run test:e2e",
-    "test:e2e:ui": "npm --workspace web run test:e2e:ui",
-    "playwright:install": "npm --workspace web run playwright:install",
+    "test:e2e": "npm --workspace web-modern run test:e2e",
+    "test:e2e:ui": "npm --workspace web-modern run test:e2e:ui",
+    "playwright:install": "npm --workspace web-modern run playwright:install",
     "api:prisma:use:sqlite": "npm --workspace api run prisma:use:sqlite",
     "api:prisma:use:postgres": "npm --workspace api run prisma:use:postgres",
     "api:prisma:generate": "npm --workspace api run prisma:generate",

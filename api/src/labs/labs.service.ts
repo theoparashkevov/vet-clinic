@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLabPanelDto, CreateLabTestDto, CreateLabResultDto, UpdateLabResultDto, UpdateLabPanelDto, UpdateLabTestDto } from './dto';
 
@@ -11,7 +12,7 @@ export class LabsService {
   // ── Lab Panels ─────────────────────────────────────────────────────────────
 
   async findAllPanels(species?: string) {
-    const where: any = {};
+    const where: Prisma.LabPanelWhereInput = {};
     if (species) {
       where.OR = [
         { species: species },
@@ -35,7 +36,7 @@ export class LabsService {
   }
 
   async findCommonPanels(species?: string) {
-    const where: any = { isCommon: true };
+    const where: Prisma.LabPanelWhereInput = { isCommon: true };
     if (species) {
       where.OR = [
         { species: species },
@@ -71,7 +72,7 @@ export class LabsService {
       throw new NotFoundException('Lab panel not found');
     }
 
-    const data: any = {};
+    const data: Prisma.LabPanelUpdateInput = {};
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.category !== undefined) data.category = dto.category;
     if (dto.description !== undefined) data.description = dto.description;
@@ -141,7 +142,7 @@ export class LabsService {
       throw new NotFoundException('Lab test not found');
     }
 
-    const data: any = {};
+    const data: Prisma.LabTestUpdateInput = {};
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.abbreviation !== undefined) data.abbreviation = dto.abbreviation;
     if (dto.unit !== undefined) data.unit = dto.unit;
@@ -321,7 +322,7 @@ export class LabsService {
       throw new NotFoundException('Lab result not found');
     }
 
-    const data: any = {};
+    const data: Prisma.LabResultUpdateInput = {};
     if (dto.status !== undefined) data.status = dto.status;
     if (dto.reviewedDate !== undefined) data.reviewedDate = new Date(dto.reviewedDate);
     if (dto.reviewedBy !== undefined) data.reviewedBy = dto.reviewedBy;

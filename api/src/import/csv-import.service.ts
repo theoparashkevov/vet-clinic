@@ -1,46 +1,11 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
-interface CsvLabPanel {
-  name: string;
-  category?: string;
-  description?: string;
-  species?: string;
-  isCommon?: boolean | string;
-}
-
-interface CsvLabTest {
-  panelName: string;
-  name: string;
-  abbreviation?: string;
-  unit?: string;
-  refRangeDogMin?: number | string;
-  refRangeDogMax?: number | string;
-  refRangeCatMin?: number | string;
-  refRangeCatMax?: number | string;
-  criticalLow?: number | string;
-  criticalHigh?: number | string;
-  warningLow?: number | string;
-  warningHigh?: number | string;
-  sortOrder?: number | string;
-}
-
-interface CsvMedicationTemplate {
-  name: string;
-  category?: string;
-  dosage?: string;
-  frequency?: string;
-  duration?: string;
-  instructions?: string;
-  isCommon?: boolean | string;
-}
-
-interface CsvNoteTemplate {
-  name: string;
-  category?: string;
-  content?: string;
-  isCommon?: boolean | string;
-}
+import {
+  CsvLabPanelDto,
+  CsvLabTestDto,
+  CsvMedicationTemplateDto,
+  CsvNoteTemplateDto,
+} from './dto';
 
 interface CsvImportResult {
   success: number;
@@ -52,208 +17,229 @@ interface CsvImportResult {
 export class CsvImportService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async importLabPanels(data: CsvLabPanel[]): Promise<CsvImportResult> {
+  async importLabPanels(data: CsvLabPanelDto[]): Promise<CsvImportResult> {
     const result: CsvImportResult = { success: 0, errors: 0, messages: [] };
 
     for (const row of data) {
-      try {
-        if (!row.name) {
-          result.errors++;
-          result.messages.push(`Error: Missing panel name`);
-          continue;
-        }
-
-        // Check if panel exists by name
-        const existing = await this.prisma.labPanel.findFirst({
-          where: { name: row.name },
-        });
-
-        const panelData = {
-          name: row.name,
-          category: row.category || 'Other',
-          description: row.description || null,
-          species: row.species || null,
-          isCommon: this.parseBoolean(row.isCommon, false),
-        };
-
-        if (existing) {
-          await this.prisma.labPanel.update({
-            where: { id: existing.id },
-            data: panelData,
-          });
-        } else {
-          await this.prisma.labPanel.create({
-            data: panelData,
-          });
-        }
-
-        result.success++;
-      } catch (error: any) {
+      if (!row.name) {
         result.errors++;
-        result.messages.push(`Error importing panel "${row.name}": ${error.message}`);
+        result.messages.push(`Error: Missing panel name`);
       }
+    }
+
+    if (result.errors > 0) {
+      return result;
+    }
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        for (const row of data) {
+          const existing = await tx.labPanel.findFirst({
+            where: { name: row.name },
+          });
+
+          const panelData = {
+            name: row.name,
+            category: row.category || 'Other',
+            description: row.description || null,
+            species: row.species || null,
+            isCommon: this.parseBoolean(row.isCommon, false),
+          };
+
+          if (existing) {
+            await tx.labPanel.update({
+              where: { id: existing.id },
+              data: panelData,
+            });
+          } else {
+            await tx.labPanel.create({
+              data: panelData,
+            });
+          }
+
+          result.success++;
+        }
+      });
+    } catch (error: any) {
+      result.errors = data.length - result.success;
+      result.messages.push(`Transaction failed: ${error.message}`);
     }
 
     return result;
   }
 
-  async importLabTests(data: CsvLabTest[]): Promise<CsvImportResult> {
+  async importLabTests(data: CsvLabTestDto[]): Promise<CsvImportResult> {
     const result: CsvImportResult = { success: 0, errors: 0, messages: [] };
 
-    // Build a map of panel names to IDs
-    const panels = await this.prisma.labPanel.findMany({
-      select: { id: true, name: true },
-    });
-    const panelMap = new Map(panels.map((p) => [p.name, p.id]));
-
     for (const row of data) {
-      try {
-        if (!row.name || !row.panelName) {
-          result.errors++;
-          result.messages.push(`Error: Missing test name or panel name`);
-          continue;
-        }
+      if (!row.name || !row.panelName) {
+        result.errors++;
+        result.messages.push(`Error: Missing test name or panel name`);
+      }
+    }
 
-        const panelId = panelMap.get(row.panelName);
-        if (!panelId) {
-          result.errors++;
-          result.messages.push(`Error: Panel "${row.panelName}" not found. Create the panel first.`);
-          continue;
-        }
+    if (result.errors > 0) {
+      return result;
+    }
 
-        // Check if test exists in this panel
-        const existingTest = await this.prisma.labTest.findFirst({
-          where: {
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const panels = await tx.labPanel.findMany({
+          select: { id: true, name: true },
+        });
+        const panelMap = new Map(panels.map((p) => [p.name, p.id]));
+
+        for (const row of data) {
+          const panelId = panelMap.get(row.panelName);
+          if (!panelId) {
+            throw new Error(`Panel "${row.panelName}" not found. Create the panel first.`);
+          }
+
+          const existingTest = await tx.labTest.findFirst({
+            where: {
+              panelId,
+              name: row.name,
+            },
+          });
+
+          const sortOrder = row.sortOrder ?? 0;
+
+          const testData = {
             panelId,
             name: row.name,
-          },
-        });
+            abbreviation: row.abbreviation || null,
+            unit: row.unit || '',
+            refRangeDogMin: row.refRangeDogMin ?? null,
+            refRangeDogMax: row.refRangeDogMax ?? null,
+            refRangeCatMin: row.refRangeCatMin ?? null,
+            refRangeCatMax: row.refRangeCatMax ?? null,
+            criticalLow: row.criticalLow ?? null,
+            criticalHigh: row.criticalHigh ?? null,
+            warningLow: row.warningLow ?? null,
+            warningHigh: row.warningHigh ?? null,
+            sortOrder,
+          };
 
-        const sortOrder = this.parseNumber(row.sortOrder, 0) ?? 0;
+          if (existingTest) {
+            await tx.labTest.update({
+              where: { id: existingTest.id },
+              data: testData,
+            });
+          } else {
+            await tx.labTest.create({
+              data: testData,
+            });
+          }
 
-        const testData = {
-          panelId,
-          name: row.name,
-          abbreviation: row.abbreviation || null,
-          unit: row.unit || '',
-          refRangeDogMin: this.parseNumber(row.refRangeDogMin, null),
-          refRangeDogMax: this.parseNumber(row.refRangeDogMax, null),
-          refRangeCatMin: this.parseNumber(row.refRangeCatMin, null),
-          refRangeCatMax: this.parseNumber(row.refRangeCatMax, null),
-          criticalLow: this.parseNumber(row.criticalLow, null),
-          criticalHigh: this.parseNumber(row.criticalHigh, null),
-          warningLow: this.parseNumber(row.warningLow, null),
-          warningHigh: this.parseNumber(row.warningHigh, null),
-          sortOrder,
-        };
-
-        if (existingTest) {
-          await this.prisma.labTest.update({
-            where: { id: existingTest.id },
-            data: testData,
-          });
-        } else {
-          await this.prisma.labTest.create({
-            data: testData,
-          });
+          result.success++;
         }
-
-        result.success++;
-      } catch (error: any) {
-        result.errors++;
-        result.messages.push(`Error importing test "${row.name}": ${error.message}`);
-      }
+      });
+    } catch (error: any) {
+      result.errors = data.length - result.success;
+      result.messages.push(`Transaction failed: ${error.message}`);
     }
 
     return result;
   }
 
-  async importMedicationTemplates(data: CsvMedicationTemplate[]): Promise<CsvImportResult> {
+  async importMedicationTemplates(data: CsvMedicationTemplateDto[]): Promise<CsvImportResult> {
     const result: CsvImportResult = { success: 0, errors: 0, messages: [] };
 
     for (const row of data) {
-      try {
-        if (!row.name) {
-          result.errors++;
-          result.messages.push(`Error: Missing medication name`);
-          continue;
-        }
-
-        // Check if medication exists by name
-        const existing = await this.prisma.medicationTemplate.findFirst({
-          where: { name: row.name },
-        });
-
-        const medData = {
-          name: row.name,
-          category: row.category || 'Other',
-          dosage: row.dosage || '',
-          frequency: row.frequency || '',
-          duration: row.duration || '',
-          instructions: row.instructions || '',
-          isCommon: this.parseBoolean(row.isCommon, false),
-        };
-
-        if (existing) {
-          await this.prisma.medicationTemplate.update({
-            where: { id: existing.id },
-            data: medData,
-          });
-        } else {
-          await this.prisma.medicationTemplate.create({
-            data: medData,
-          });
-        }
-
-        result.success++;
-      } catch (error: any) {
+      if (!row.name) {
         result.errors++;
-        result.messages.push(`Error importing "${row.name}": ${error.message}`);
+        result.messages.push(`Error: Missing medication name`);
       }
+    }
+
+    if (result.errors > 0) {
+      return result;
+    }
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        for (const row of data) {
+          const existing = await tx.medicationTemplate.findFirst({
+            where: { name: row.name },
+          });
+
+          const medData = {
+            name: row.name,
+            category: row.category || 'Other',
+            dosage: row.dosage || '',
+            frequency: row.frequency || '',
+            duration: row.duration || '',
+            instructions: row.instructions || '',
+            isCommon: this.parseBoolean(row.isCommon, false),
+          };
+
+          if (existing) {
+            await tx.medicationTemplate.update({
+              where: { id: existing.id },
+              data: medData,
+            });
+          } else {
+            await tx.medicationTemplate.create({
+              data: medData,
+            });
+          }
+
+          result.success++;
+        }
+      });
+    } catch (error: any) {
+      result.errors = data.length - result.success;
+      result.messages.push(`Transaction failed: ${error.message}`);
     }
 
     return result;
   }
 
-  async importNoteTemplates(data: CsvNoteTemplate[]): Promise<CsvImportResult> {
+  async importNoteTemplates(data: CsvNoteTemplateDto[]): Promise<CsvImportResult> {
     const result: CsvImportResult = { success: 0, errors: 0, messages: [] };
 
     for (const row of data) {
-      try {
-        if (!row.name) {
-          result.errors++;
-          result.messages.push(`Error: Missing template name`);
-          continue;
-        }
-
-        // Check if template exists by name
-        const existing = await this.prisma.noteTemplate.findFirst({
-          where: { name: row.name },
-        });
-
-        const templateData = {
-          name: row.name,
-          category: row.category || 'General',
-          content: row.content || '',
-          isCommon: this.parseBoolean(row.isCommon, false),
-        };
-
-        if (existing) {
-          await this.prisma.noteTemplate.update({
-            where: { id: existing.id },
-            data: templateData,
-          });
-        } else {
-          await this.prisma.noteTemplate.create({
-            data: templateData,
-          });
-        }
-
-        result.success++;
-      } catch (error: any) {
+      if (!row.name) {
         result.errors++;
-        result.messages.push(`Error importing "${row.name}": ${error.message}`);
+        result.messages.push(`Error: Missing template name`);
       }
+    }
+
+    if (result.errors > 0) {
+      return result;
+    }
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        for (const row of data) {
+          const existing = await tx.noteTemplate.findFirst({
+            where: { name: row.name },
+          });
+
+          const templateData = {
+            name: row.name,
+            category: row.category || 'General',
+            content: row.content || '',
+            isCommon: this.parseBoolean(row.isCommon, false),
+          };
+
+          if (existing) {
+            await tx.noteTemplate.update({
+              where: { id: existing.id },
+              data: templateData,
+            });
+          } else {
+            await tx.noteTemplate.create({
+              data: templateData,
+            });
+          }
+
+          result.success++;
+        }
+      });
+    } catch (error: any) {
+      result.errors = data.length - result.success;
+      result.messages.push(`Transaction failed: ${error.message}`);
     }
 
     return result;
@@ -268,14 +254,6 @@ export class CsvImportService {
     return defaultValue;
   }
 
-  private parseNumber(value: number | string | undefined, defaultValue: number | null): number | null {
-    if (value === undefined || value === null || value === '') return defaultValue;
-    if (typeof value === 'number') return value;
-    const parsed = parseFloat(value);
-    return isNaN(parsed) ? defaultValue : parsed;
-  }
-
-  // Get templates for download
   getLabPanelTemplate(): string {
     const headers = ['name', 'category', 'description', 'species', 'isCommon'];
     const sample = ['Complete Blood Count', 'Hematology', 'CBC with differential', '', 'true'];

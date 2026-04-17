@@ -6,16 +6,17 @@ import {
   Res,
   UseInterceptors,
   UploadedFile,
-  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { CsvImportService } from './csv-import.service';
 import { StaffAccess } from '../auth/staff-access.decorator';
-
-interface CsvImportBody {
-  data: Record<string, any>[];
-}
+import {
+  ImportLabPanelsDto,
+  ImportLabTestsDto,
+  ImportMedicationTemplatesDto,
+  ImportNoteTemplatesDto,
+} from './dto';
 
 @StaffAccess()
 @Controller('import')
@@ -23,38 +24,25 @@ export class ImportController {
   constructor(private readonly csvImportService: CsvImportService) {}
 
   @Post('lab-panels')
-  async importLabPanels(@Body() body: CsvImportBody) {
-    if (!Array.isArray(body.data)) {
-      throw new BadRequestException('Expected data array');
-    }
-    return this.csvImportService.importLabPanels(body.data as any);
+  async importLabPanels(@Body() dto: ImportLabPanelsDto) {
+    return this.csvImportService.importLabPanels(dto.data);
   }
 
   @Post('lab-tests')
-  async importLabTests(@Body() body: CsvImportBody) {
-    if (!Array.isArray(body.data)) {
-      throw new BadRequestException('Expected data array');
-    }
-    return this.csvImportService.importLabTests(body.data as any);
+  async importLabTests(@Body() dto: ImportLabTestsDto) {
+    return this.csvImportService.importLabTests(dto.data);
   }
 
   @Post('medication-templates')
-  async importMedicationTemplates(@Body() body: CsvImportBody) {
-    if (!Array.isArray(body.data)) {
-      throw new BadRequestException('Expected data array');
-    }
-    return this.csvImportService.importMedicationTemplates(body.data as any);
+  async importMedicationTemplates(@Body() dto: ImportMedicationTemplatesDto) {
+    return this.csvImportService.importMedicationTemplates(dto.data);
   }
 
   @Post('note-templates')
-  async importNoteTemplates(@Body() body: CsvImportBody) {
-    if (!Array.isArray(body.data)) {
-      throw new BadRequestException('Expected data array');
-    }
-    return this.csvImportService.importNoteTemplates(body.data as any);
+  async importNoteTemplates(@Body() dto: ImportNoteTemplatesDto) {
+    return this.csvImportService.importNoteTemplates(dto.data);
   }
 
-  // Template downloads
   @Get('templates/lab-panels')
   downloadLabPanelTemplate(@Res() res: Response) {
     const csv = this.csvImportService.getLabPanelTemplate();

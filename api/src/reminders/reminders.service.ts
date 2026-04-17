@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFollowUpReminderDto, UpdateFollowUpReminderDto, CreateFromAppointmentDto } from './dto';
 
@@ -13,7 +14,7 @@ export class RemindersService {
     priority?: string;
     dueBefore?: string;
   }) {
-    const where: any = {};
+    const where: Prisma.FollowUpReminderWhereInput = {};
 
     if (filters.patientId) where.patientId = filters.patientId;
     if (filters.assignedTo) where.assignedTo = filters.assignedTo;
@@ -184,7 +185,7 @@ export class RemindersService {
       throw new NotFoundException('Reminder not found');
     }
 
-    const data: any = {};
+    const data: Prisma.FollowUpReminderUpdateInput = {};
 
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.description !== undefined) data.description = dto.description;
@@ -232,6 +233,10 @@ export class RemindersService {
 
   async getStats(userId: string) {
     const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
 
     const [
       totalPending,
@@ -257,8 +262,8 @@ export class RemindersService {
           assignedTo: userId,
           status: { in: ['pending', 'overdue'] },
           dueDate: {
-            gte: new Date(now.setHours(0, 0, 0, 0)),
-            lt: new Date(now.setHours(23, 59, 59, 999)),
+            gte: startOfDay,
+            lt: endOfDay,
           },
         },
       }),

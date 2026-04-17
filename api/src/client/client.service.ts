@@ -18,6 +18,7 @@
  */
 
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -293,7 +294,7 @@ export class ClientService {
    * @param vaccinations - Array of vaccination records with dueDate
    * @returns 'current' | 'due-soon' | 'overdue'
    */
-  private calculateVaccinationStatus(vaccinations: any[]): 'current' | 'due-soon' | 'overdue' {
+  private calculateVaccinationStatus(vaccinations: { dueDate: Date }[]): 'current' | 'due-soon' | 'overdue' {
     if (vaccinations.length === 0) return 'current';
 
     const now = new Date();

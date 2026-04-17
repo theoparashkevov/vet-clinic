@@ -84,11 +84,11 @@ EOF
 fi
 
 # ── Web .env.local ────────────────────────────────────────────────────────────
-if [ ! -f web/.env.local ]; then
-  cat > web/.env.local <<'EOF'
-NEXT_PUBLIC_API_URL=http://localhost:3000
+if [ ! -f web-modern/.env.local ]; then
+  cat > web-modern/.env.local <<'EOF'
+VITE_API_URL=http://localhost:3000
 EOF
-  info "Set web/.env.local"
+  info "Set web-modern/.env.local"
 fi
 
 # ── Prisma client ─────────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ if [ "$API_ONLY" -eq 1 ]; then
   cd api && npm run start:dev
 elif [ "$WEB_ONLY" -eq 1 ]; then
   info "Starting Web server only..."
-  cd web && npm run dev
+  cd web-modern && npm run dev
 else
   info "Starting both API and Web servers..."
   info "Press Ctrl+C to stop"

@@ -18,6 +18,8 @@ import { SMSModule } from './sms/sms.module';
 import { LabsModule } from './labs/labs.module';
 import { ImportModule } from './import/import.module';
 import { LoggerModule } from './logger/logger.module';
+import { PhotosModule } from './photos/photos.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -39,6 +41,8 @@ import { LoggerModule } from './logger/logger.module';
     LabsModule,
     ImportModule,
     LoggerModule,
+    PhotosModule,
+    AnalyticsModule,
   ],
   controllers: [HealthController],
 })

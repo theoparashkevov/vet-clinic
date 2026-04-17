@@ -11,6 +11,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
 import { LabsService } from './labs.service';
 import { CreateLabPanelDto, CreateLabTestDto, CreateLabResultDto, UpdateLabResultDto, UpdateLabPanelDto, UpdateLabTestDto } from './dto';
 import { StaffAccess } from '../auth/staff-access.decorator';
@@ -95,7 +96,7 @@ export class LabsController {
     @CurrentUser() user: AuthUser,
   ) {
     // Get user name for reviewedBy field
-    return this.labsService.create(patientId, dto, 'Dr. ' + user.sub);
+    return this.labsService.create(patientId, dto, 'Dr. ' + user.name);
   }
 
   @Put('results/:id')

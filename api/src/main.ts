@@ -3,6 +3,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common';
+import * as express from 'express';
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,7 +15,8 @@ async function bootstrap() {
     : ['http://localhost:3001', 'http://localhost:3000']);
   app.enableCors({ origin: corsOrigins, credentials: true });
 
-  // Version REST under /v1, but keep /health at root
+  app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
   app.setGlobalPrefix('v1', { exclude: [{ path: 'health', method: RequestMethod.GET }] });
   await app.listen(process.env.PORT || 3000);
 }

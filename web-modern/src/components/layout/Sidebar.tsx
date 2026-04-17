@@ -6,6 +6,7 @@ import { Link, useLocation } from "@tanstack/react-router"
 import {
   LayoutDashboard,
   Calendar,
+  Clock,
   PawPrint,
   DollarSign,
   Pill,
@@ -44,7 +45,8 @@ const menuSections: MenuSection[] = [
     title: "Main",
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/appointments", label: "Appointments", icon: Calendar },
+      { href: "/calendar", label: "Calendar", icon: Calendar },
+      { href: "/appointments", label: "Appointments", icon: Clock },
       { href: "/patients", label: "Patients", icon: PawPrint },
       {
         href: "/admin/billing",
