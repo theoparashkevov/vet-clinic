@@ -1,5 +1,17 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/v1"
 
+function getToken(): string | null {
+  if (typeof window === "undefined") return null
+  const stored = localStorage.getItem("vet-clinic-auth")
+  if (!stored) return null
+  try {
+    const parsed = JSON.parse(stored)
+    return parsed.state?.token || null
+  } catch {
+    return null
+  }
+}
+
 export interface Photo {
   id: string
   url: string
@@ -20,7 +32,7 @@ export interface PhotoUploadData {
 }
 
 export async function fetchPatientPhotos(patientId: string): Promise<Photo[]> {
-  const token = localStorage.getItem("token")
+  const token = getToken()
   const response = await fetch(`${API_URL}/patients/${patientId}/photos`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -40,7 +52,7 @@ export async function uploadPatientPhoto(
   file: File,
   data: PhotoUploadData
 ): Promise<Photo> {
-  const token = localStorage.getItem("token")
+  const token = getToken()
   const formData = new FormData()
   formData.append("file", file)
   
@@ -66,7 +78,7 @@ export async function uploadPatientPhoto(
 }
 
 export async function deletePatientPhoto(photoId: string): Promise<void> {
-  const token = localStorage.getItem("token")
+  const token = getToken()
   const response = await fetch(`${API_URL}/photos/${photoId}`, {
     method: "DELETE",
     headers: {

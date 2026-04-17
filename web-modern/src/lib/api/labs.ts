@@ -82,7 +82,7 @@ export interface CreateLabResultData {
 }
 
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("token")
+  const token = getToken()
   const response = await fetch(url, {
     ...options,
     headers: {

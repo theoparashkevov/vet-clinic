@@ -1,5 +1,17 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/v1"
 
+function getToken(): string | null {
+  if (typeof window === "undefined") return null
+  const stored = localStorage.getItem("vet-clinic-auth")
+  if (!stored) return null
+  try {
+    const parsed = JSON.parse(stored)
+    return parsed.state?.token || null
+  } catch {
+    return null
+  }
+}
+
 export interface MedicalRecord {
   id: string
   patientId: string
@@ -31,7 +43,7 @@ export interface UpdateMedicalRecordData {
 }
 
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("token")
+  const token = getToken()
   const response = await fetch(url, {
     ...options,
     headers: {
