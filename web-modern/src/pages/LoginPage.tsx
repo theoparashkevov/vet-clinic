@@ -21,26 +21,32 @@ export function LoginPage() {
   const { login } = useAuthStore()
 
   const performLogin = async (email: string, password: string) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/v1"
+    
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    })
 
-    // Mock authentication
-    if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-      login(
-        {
-          id: "1",
-          name: "Dr. Maria Ivanova",
-          email: DEMO_EMAIL,
-          role: "doctor",
-        },
-        "mock-jwt-token"
-      )
-      navigate({ to: "/admin" })
-      return true
-    } else {
-      setError("Invalid email or password")
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      setError(error.message || "Invalid email or password")
       return false
     }
+
+    const data = await response.json()
+    login(
+      {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+      },
+      data.accessToken
+    )
+    navigate({ to: "/admin" })
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

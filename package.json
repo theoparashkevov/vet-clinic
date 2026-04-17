@@ -7,7 +7,8 @@
     "bot"
   ],
   "scripts": {
-    "dev": "concurrently --names api,web --prefix-colors blue,green \"npm --workspace api run start:dev\" \"npm --workspace web-modern run dev\"",    "lint": "echo 'lint TBD'",
+    "dev": "concurrently --names api,web --prefix-colors blue,green \"npm --workspace api run start:dev\" \"npm --workspace web-modern run dev\"",
+    "lint": "echo 'lint TBD'",
     "build": "echo 'build TBD'",
     "test": "echo 'test TBD'",
     "test:e2e": "npm --workspace web-modern run test:e2e",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "rolldown": "^1.0.0-rc.16",
     "tailwindcss-animate": "^1.0.7"
   },
   "dependencies": {
