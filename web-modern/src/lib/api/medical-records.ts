@@ -74,6 +74,9 @@ export async function createMedicalRecord(
     method: "POST",
     body: JSON.stringify(data),
   })
+  if (!result.data) {
+    throw new Error("Failed to create medical record")
+  }
   return result.data
 }
 
@@ -85,5 +88,8 @@ export async function updateMedicalRecord(
     method: "PUT",
     body: JSON.stringify(data),
   })
+  if (!result.data) {
+    throw new Error("Failed to update medical record")
+  }
   return result.data
 }

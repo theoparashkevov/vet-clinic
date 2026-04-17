@@ -74,6 +74,9 @@ export async function uploadPatientPhoto(
   }
 
   const result = await response.json()
+  if (!result.data) {
+    throw new Error("Failed to upload photo")
+  }
   return result.data
 }
 

@@ -83,6 +83,9 @@ export async function fetchPatients(
 
 export async function fetchPatient(id: string): Promise<Patient> {
   const result = await fetchWithAuth(`${API_URL}/patients/${id}`)
+  if (!result.data) {
+    throw new Error("Patient not found")
+  }
   return result.data
 }
 
@@ -124,6 +127,9 @@ export async function fetchOwners(
 
 export async function fetchOwner(id: string): Promise<Owner> {
   const result = await fetchWithAuth(`${API_URL}/owners/${id}`)
+  if (!result.data) {
+    throw new Error("Owner not found")
+  }
   return result.data
 }
 

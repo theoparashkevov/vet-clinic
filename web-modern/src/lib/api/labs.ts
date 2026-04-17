@@ -104,33 +104,36 @@ export async function fetchLabPanels(species?: string): Promise<LabPanel[]> {
   const params = new URLSearchParams()
   if (species) params.append("species", species)
   const result = await fetchWithAuth(`${API_URL}/labs/panels?${params}`)
-  return result.data
+  return result.data || []
 }
 
 export async function fetchCommonLabPanels(species?: string): Promise<LabPanel[]> {
   const params = new URLSearchParams()
   if (species) params.append("species", species)
   const result = await fetchWithAuth(`${API_URL}/labs/panels/common?${params}`)
-  return result.data
+  return result.data || []
 }
 
 export async function fetchLabTestsByPanel(panelId: string): Promise<LabTest[]> {
   const result = await fetchWithAuth(`${API_URL}/labs/panels/${panelId}/tests`)
-  return result.data
+  return result.data || []
 }
 
 export async function fetchLabResults(patientId: string): Promise<LabResult[]> {
   const result = await fetchWithAuth(`${API_URL}/labs/patients/${patientId}/results`)
-  return result.data
+  return result.data || []
 }
 
 export async function fetchPendingLabResults(patientId: string): Promise<LabResult[]> {
   const result = await fetchWithAuth(`${API_URL}/labs/patients/${patientId}/results/pending`)
-  return result.data
+  return result.data || []
 }
 
 export async function fetchLabResult(id: string): Promise<LabResult> {
   const result = await fetchWithAuth(`${API_URL}/labs/results/${id}`)
+  if (!result.data) {
+    throw new Error("Lab result not found")
+  }
   return result.data
 }
 
@@ -142,6 +145,9 @@ export async function createLabResult(
     method: "POST",
     body: JSON.stringify(data),
   })
+  if (!result.data) {
+    throw new Error("Failed to create lab result")
+  }
   return result.data
 }
 
@@ -159,6 +165,9 @@ export async function updateLabResult(
     method: "PUT",
     body: JSON.stringify(data),
   })
+  if (!result.data) {
+    throw new Error("Failed to update lab result")
+  }
   return result.data
 }
 
@@ -176,5 +185,5 @@ export async function fetchTestHistory(
   const result = await fetchWithAuth(
     `${API_URL}/labs/patients/${patientId}/tests/${testId}/history?limit=${limit}`
   )
-  return result.data
+  return result.data || []
 }

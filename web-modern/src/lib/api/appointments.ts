@@ -101,6 +101,9 @@ export async function fetchAppointments(
 
 export async function fetchAppointment(id: string): Promise<Appointment> {
   const result = await fetchWithAuth(`${API_URL}/appointments/${id}`)
+  if (!result.data) {
+    throw new Error("Appointment not found")
+  }
   return result.data
 }
 
@@ -109,6 +112,9 @@ export async function createAppointment(data: CreateAppointmentData): Promise<Ap
     method: "POST",
     body: JSON.stringify(data),
   })
+  if (!result.data) {
+    throw new Error("Failed to create appointment")
+  }
   return result.data
 }
 
@@ -117,6 +123,9 @@ export async function updateAppointment(id: string, data: Partial<CreateAppointm
     method: "PUT",
     body: JSON.stringify(data),
   })
+  if (!result.data) {
+    throw new Error("Failed to update appointment")
+  }
   return result.data
 }
 
