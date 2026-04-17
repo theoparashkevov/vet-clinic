@@ -30,11 +30,16 @@ import {
 import { usePatient } from "../../../lib/queries/patients"
 import { useLabResults } from "../../../lib/queries/labs"
 import { usePatientPhotos, useUploadPhoto, useDeletePhoto } from "../../../lib/queries/photos"
+import { useMedicalRecords, useCreateMedicalRecord, useUpdateMedicalRecord } from "../../../lib/queries/medical-records"
 import type { LabResult } from "../../../lib/api/labs"
+import type { MedicalRecord } from "../../../lib/api/medical-records"
 import { downloadPatientRecordPDF } from "../../../lib/pdf/patientRecord"
 import { LabResultsList } from "../../../components/labs/LabResultsList"
 import { PhotoGallery } from "../../../components/photos/PhotoGallery"
 import { ImageUpload } from "../../../components/photos/ImageUpload"
+import { MedicalRecordsList } from "../../../components/medical-records/MedicalRecordsList"
+import { AddMedicalRecordDialog } from "../../../components/medical-records/AddMedicalRecordDialog"
+import { EditMedicalRecordDialog } from "../../../components/medical-records/EditMedicalRecordDialog"
 import { toast } from "sonner"
 
 export const Route = createFileRoute("/_authenticated/patients/\$patientId")({
@@ -46,13 +51,18 @@ function PatientDetailPage() {
   const { data: patient, isLoading, error } = usePatient(patientId)
   const { data: labResults, isLoading: isLoadingLabs } = useLabResults(patientId)
   const { data: photos, isLoading: isLoadingPhotos } = usePatientPhotos(patientId)
+  const { data: medicalRecords, isLoading: isLoadingRecords } = useMedicalRecords(patientId)
   const uploadPhoto = useUploadPhoto()
   const deletePhoto = useDeletePhoto()
+  const createMedicalRecord = useCreateMedicalRecord()
+  const updateMedicalRecord = useUpdateMedicalRecord()
 
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false)
   const [selectedLabResult, setSelectedLabResult] = useState<LabResult | null>(null)
   const [isAddLabResultOpen, setIsAddLabResultOpen] = useState(false)
   const [isUploadPhotosOpen, setIsUploadPhotosOpen] = useState(false)
+  const [isAddMedicalRecordOpen, setIsAddMedicalRecordOpen] = useState(false)
+  const [editingMedicalRecord, setEditingMedicalRecord] = useState<MedicalRecord | null>(null)
 
   if (isLoading) {
     return (
@@ -247,6 +257,7 @@ function PatientDetailPage() {
       <Tabs defaultValue="info" className="space-y-4">
         <TabsList>
           <TabsTrigger value="info">Information</TabsTrigger>
+          <TabsTrigger value="medical-records">Medical Records</TabsTrigger>
           <TabsTrigger value="lab-results">Lab Results</TabsTrigger>
           <TabsTrigger value="photos">Photos</TabsTrigger>
         </TabsList>
@@ -262,6 +273,28 @@ function PatientDetailPage() {
               ) : (
                 <p className="text-sm text-muted-foreground">No medical notes recorded.</p>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="medical-records" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Medical Records</CardTitle>
+              </div>
+              <Button onClick={() => setIsAddMedicalRecordOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Medical Record
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <MedicalRecordsList
+                records={medicalRecords || []}
+                isLoading={isLoadingRecords}
+                onViewDetail={(record) => setEditingMedicalRecord(record)}
+                onAddNew={() => setIsAddMedicalRecordOpen(true)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -370,6 +403,47 @@ function PatientDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AddMedicalRecordDialog
+        patientName={patient.name}
+        open={isAddMedicalRecordOpen}
+        onOpenChange={setIsAddMedicalRecordOpen}
+        onSubmit={(data) => {
+          createMedicalRecord.mutate(
+            { patientId, data },
+            {
+              onSuccess: () => {
+                toast.success("Medical record created")
+                setIsAddMedicalRecordOpen(false)
+              },
+              onError: () => toast.error("Failed to create medical record"),
+            }
+          )
+        }}
+        isSubmitting={createMedicalRecord.isPending}
+      />
+
+      <EditMedicalRecordDialog
+        record={editingMedicalRecord}
+        patientName={patient.name}
+        open={!!editingMedicalRecord}
+        onOpenChange={() => setEditingMedicalRecord(null)}
+        onSubmit={(data) => {
+          if (editingMedicalRecord) {
+            updateMedicalRecord.mutate(
+              { id: editingMedicalRecord.id, data },
+              {
+                onSuccess: () => {
+                  toast.success("Medical record updated")
+                  setEditingMedicalRecord(null)
+                },
+                onError: () => toast.error("Failed to update medical record"),
+              }
+            )
+          }
+        }}
+        isSubmitting={updateMedicalRecord.isPending}
+      />
     </motion.div>
   )
 }
