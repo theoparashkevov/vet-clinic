@@ -424,10 +424,10 @@ async function main() {
     data: {
       patientId: rex.id, appointmentId: pastAppt1.id,
       visitDate: daysAgo(30),
-      summary: 'Routine check-up. All vitals normal. Weight 32 kg.',
+      summary: 'Routine check-up. All vitals normal. Weight 32 kg. Owner reports good appetite and energy levels. Coat in excellent condition. No concerns noted.',
       diagnoses: 'Healthy',
       treatments: 'None required',
-      prescriptions: 'Heartworm prevention — monthly',
+      prescriptions: 'Heartworm prevention — monthly (Interceptor)',
     },
   });
 
@@ -442,10 +442,10 @@ async function main() {
     data: {
       patientId: rex.id, appointmentId: pastAppt2.id,
       visitDate: daysAgo(90),
-      summary: 'Presented with head shaking and ear scratching. Left ear inflamed.',
-      diagnoses: 'Otitis externa (bacterial)',
-      treatments: 'Ear cleaning, topical antibiotic drops',
-      prescriptions: 'Otomax ear drops — 7 days',
+      summary: 'Presented with head shaking and ear scratching. Left ear inflamed with moderate brown discharge. Ear cytology performed.',
+      diagnoses: 'Otitis externa (bacterial) - left ear',
+      treatments: 'Deep ear cleaning under sedation, Otomax topical drops',
+      prescriptions: 'Otomax ear drops — 4 drops BID for 7 days, E-collar to prevent scratching',
     },
   });
 
@@ -460,10 +460,10 @@ async function main() {
     data: {
       patientId: whiskers.id, appointmentId: pastAppt3.id,
       visitDate: daysAgo(60),
-      summary: 'Mild coughing. Lungs clear on auscultation. Asthma history noted.',
-      diagnoses: 'Mild upper respiratory irritation — asthma flare',
-      treatments: 'Steam therapy recommended, reduce dust exposure',
-      prescriptions: 'Bronchodilator — as needed',
+      summary: 'Mild coughing episodes reported by owner. Lungs clear on auscultation. No fever. Asthma history noted. Trigger appears to be seasonal allergen exposure.',
+      diagnoses: 'Mild upper respiratory irritation — asthma flare secondary to seasonal allergens',
+      treatments: 'Steam therapy recommended, environmental allergen reduction (air purifier, reduce dust)',
+      prescriptions: 'Albuterol inhaler with spacer — 1 puff as needed for respiratory distress',
     },
   });
 
@@ -478,10 +478,10 @@ async function main() {
     data: {
       patientId: buddy.id, appointmentId: pastAppt4.id,
       visitDate: daysAgo(45),
-      summary: 'Limping on right front leg. X-ray performed — no fracture.',
+      summary: 'Acute onset limping on right front leg following play at park. Pain on carpal flexion. X-ray performed — no fracture, no joint effusion visible. Soft tissue swelling noted.',
       diagnoses: 'Minor sprain — right carpus',
-      treatments: 'Rest, cold compress 3× daily',
-      prescriptions: 'Meloxicam 1 mg/kg — 5 days',
+      treatments: 'Strict rest for 14 days, cold compress 10 min 3× daily for first 3 days',
+      prescriptions: 'Meloxicam 1.5mg/ml oral suspension — 0.1mg/kg once daily with food for 5 days',
     },
   });
 
@@ -496,9 +496,9 @@ async function main() {
     data: {
       patientId: buddy.id, appointmentId: pastAppt5.id,
       visitDate: daysAgo(38),
-      summary: 'Follow-up for right carpus sprain. Full weight bearing restored. Good recovery.',
-      diagnoses: 'Resolved sprain',
-      treatments: 'Gradual return to normal activity',
+      summary: 'Follow-up for right carpus sprain. Full weight bearing restored. No pain on palpation. Good range of motion. Owner reports normal activity at home.',
+      diagnoses: 'Resolved sprain - right carpus',
+      treatments: 'Gradual return to normal activity over 1 week, avoid high-impact activities for additional 2 weeks',
       prescriptions: 'None',
     },
   });
@@ -514,16 +514,249 @@ async function main() {
     data: {
       patientId: luna.id, appointmentId: pastAppt6.id,
       visitDate: daysAgo(15),
-      summary: 'Presented with 2-day vomiting history. Palpation normal. Likely dietary indiscretion.',
-      diagnoses: 'Acute gastritis',
-      treatments: '24h fasting, bland diet (boiled chicken + rice)',
-      prescriptions: 'Cerenia 1 mg/kg — 3 days',
+      summary: 'Presented with 2-day vomiting history (3-4 episodes/day). No diarrhea reported. Abdomen palpation normal, no pain. Alert and responsive. Likely dietary indiscretion - owner reports Luna got into trash 2 days ago.',
+      diagnoses: 'Acute gastritis - dietary indiscretion',
+      treatments: '24-hour fasting period followed by bland diet (boiled chicken + rice in small frequent meals)',
+      prescriptions: 'Cerenia 16mg tablets — 1mg/kg once daily for 3 days, Probiotics (FortiFlora) — 1 packet daily for 7 days',
     },
   });
 
-  // ── Future appointment ────────────────────────────────────────────────────
+  // ── Additional Past Medical Records (for richer history) ──────────────────
+  
+  // Rex - Additional records
+  const rexAppt1 = await prisma.appointment.create({
+    data: {
+      patientId: rex.id, ownerId: ivan.id, doctorId: drMaria.id,
+      startsAt: dateAt(daysAgo(180), 10, 0), endsAt: dateAt(daysAgo(180), 10, 30),
+      reason: 'Annual wellness exam', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: rex.id, appointmentId: rexAppt1.id,
+      visitDate: daysAgo(180),
+      summary: 'Comprehensive annual wellness examination. All physical parameters within normal limits. Coat shiny and healthy. Dental tartar minimal. Weight stable at 30.5 kg. Annual bloodwork performed.',
+      diagnoses: 'Healthy adult dog',
+      treatments: 'Routine wellness care',
+      prescriptions: 'Yearly vaccinations updated (Rabies 3-year, DHPP), Heartworm prevention continued',
+    },
+  });
+
+  const rexAppt2 = await prisma.appointment.create({
+    data: {
+      patientId: rex.id, ownerId: ivan.id, doctorId: drPetar.id,
+      startsAt: dateAt(daysAgo(365), 14, 0), endsAt: dateAt(daysAgo(365), 14, 30),
+      reason: 'Skin hot spot', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: rex.id, appointmentId: rexAppt2.id,
+      visitDate: daysAgo(365),
+      summary: 'Presented with 3cm diameter moist dermatitis on right flank. Area is erythematous, exudative, and pruritic. Owner reports Rex has been licking the area excessively.',
+      diagnoses: 'Acute moist dermatitis (hot spot) - right flank',
+      treatments: 'Clip hair around lesion, cleanse with chlorhexidine solution, topical antibiotic/steroid cream',
+      prescriptions: 'Neo-Poly-Dex ointment — apply thin layer TID for 7-10 days, E-collar to prevent licking, Benadryl 25mg — 1 tablet BID for itching',
+    },
+  });
+
+  const rexAppt3 = await prisma.appointment.create({
+    data: {
+      patientId: rex.id, ownerId: ivan.id, doctorId: drMaria.id,
+      startsAt: dateAt(daysAgo(7), 9, 30), endsAt: dateAt(daysAgo(7), 10, 0),
+      reason: 'Bloodwork - pre-surgical screening', status: 'completed',
+    },
+  });
+  const rexRecord3 = await prisma.medicalRecord.create({
+    data: {
+      patientId: rex.id, appointmentId: rexAppt3.id,
+      visitDate: daysAgo(7),
+      summary: 'Pre-surgical bloodwork panel drawn for upcoming dental procedure. Patient fasted 12 hours. Tolerated venipuncture well.',
+      diagnoses: 'Pre-surgical screening',
+      treatments: 'Blood draw for CBC and Chemistry panel',
+      prescriptions: 'None',
+    },
+  });
+
+  // Buddy - Additional records showing weight loss pattern
+  const buddyAppt1 = await prisma.appointment.create({
+    data: {
+      patientId: buddy.id, ownerId: ivan.id, doctorId: drElena.id,
+      startsAt: dateAt(daysAgo(120), 9, 0), endsAt: dateAt(daysAgo(120), 9, 30),
+      reason: 'Annual exam + vaccines', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: buddy.id, appointmentId: buddyAppt1.id,
+      visitDate: daysAgo(120),
+      summary: 'Annual wellness examination. Weight 34 kg (ideal for breed). Excellent body condition. Vaccines updated. Routine deworming performed.',
+      diagnoses: 'Healthy',
+      treatments: 'Routine preventive care',
+      prescriptions: 'Rabies 3-year vaccine, DHPP booster, Heartgard Plus monthly',
+    },
+  });
+
+  const buddyAppt2 = await prisma.appointment.create({
+    data: {
+      patientId: buddy.id, ownerId: ivan.id, doctorId: drElena.id,
+      startsAt: dateAt(daysAgo(75), 16, 0), endsAt: dateAt(daysAgo(75), 16, 30),
+      reason: 'Weight loss concern', status: 'completed',
+    },
+  });
+  const buddyRecord2 = await prisma.medicalRecord.create({
+    data: {
+      patientId: buddy.id, appointmentId: buddyAppt2.id,
+      visitDate: daysAgo(75),
+      summary: 'Owner reports decreased appetite over past month. Weight down from 34 kg to 33.5 kg. Physical exam unremarkable. No GI symptoms. Recommend monitoring and recheck in 2 weeks.',
+      diagnoses: 'Unexplained weight loss - early stage',
+      treatments: 'Appetite stimulant trial, diet assessment',
+      prescriptions: 'Mirtazapine 15mg — 1/4 tablet every 3 days for appetite stimulation',
+    },
+  });
+
+  const buddyAppt3 = await prisma.appointment.create({
+    data: {
+      patientId: buddy.id, ownerId: ivan.id, doctorId: drElena.id,
+      startsAt: dateAt(daysAgo(60), 15, 0), endsAt: dateAt(daysAgo(60), 15, 30),
+      reason: 'Weight loss recheck + bloodwork', status: 'completed',
+    },
+  });
+  const buddyRecord3 = await prisma.medicalRecord.create({
+    data: {
+      patientId: buddy.id, appointmentId: buddyAppt3.id,
+      visitDate: daysAgo(60),
+      summary: 'Weight now 32 kg (continued loss despite appetite stimulant). Full physical exam performed. Abdomen palpation normal. Bloodwork drawn for comprehensive panel.',
+      diagnoses: 'Progressive weight loss - under investigation',
+      treatments: 'Comprehensive blood panel, urinalysis, fecal exam',
+      prescriptions: 'Continue Mirtazapine, Schedule abdominal ultrasound',
+    },
+  });
+
+  // Whiskers - Additional asthma records
+  const whiskersAppt1 = await prisma.appointment.create({
+    data: {
+      patientId: whiskers.id, ownerId: ana.id, doctorId: drPetar.id,
+      startsAt: dateAt(daysAgo(120), 11, 0), endsAt: dateAt(daysAgo(120), 11, 30),
+      reason: 'Asthma management check', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: whiskers.id, appointmentId: whiskersAppt1.id,
+      visitDate: daysAgo(120),
+      summary: 'Routine asthma management visit. Owner reports using inhaler 1-2 times per week during high pollen days. No emergency episodes. Lungs clear. Weight stable.',
+      diagnoses: 'Controlled feline asthma',
+      treatments: 'Continue current management, environmental control education',
+      prescriptions: 'Albuterol inhaler refill, Consider starting inhaled steroid (Flovent) for maintenance',
+    },
+  });
+
+  const whiskersAppt2 = await prisma.appointment.create({
+    data: {
+      patientId: whiskers.id, ownerId: ana.id, doctorId: drPetar.id,
+      startsAt: dateAt(daysAgo(180), 10, 0), endsAt: dateAt(daysAgo(180), 10, 30),
+      reason: 'Initial asthma diagnosis', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: whiskers.id, appointmentId: whiskersAppt2.id,
+      visitDate: daysAgo(180),
+      summary: 'Presented with acute respiratory distress. Open-mouth breathing, coughing, lethargy. Radiographs show bronchial pattern consistent with asthma. Nebulization performed in clinic.',
+      diagnoses: 'Feline asthma - acute exacerbation',
+      treatments: 'Oxygen therapy, Nebulization with bronchodilator, In-hospital monitoring for 4 hours',
+      prescriptions: 'Albuterol inhaler with AeroKat spacer — 1 puff BID, Prednisolone 5mg — 1 tablet daily for 5 days then taper',
+    },
+  });
+
+  // Bella - Allergy and spay records
+  const bellaAppt1 = await prisma.appointment.create({
+    data: {
+      patientId: bella.id, ownerId: ana.id, doctorId: drPetar.id,
+      startsAt: dateAt(daysAgo(60), 9, 0), endsAt: dateAt(daysAgo(60), 9, 30),
+      reason: 'Spay surgery', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: bella.id, appointmentId: bellaAppt1.id,
+      visitDate: daysAgo(60),
+      summary: 'Ovariohysterectomy performed under general anesthesia. Surgery uneventful. Recovery smooth. Incision closed with absorbable sutures.',
+      diagnoses: 'Spay (OHE) - routine',
+      treatments: 'Ovariohysterectomy, Post-operative pain management',
+      prescriptions: 'Carprofen 75mg — 1/2 tablet daily for 3 days, Activity restriction for 10 days',
+    },
+  });
+
+  const bellaAppt2 = await prisma.appointment.create({
+    data: {
+      patientId: bella.id, ownerId: ana.id, doctorId: drPetar.id,
+      startsAt: dateAt(daysAgo(90), 14, 0), endsAt: dateAt(daysAgo(90), 14, 30),
+      reason: 'Skin allergies - itchy skin', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: bella.id, appointmentId: bellaAppt2.id,
+      visitDate: daysAgo(90),
+      summary: 'Presented with pruritus, erythema on abdomen and inner thighs. Chronic history of skin issues. Owner suspects chicken-based diet causing flare-ups.',
+      diagnoses: 'Atopic dermatitis with suspected food allergy (chicken)',
+      treatments: 'Hydrolyzed protein diet trial, Antihistamine therapy, Topical soothing spray',
+      prescriptions: 'Royal Canin Hydrolyzed Protein diet — strict 8-week trial, Apoquel 16mg — 1 tablet daily for 14 days then reassess, MalAcetic spray — apply to affected areas BID',
+    },
+  });
+
+  // Luna - Additional records
+  const lunaAppt1 = await prisma.appointment.create({
+    data: {
+      patientId: luna.id, ownerId: georgi.id, doctorId: drMaria.id,
+      startsAt: dateAt(daysAgo(90), 10, 0), endsAt: dateAt(daysAgo(90), 10, 30),
+      reason: 'Kitten wellness - first visit', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: luna.id, appointmentId: lunaAppt1.id,
+      visitDate: daysAgo(90),
+      summary: 'First kitten visit. Luna is bright, alert, and playful. Fecal exam negative for parasites. No concerns identified. Discussed kitten care and nutrition.',
+      diagnoses: 'Healthy kitten',
+      treatments: 'First vaccinations, Fecal examination, Deworming',
+      prescriptions: 'FVRCP vaccine #1, Pyrantel pamoate dewormer, Royal Canin Kitten food recommended',
+    },
+  });
+
+  // Milo - Rabbit records
+  const miloAppt1 = await prisma.appointment.create({
+    data: {
+      patientId: milo.id, ownerId: marina.id, doctorId: drElena.id,
+      startsAt: dateAt(daysAgo(180), 11, 0), endsAt: dateAt(daysAgo(180), 11, 30),
+      reason: 'Annual rabbit exam', status: 'completed',
+    },
+  });
+  await prisma.medicalRecord.create({
+    data: {
+      patientId: milo.id, appointmentId: miloAppt1.id,
+      visitDate: daysAgo(180),
+      summary: 'Annual examination for Milo the rabbit. Teeth appear normal (no overgrowth). Nails trimmed. Weight stable. Discussed proper rabbit diet and housing.',
+      diagnoses: 'Healthy rabbit',
+      treatments: 'Nail trim, Physical examination',
+      prescriptions: 'Continue unlimited timothy hay, fresh vegetables, limited pellets',
+    },
+  });
+
+  console.log('  Past appointments + medical records: 18 (6 original + 12 additional)');
+
+  // ── Future appointments ───────────────────────────────────────────────────
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const dayAfterTomorrow = new Date();
+  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+  
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  
   await prisma.appointment.create({
     data: {
       patientId: milo.id, ownerId: marina.id, doctorId: drElena.id,
@@ -531,9 +764,48 @@ async function main() {
       reason: 'First visit — health screening', status: 'scheduled',
     },
   });
+  
+  await prisma.appointment.create({
+    data: {
+      patientId: rex.id, ownerId: ivan.id, doctorId: drMaria.id,
+      startsAt: dateAt(tomorrow, 14, 0), endsAt: dateAt(tomorrow, 14, 30),
+      reason: 'Dental cleaning follow-up', status: 'scheduled',
+    },
+  });
+  
+  await prisma.appointment.create({
+    data: {
+      patientId: whiskers.id, ownerId: ana.id, doctorId: drPetar.id,
+      startsAt: dateAt(dayAfterTomorrow, 11, 0), endsAt: dateAt(dayAfterTomorrow, 11, 30),
+      reason: 'Vaccination overdue - Rabies & FVRCP', status: 'scheduled',
+    },
+  });
+  
+  await prisma.appointment.create({
+    data: {
+      patientId: buddy.id, ownerId: ivan.id, doctorId: drElena.id,
+      startsAt: dateAt(dayAfterTomorrow, 15, 0), endsAt: dateAt(dayAfterTomorrow, 15, 30),
+      reason: 'Weight loss follow-up - comprehensive workup', status: 'scheduled',
+    },
+  });
+  
+  await prisma.appointment.create({
+    data: {
+      patientId: luna.id, ownerId: georgi.id, doctorId: drMaria.id,
+      startsAt: dateAt(nextWeek, 10, 0), endsAt: dateAt(nextWeek, 10, 30),
+      reason: 'Kitten booster vaccines', status: 'scheduled',
+    },
+  });
+  
+  await prisma.appointment.create({
+    data: {
+      patientId: bella.id, ownerId: ana.id, doctorId: drPetar.id,
+      startsAt: dateAt(nextWeek, 16, 0), endsAt: dateAt(nextWeek, 16, 30),
+      reason: 'Spay incision check (suture removal)', status: 'scheduled',
+    },
+  });
 
-  console.log('  Past appointments + medical records: 6');
-  console.log('  Upcoming appointments: 1 (tomorrow)');
+  console.log('  Upcoming appointments: 6 (1 tomorrow + 5 additional)');
 
   // ── Prescriptions ─────────────────────────────────────────────────────────
   // Rex - Active prescriptions
@@ -603,7 +875,56 @@ async function main() {
       veterinarian: 'Dr. Petar Dimitrov',
     },
   });
-  console.log('  Prescriptions: 4 records created');
+  
+  // Additional prescriptions
+  await prisma.prescription.create({
+    data: {
+      patientId: buddy.id,
+      medication: 'Mirtazapine 15mg',
+      dosage: '1/4 tablet',
+      frequency: 'Every 3 days',
+      duration: 'As needed',
+      instructions: 'Appetite stimulant for weight loss',
+      expiresAt: new Date(today.getFullYear(), today.getMonth() + 2, today.getDate()),
+      refillsTotal: 3,
+      refillsRemaining: 2,
+      isControlled: false,
+      veterinarian: 'Dr. Elena Georgieva',
+    },
+  });
+  
+  await prisma.prescription.create({
+    data: {
+      patientId: bella.id,
+      medication: 'Apoquel 16mg',
+      dosage: '1 tablet',
+      frequency: 'Once daily',
+      duration: '14 days',
+      instructions: 'For allergic dermatitis itching',
+      expiresAt: new Date(today.getFullYear(), today.getMonth() + 1, today.getDate()),
+      refillsTotal: 2,
+      refillsRemaining: 2,
+      isControlled: false,
+      veterinarian: 'Dr. Petar Dimitrov',
+    },
+  });
+  
+  await prisma.prescription.create({
+    data: {
+      patientId: whiskers.id,
+      medication: 'Prednisolone 5mg',
+      dosage: '1 tablet',
+      frequency: 'Once daily',
+      duration: '5 days then taper',
+      instructions: 'For asthma control - do not stop abruptly',
+      expiresAt: new Date(today.getFullYear(), today.getMonth() + 1, today.getDate()),
+      refillsTotal: 1,
+      refillsRemaining: 1,
+      isControlled: false,
+      veterinarian: 'Dr. Petar Dimitrov',
+    },
+  });
+  console.log('  Prescriptions: 7 records created');
 
   // ── Follow-up Reminders ────────────────────────────────────────────────────
   // Rex - Lab results due today (high priority)
@@ -1106,7 +1427,626 @@ Sympathies extended to family. {{patientName}} was a wonderful {{species}} and w
     ],
   });
 
-  console.log('  Lab panels: CBC, Chemistry with 20 reference ranges');
+  // Thyroid Panel
+  const thyroidPanel = await prisma.labPanel.create({
+    data: {
+      name: 'Thyroid Panel',
+      category: 'Endocrinology',
+      description: 'Thyroid hormone levels for metabolic assessment',
+      isCommon: true,
+    },
+  });
+
+  await prisma.labTest.createMany({
+    data: [
+      { panelId: thyroidPanel.id, name: 'Total T4', abbreviation: 'T4', unit: 'µg/dL', refRangeDogMin: 1.0, refRangeDogMax: 4.0, refRangeCatMin: 0.8, refRangeCatMax: 4.0, criticalLow: 0.5, criticalHigh: 6.0, sortOrder: 1 },
+      { panelId: thyroidPanel.id, name: 'Free T4', abbreviation: 'fT4', unit: 'ng/dL', refRangeDogMin: 0.8, refRangeDogMax: 2.5, refRangeCatMin: 0.6, refRangeCatMax: 2.5, sortOrder: 2 },
+      { panelId: thyroidPanel.id, name: 'TSH', abbreviation: 'TSH', unit: 'ng/mL', refRangeDogMin: 0.1, refRangeDogMax: 0.6, refRangeCatMin: 0.1, refRangeCatMax: 0.6, sortOrder: 3 },
+    ],
+  });
+
+  // Urinalysis Panel
+  const urinePanel = await prisma.labPanel.create({
+    data: {
+      name: 'Urinalysis',
+      category: 'Urine',
+      description: 'Urine specific gravity, pH, and sediment analysis',
+      isCommon: true,
+    },
+  });
+
+  await prisma.labTest.createMany({
+    data: [
+      { panelId: urinePanel.id, name: 'Specific Gravity', abbreviation: 'USG', unit: '', refRangeDogMin: 1.015, refRangeDogMax: 1.045, refRangeCatMin: 1.035, refRangeCatMax: 1.060, sortOrder: 1 },
+      { panelId: urinePanel.id, name: 'pH', abbreviation: 'pH', unit: '', refRangeDogMin: 5.5, refRangeDogMax: 7.5, refRangeCatMin: 5.5, refRangeCatMax: 7.5, sortOrder: 2 },
+      { panelId: urinePanel.id, name: 'Protein', abbreviation: 'PRO', unit: '', sortOrder: 3 },
+      { panelId: urinePanel.id, name: 'Glucose', abbreviation: 'GLU', unit: '', sortOrder: 4 },
+      { panelId: urinePanel.id, name: 'Ketones', abbreviation: 'KET', unit: '', sortOrder: 5 },
+    ],
+  });
+
+  console.log('  Lab panels: CBC, Chemistry, Thyroid, Urinalysis with reference ranges');
+
+  const cbcTests = await prisma.labTest.findMany({
+    where: { panelId: cbcPanel.id },
+    select: { id: true, abbreviation: true, refRangeDogMin: true, refRangeDogMax: true },
+  });
+
+  const rexCbcResult = await prisma.labResult.create({
+    data: {
+      patientId: rex.id,
+      panelId: cbcPanel.id,
+      testDate: daysAgo(180),
+      receivedDate: daysAgo(179),
+      reviewedDate: daysAgo(179),
+      reviewedBy: 'Dr. Maria Ivanova',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Annual wellness screening CBC',
+      interpretation: 'All values within normal limits for adult German Shepherd.',
+      externalLab: 'In-house',
+    },
+  });
+
+  for (const test of cbcTests) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'WBC': value = 10.5; break;
+      case 'RBC': value = 7.0; break;
+      case 'HGB': value = 15.5; break;
+      case 'HCT': value = 45; break;
+      case 'PLT': value = 280; break;
+      case 'MCV': value = 65; break;
+      case 'MCH': value = 22; break;
+      case 'NEU': value = 6.5; break;
+      case 'LYM': value = 2.8; break;
+      case 'MONO': value = 0.8; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: rexCbcResult.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeDogMin ?? undefined,
+        refRangeMax: test.refRangeDogMax ?? undefined,
+      },
+    });
+  }
+
+  const rexSurgeryResult = await prisma.labResult.create({
+    data: {
+      patientId: rex.id,
+      panelId: cbcPanel.id,
+      testDate: daysAgo(7),
+      receivedDate: daysAgo(6),
+      reviewedDate: daysAgo(6),
+      reviewedBy: 'Dr. Maria Ivanova',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Pre-dental screening panel',
+      interpretation: 'CBC normal. Approved for anesthesia.',
+      externalLab: 'In-house',
+    },
+  });
+
+  for (const test of cbcTests) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'WBC': value = 9.8; break;
+      case 'RBC': value = 7.2; break;
+      case 'HGB': value = 16.0; break;
+      case 'HCT': value = 47; break;
+      case 'PLT': value = 310; break;
+      case 'MCV': value = 66; break;
+      case 'MCH': value = 22.5; break;
+      case 'NEU': value = 6.0; break;
+      case 'LYM': value = 2.5; break;
+      case 'MONO': value = 0.7; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: rexSurgeryResult.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeDogMin ?? undefined,
+        refRangeMax: test.refRangeDogMax ?? undefined,
+      },
+    });
+  }
+
+  const chemTests = await prisma.labTest.findMany({
+    where: { panelId: chemPanel.id },
+    select: { id: true, abbreviation: true, refRangeDogMin: true, refRangeDogMax: true },
+  });
+
+  const rexChemResult = await prisma.labResult.create({
+    data: {
+      patientId: rex.id,
+      panelId: chemPanel.id,
+      testDate: daysAgo(7),
+      receivedDate: daysAgo(6),
+      reviewedDate: daysAgo(6),
+      reviewedBy: 'Dr. Maria Ivanova',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Chemistry panel with CBC',
+      interpretation: 'All chemistry values within normal limits. Kidney and liver function excellent.',
+      externalLab: 'In-house',
+    },
+  });
+
+  for (const test of chemTests) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'BUN': value = 18; break;
+      case 'CREA': value = 1.1; break;
+      case 'ALT': value = 45; break;
+      case 'ALP': value = 85; break;
+      case 'TBIL': value = 0.3; break;
+      case 'TP': value = 6.8; break;
+      case 'ALB': value = 3.4; break;
+      case 'GLOB': value = 3.4; break;
+      case 'GLU': value = 95; break;
+      case 'CA': value = 10.2; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: rexChemResult.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeDogMin ?? undefined,
+        refRangeMax: test.refRangeDogMax ?? undefined,
+      },
+    });
+  }
+
+  const buddyWorkupCbc = await prisma.labResult.create({
+    data: {
+      patientId: buddy.id,
+      panelId: cbcPanel.id,
+      testDate: daysAgo(60),
+      receivedDate: daysAgo(59),
+      reviewedDate: daysAgo(59),
+      reviewedBy: 'Dr. Elena Georgieva',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Weight loss workup - CBC',
+      interpretation: 'CBC within normal limits. No signs of infection or anemia.',
+      externalLab: 'IDEXX',
+    },
+  });
+
+  for (const test of cbcTests) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'WBC': value = 8.5; break;
+      case 'RBC': value = 6.8; break;
+      case 'HGB': value = 14.8; break;
+      case 'HCT': value = 43; break;
+      case 'PLT': value = 265; break;
+      case 'MCV': value = 64; break;
+      case 'MCH': value = 22; break;
+      case 'NEU': value = 5.5; break;
+      case 'LYM': value = 2.2; break;
+      case 'MONO': value = 0.6; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: buddyWorkupCbc.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeDogMin ?? undefined,
+        refRangeMax: test.refRangeDogMax ?? undefined,
+      },
+    });
+  }
+
+  const buddyWorkupChem = await prisma.labResult.create({
+    data: {
+      patientId: buddy.id,
+      panelId: chemPanel.id,
+      testDate: daysAgo(60),
+      receivedDate: daysAgo(59),
+      reviewedDate: daysAgo(58),
+      reviewedBy: 'Dr. Elena Georgieva',
+      status: 'reviewed',
+      abnormalCount: 2,
+      criticalCount: 0,
+      notes: 'Weight loss workup - Chemistry panel',
+      interpretation: 'Mild elevation in liver enzymes (ALT, ALP). May indicate early liver changes or secondary to weight loss. Recommend ultrasound and recheck in 4 weeks.',
+      externalLab: 'IDEXX',
+    },
+  });
+
+  for (const test of chemTests) {
+    let value: number;
+    let status = 'normal';
+    
+    switch (test.abbreviation) {
+      case 'BUN': value = 22; break;
+      case 'CREA': value = 1.2; break;
+      case 'ALT': value = 95; status = 'high'; break;
+      case 'ALP': value = 185; status = 'high'; break;
+      case 'TBIL': value = 0.4; break;
+      case 'TP': value = 6.2; break;
+      case 'ALB': value = 3.0; break;
+      case 'GLOB': value = 3.2; break;
+      case 'GLU': value = 102; break;
+      case 'CA': value = 9.8; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: buddyWorkupChem.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status,
+        refRangeMin: test.refRangeDogMin ?? undefined,
+        refRangeMax: test.refRangeDogMax ?? undefined,
+      },
+    });
+  }
+
+  const cbcTestsCat = await prisma.labTest.findMany({
+    where: { panelId: cbcPanel.id },
+    select: { id: true, abbreviation: true, refRangeCatMin: true, refRangeCatMax: true },
+  });
+
+  const whiskersSeniorCbc = await prisma.labResult.create({
+    data: {
+      patientId: whiskers.id,
+      panelId: cbcPanel.id,
+      testDate: daysAgo(180),
+      receivedDate: daysAgo(179),
+      reviewedDate: daysAgo(179),
+      reviewedBy: 'Dr. Petar Dimitrov',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Senior wellness screening CBC',
+      interpretation: 'CBC normal for 3-year-old Siamese cat.',
+      externalLab: 'In-house',
+    },
+  });
+
+  for (const test of cbcTestsCat) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'WBC': value = 12.5; break;
+      case 'RBC': value = 7.5; break;
+      case 'HGB': value = 11.2; break;
+      case 'HCT': value = 35; break;
+      case 'PLT': value = 320; break;
+      case 'MCV': value = 47; break;
+      case 'MCH': value = 15; break;
+      case 'NEU': value = 7.0; break;
+      case 'LYM': value = 4.5; break;
+      case 'MONO': value = 0.4; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: whiskersSeniorCbc.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeCatMin ?? undefined,
+        refRangeMax: test.refRangeCatMax ?? undefined,
+      },
+    });
+  }
+
+  const chemTestsCat = await prisma.labTest.findMany({
+    where: { panelId: chemPanel.id },
+    select: { id: true, abbreviation: true, refRangeCatMin: true, refRangeCatMax: true },
+  });
+
+  const whiskersSeniorChem = await prisma.labResult.create({
+    data: {
+      patientId: whiskers.id,
+      panelId: chemPanel.id,
+      testDate: daysAgo(180),
+      receivedDate: daysAgo(179),
+      reviewedDate: daysAgo(179),
+      reviewedBy: 'Dr. Petar Dimitrov',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Senior wellness chemistry panel',
+      interpretation: 'All values within feline reference ranges.',
+      externalLab: 'In-house',
+    },
+  });
+
+  for (const test of chemTestsCat) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'BUN': value = 28; break;
+      case 'CREA': value = 1.6; break;
+      case 'ALT': value = 55; break;
+      case 'ALP': value = 45; break;
+      case 'TBIL': value = 0.25; break;
+      case 'TP': value = 7.2; break;
+      case 'ALB': value = 3.2; break;
+      case 'GLOB': value = 4.0; break;
+      case 'GLU': value = 115; break;
+      case 'CA': value = 9.5; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: whiskersSeniorChem.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeCatMin ?? undefined,
+        refRangeMax: test.refRangeCatMax ?? undefined,
+      },
+    });
+  }
+
+  const thyroidTests = await prisma.labTest.findMany({
+    where: { panelId: thyroidPanel.id },
+    select: { id: true, abbreviation: true, refRangeCatMin: true, refRangeCatMax: true },
+  });
+
+  const whiskersThyroid = await prisma.labResult.create({
+    data: {
+      patientId: whiskers.id,
+      panelId: thyroidPanel.id,
+      testDate: daysAgo(180),
+      receivedDate: daysAgo(179),
+      reviewedDate: daysAgo(179),
+      reviewedBy: 'Dr. Petar Dimitrov',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Senior wellness thyroid screening',
+      interpretation: 'T4 within normal range. No evidence of hyperthyroidism.',
+      externalLab: 'In-house',
+    },
+  });
+
+  for (const test of thyroidTests) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'T4': value = 1.8; break;
+      case 'fT4': value = 1.1; break;
+      case 'TSH': value = 0.25; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: whiskersThyroid.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeCatMin ?? undefined,
+        refRangeMax: test.refRangeCatMax ?? undefined,
+      },
+    });
+  }
+
+  const bellaAllergyCbc = await prisma.labResult.create({
+    data: {
+      patientId: bella.id,
+      panelId: cbcPanel.id,
+      testDate: daysAgo(90),
+      receivedDate: daysAgo(89),
+      reviewedDate: daysAgo(89),
+      reviewedBy: 'Dr. Petar Dimitrov',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Pre-medication baseline CBC',
+      interpretation: 'CBC normal. No eosinophilia noted.',
+      externalLab: 'In-house',
+    },
+  });
+
+  for (const test of cbcTests) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'WBC': value = 9.2; break;
+      case 'RBC': value = 6.9; break;
+      case 'HGB': value = 14.2; break;
+      case 'HCT': value = 41; break;
+      case 'PLT': value = 290; break;
+      case 'MCV': value = 60; break;
+      case 'MCH': value = 21; break;
+      case 'NEU': value = 6.2; break;
+      case 'LYM': value = 2.5; break;
+      case 'MONO': value = 0.5; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: bellaAllergyCbc.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeDogMin ?? undefined,
+        refRangeMax: test.refRangeDogMax ?? undefined,
+      },
+    });
+  }
+
+  const bellaAllergyChem = await prisma.labResult.create({
+    data: {
+      patientId: bella.id,
+      panelId: chemPanel.id,
+      testDate: daysAgo(90),
+      receivedDate: daysAgo(89),
+      reviewedDate: daysAgo(89),
+      reviewedBy: 'Dr. Petar Dimitrov',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Pre-medication chemistry baseline',
+      interpretation: 'All values normal. Kidney and liver function appropriate for medication.',
+      externalLab: 'In-house',
+    },
+  });
+
+  for (const test of chemTests) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'BUN': value = 20; break;
+      case 'CREA': value = 1.0; break;
+      case 'ALT': value = 65; break;
+      case 'ALP': value = 95; break;
+      case 'TBIL': value = 0.3; break;
+      case 'TP': value = 6.5; break;
+      case 'ALB': value = 3.2; break;
+      case 'GLOB': value = 3.3; break;
+      case 'GLU': value = 98; break;
+      case 'CA': value = 10.0; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: bellaAllergyChem.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeDogMin ?? undefined,
+        refRangeMax: test.refRangeDogMax ?? undefined,
+      },
+    });
+  }
+
+  const lunaKittenCbc = await prisma.labResult.create({
+    data: {
+      patientId: luna.id,
+      panelId: cbcPanel.id,
+      testDate: daysAgo(90),
+      receivedDate: daysAgo(89),
+      reviewedDate: daysAgo(89),
+      reviewedBy: 'Dr. Maria Ivanova',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Kitten first visit screening CBC',
+      interpretation: 'Normal kitten CBC. Slightly higher WBC typical for young cats.',
+      externalLab: 'In-house',
+    },
+  });
+
+  for (const test of cbcTestsCat) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'WBC': value = 14.5; break;
+      case 'RBC': value = 8.0; break;
+      case 'HGB': value = 12.0; break;
+      case 'HCT': value = 37; break;
+      case 'PLT': value = 350; break;
+      case 'MCV': value = 46; break;
+      case 'MCH': value = 15; break;
+      case 'NEU': value = 8.5; break;
+      case 'LYM': value = 5.0; break;
+      case 'MONO': value = 0.5; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: lunaKittenCbc.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeCatMin ?? undefined,
+        refRangeMax: test.refRangeCatMax ?? undefined,
+      },
+    });
+  }
+
+  const miloRabbitCbc = await prisma.labResult.create({
+    data: {
+      patientId: milo.id,
+      panelId: cbcPanel.id,
+      testDate: daysAgo(180),
+      receivedDate: daysAgo(179),
+      reviewedDate: daysAgo(179),
+      reviewedBy: 'Dr. Elena Georgieva',
+      status: 'reviewed',
+      abnormalCount: 0,
+      criticalCount: 0,
+      notes: 'Annual rabbit wellness bloodwork - limited panel',
+      interpretation: 'Rabbit CBC within expected ranges. Note: Using canine reference ranges as approximation.',
+      externalLab: 'In-house',
+    },
+  });
+
+  const miloTests = cbcTests.slice(0, 5);
+  for (const test of miloTests) {
+    let value: number;
+    
+    switch (test.abbreviation) {
+      case 'WBC': value = 6.5; break;
+      case 'RBC': value = 5.8; break;
+      case 'HGB': value = 11.5; break;
+      case 'HCT': value = 38; break;
+      case 'PLT': value = 280; break;
+      default: value = 0;
+    }
+
+    await prisma.labResultValue.create({
+      data: {
+        labResultId: miloRabbitCbc.id,
+        testId: test.id,
+        value,
+        displayValue: value.toString(),
+        status: 'normal',
+        refRangeMin: test.refRangeDogMin ?? undefined,
+        refRangeMax: test.refRangeDogMax ?? undefined,
+      },
+    });
+  }
+
+  console.log('  Lab results: 10 completed lab panels with individual test results');
 
   console.log('\nSeeding complete!');
 }
