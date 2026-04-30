@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { AIProviderRegistry } from './ai-provider.registry';
 import {
   ChatCompletionRequest,
@@ -15,6 +16,7 @@ export class AIService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly registry: AIProviderRegistry,
+    private readonly settings: SettingsService,
   ) {}
 
   async generateCompletion(
@@ -40,28 +42,107 @@ export class AIService {
       }
     }
 
+    const apiKeySetting = await this.settings.getDecryptedValue(
+      `ai.${request.provider}.apiKey`,
+    );
+    if (apiKeySetting && !(config as any).apiKey) {
+      (config as any).apiKey = apiKeySetting;
+    }
+
+    const modelSetting = await this.settings.getDecryptedValue(
+      `ai.${request.provider}.model`,
+    );
+    if (modelSetting && !(config as any).model) {
+      (config as any).model = modelSetting;
+    }
+
     if (!provider.validateConfig(config)) {
       throw new BadRequestException(
         `Provider "${request.provider}" is not properly configured`,
       );
     }
 
-    let text: string;
+    let messages = request.messages;
+    if (request.pageContext) {
+      const pagePrompt = await this.settings.getDecryptedValue(
+        `ai.prompt.${request.pageContext}`,
+      );
+      if (pagePrompt) {
+        messages = [
+          { role: 'system', content: pagePrompt },
+          ...messages.filter((m) => m.role !== 'system'),
+        ];
+      }
+    }
+
+    let text = '';
+    let usedProvider = request.provider;
+
     try {
-      text = await provider.generateCompletion(request.messages, config);
+      text = await provider.generateCompletion(messages, config);
     } catch (error) {
-      const testProvider = this.registry.get('test');
-      if (testProvider && request.provider !== 'test') {
-        text = await testProvider.generateCompletion(request.messages, {});
-      } else {
-        throw error;
+      const fallbackOrder = ['openai', 'anthropic'];
+      const fallbackProviders = fallbackOrder.filter(
+        (p) => p !== request.provider,
+      );
+
+      let fallbackSuccess = false;
+      for (const fallbackId of fallbackProviders) {
+        const fallbackProvider = this.registry.get(fallbackId);
+        if (!fallbackProvider) continue;
+
+        let fallbackConfig: AIProviderConfigMap = {};
+        const fallbackRecord = await this.prisma.aIProviderConfig.findFirst({
+          where: { provider: fallbackId, isActive: true },
+        });
+        if (fallbackRecord?.configJson) {
+          try {
+            fallbackConfig = JSON.parse(fallbackRecord.configJson);
+          } catch {
+            fallbackConfig = {};
+          }
+        }
+
+        const fallbackApiKey = await this.settings.getDecryptedValue(
+          `ai.${fallbackId}.apiKey`,
+        );
+        if (fallbackApiKey && !(fallbackConfig as any).apiKey) {
+          (fallbackConfig as any).apiKey = fallbackApiKey;
+        }
+        const fallbackModel = await this.settings.getDecryptedValue(
+          `ai.${fallbackId}.model`,
+        );
+        if (fallbackModel && !(fallbackConfig as any).model) {
+          (fallbackConfig as any).model = fallbackModel;
+        }
+
+        if (!fallbackProvider.validateConfig(fallbackConfig)) continue;
+
+        try {
+          text = await fallbackProvider.generateCompletion(messages, fallbackConfig);
+          usedProvider = fallbackId;
+          fallbackSuccess = true;
+          break;
+        } catch {
+          // noop: try next fallback
+        }
+      }
+
+      if (!fallbackSuccess) {
+        const testProvider = this.registry.get('test');
+        if (testProvider && request.provider !== 'test') {
+          text = await testProvider.generateCompletion(messages, {});
+          usedProvider = 'test';
+        } else {
+          throw error;
+        }
       }
     }
 
     return {
       text: `${DISCLAIMER}\n\n${text}`,
       disclaimer: true,
-      provider: request.provider,
+      provider: usedProvider,
     };
   }
 }

@@ -39,6 +39,11 @@ const DEFAULT_SETTINGS = [
   { key: 'clinic.email', value: '', type: 'string', category: 'clinic', isPublic: true, description: 'Clinic email' },
   { key: 'clinic.timezone', value: 'UTC', type: 'string', category: 'clinic', isPublic: true, description: 'Clinic timezone' },
   { key: 'ai.defaultProvider', value: 'openai', type: 'string', category: 'ai', isPublic: true, description: 'Default AI provider' },
+  { key: 'ai.openai.apiKey', value: '', type: 'string', category: 'ai', isPublic: false, description: 'OpenAI API key' },
+  { key: 'ai.openai.model', value: 'gpt-4o', type: 'string', category: 'ai', isPublic: true, description: 'OpenAI model' },
+  { key: 'ai.anthropic.apiKey', value: '', type: 'string', category: 'ai', isPublic: false, description: 'Anthropic API key' },
+  { key: 'ai.anthropic.model', value: 'claude-3-opus-20240229', type: 'string', category: 'ai', isPublic: true, description: 'Anthropic model' },
+  { key: 'ai.systemPrompt', value: 'You are a helpful veterinary clinic assistant. You can answer general questions about pet care, clinic services, and appointments. You do not provide medical diagnoses.', type: 'string', category: 'ai', isPublic: true, description: 'Default AI system prompt' },
   { key: 'viber.enabled', value: 'false', type: 'boolean', category: 'viber', isPublic: true, description: 'Viber bot enabled' },
 ];
 

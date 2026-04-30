@@ -27,6 +27,7 @@ import { AuditLogModule } from './audit-log/audit-log.module';
 import { SettingsModule } from './settings/settings.module';
 import { BotModule } from './bot/bot.module';
 import { AIModule } from './ai/ai.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { AIModule } from './ai/ai.module';
     SettingsModule,
     BotModule,
     AIModule,
+    InvoicesModule,
   ],
   controllers: [HealthController],
 })
