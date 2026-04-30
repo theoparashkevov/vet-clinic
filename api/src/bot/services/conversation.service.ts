@@ -18,6 +18,7 @@ export class ConversationService {
         data: {
           viberUserId: externalId,
           status: 'active',
+          state: 'idle',
         },
       });
     }
@@ -53,6 +54,39 @@ export class ConversationService {
       where: { id },
       data: { status },
     });
+  }
+
+  async updateState(id: string, state: string, context?: Record<string, unknown>) {
+    const data: Record<string, unknown> = { state };
+    if (context !== undefined) {
+      data.context = JSON.stringify(context);
+    }
+    return this.prisma.botConversation.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async linkOwner(id: string, ownerId: string) {
+    return this.prisma.botConversation.update({
+      where: { id },
+      data: { ownerId },
+    });
+  }
+
+  async getContext(id: string): Promise<Record<string, unknown>> {
+    const conversation = await this.prisma.botConversation.findUnique({
+      where: { id },
+      select: { context: true },
+    });
+    if (conversation?.context) {
+      try {
+        return JSON.parse(conversation.context) as Record<string, unknown>;
+      } catch {
+        return {};
+      }
+    }
+    return {};
   }
 
   async listMessages(conversationId: string) {

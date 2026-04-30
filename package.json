@@ -22,6 +22,8 @@
     "api:prisma:seed": "npm --workspace api run prisma:seed"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
     "concurrently": "^8.2.2",
     "rolldown": "^1.0.0-rc.16",
     "tailwindcss-animate": "^1.0.7"

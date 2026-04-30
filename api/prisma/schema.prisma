@@ -670,6 +670,8 @@ model BotConversation {
   ownerId      String?
   viberUserId  String?
   status       String       @default("active")
+  state        String       @default("idle")
+  context      String?
   startedAt    DateTime     @default(now())
   endedAt      DateTime?
   messages     BotMessage[]
@@ -679,6 +681,7 @@ model BotConversation {
   @@index([ownerId])
   @@index([viberUserId])
   @@index([status])
+  @@index([state])
 }
 
 model BotMessage {

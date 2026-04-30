@@ -14,3 +14,7 @@ api/prisma/*.db-journal
 /playwright-report/
 /playwright/.cache/
 e2e/.auth/
+
+# Playwright
+/blob-report/
+/playwright/.auth/
