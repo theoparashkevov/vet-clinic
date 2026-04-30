@@ -7,69 +7,810 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum AppointmentStatus {
+  SCHEDULED
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  CHECK
+  INSURANCE
+  ONLINE
+}
+
+enum ServiceType {
+  CONSULTATION
+  SURGERY
+  VACCINATION
+  LABORATORY
+  IMAGING
+  MEDICATION
+  GROOMING
+  BOARDING
+  EMERGENCY
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+// ── Core Entities ────────────────────────────────────────────────────────────
+
+model User {
+  id                      String             @id @default(cuid())
+  name                    String
+  email                   String             @unique
+  passwordHash            String?
+  isSuperAdmin            Boolean            @default(false)
+  isActive                Boolean            @default(true)
+  phone                   String?
+  avatarUrl               String?
+  lastLoginAt             DateTime?
+  owner                   Owner?             @relation(fields: [ownerId], references: [id])
+  ownerId                 String?            @unique
+  appointments            Appointment[]
+  userRoles               UserRole[]
+  assignedUserRoles       UserRole[]         @relation("UserRoleAssignedBy")
+  createdMedicalRecords   MedicalRecord[]    @relation("MedicalRecordCreatedBy")
+  updatedMedicalRecords   MedicalRecord[]    @relation("MedicalRecordUpdatedBy")
+  prescribedPrescriptions Prescription[]     @relation("PrescriptionPrescribedBy")
+  createdInvoices         Invoice[]          @relation("InvoiceCreatedBy")
+  processedPayments       Payment[]          @relation("PaymentProcessedBy")
+  recordedVitalSigns      VitalSigns[]       @relation("VitalSignsRecordedBy")
+  assignedTasks           Task[]             @relation("TaskAssignedTo")
+  auditLogs               AuditLog[]
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  @@index([email])
+  @@index([isActive])
+}
+
 model Owner {
-  id           String        @id @default(cuid())
-  name         String
-  phone        String
-  email        String?
-  patients     Patient[]
-  appointments Appointment[]
-  createdAt    DateTime      @default(now())
+  id                String            @id @default(cuid())
+  name              String
+  phone             String
+  email             String?
+  address           String?
+  city              String?
+  postalCode        String?
+  emergencyContact  String?
+  isActive          Boolean           @default(true)
+  patients          Patient[]
+  appointments      Appointment[]
+  user              User?
+  tasks             Task[]
+  invoices          Invoice[]
+  communicationLogs CommunicationLog[]
+  botConversations  BotConversation[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([email])
+  @@index([phone])
+  @@index([isActive])
 }
 
 model Patient {
-  id                String          @id @default(cuid())
-  owner             Owner           @relation(fields: [ownerId], references: [id])
+  id                String             @id @default(cuid())
+  owner             Owner              @relation(fields: [ownerId], references: [id])
   ownerId           String
   name              String
   species           String
   breed             String?
   birthdate         DateTime?
+  sex               String?
+  isNeutered        Boolean?
+  color             String?
   microchipId       String?
+  status            String             @default("active")
+  deceasedAt        DateTime?
   notes             String?
   allergies         String?
   chronicConditions String?
   medicalRecords    MedicalRecord[]
   appointments      Appointment[]
-  createdAt         DateTime        @default(now())
+  vaccinations      Vaccination[]
+  weightRecords     WeightRecord[]
+  patientAlerts     PatientAlert[]
+  prescriptions     Prescription[]
+  photos            PatientPhoto[]
+  followUpReminders FollowUpReminder[]
+  labResults        LabResult[]
+  tasks             Task[]
+  invoices          Invoice[]
+  vitalSigns        VitalSigns[]
+  communicationLogs CommunicationLog[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([microchipId])
+  @@index([name])
 }
 
+// ── RBAC ─────────────────────────────────────────────────────────────────────
+
+model Role {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  description     String?
+  isSystem        Boolean          @default(false)
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([name])
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  resource        String
+  action          String
+  description     String?
+  rolePermissions RolePermission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([name])
+  @@index([resource])
+  @@index([action])
+}
+
+model UserRole {
+  id           String   @id @default(cuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+  role         Role     @relation(fields: [roleId], references: [id])
+  roleId       String
+  assignedAt   DateTime @default(now())
+  assignedBy   User?    @relation("UserRoleAssignedBy", fields: [assignedById], references: [id])
+  assignedById String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([assignedById])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  role         Role       @relation(fields: [roleId], references: [id])
+  roleId       String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  permissionId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+// ── Appointments & Clinical ──────────────────────────────────────────────────
+
 model Appointment {
-  id             String          @id @default(cuid())
-  patient        Patient         @relation(fields: [patientId], references: [id])
-  patientId      String
-  owner          Owner           @relation(fields: [ownerId], references: [id])
-  ownerId        String
-  doctor         User?           @relation(fields: [doctorId], references: [id])
-  doctorId       String?
-  startsAt       DateTime
-  endsAt         DateTime
-  reason         String?
-  status         String          @default("scheduled")
-  medicalRecords MedicalRecord[]
-  createdAt      DateTime        @default(now())
+  id                 String             @id @default(cuid())
+  patient            Patient            @relation(fields: [patientId], references: [id])
+  patientId          String
+  owner              Owner              @relation(fields: [ownerId], references: [id])
+  ownerId            String
+  doctor             User?              @relation(fields: [doctorId], references: [id])
+  doctorId           String?
+  startsAt           DateTime
+  endsAt             DateTime
+  reason             String?
+  status             AppointmentStatus  @default(SCHEDULED)
+  checkedInAt        DateTime?
+  checkedOutAt       DateTime?
+  room               String?
+  notes              String?
+  cancelledAt        DateTime?
+  cancelledBy        String?
+  cancellationReason String?
+  medicalRecords     MedicalRecord[]
+  followUps          FollowUpReminder[]
+  labResults         LabResult[]
+  tasks              Task[]
+  invoices           Invoice[]
+  vitalSigns         VitalSigns[]
+  communicationLogs  CommunicationLog[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([patientId])
+  @@index([ownerId])
+  @@index([doctorId])
+  @@index([startsAt])
+  @@index([status])
+  @@index([endsAt])
 }
 
 model MedicalRecord {
-  id            String       @id @default(cuid())
-  patient       Patient      @relation(fields: [patientId], references: [id])
-  patientId     String
-  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
-  appointmentId String?
-  visitDate     DateTime
-  summary       String
-  diagnoses     String?
-  treatments    String?
-  prescriptions String?
-  attachments   String?
-  createdAt     DateTime     @default(now())
+  id                   String       @id @default(cuid())
+  patient              Patient      @relation(fields: [patientId], references: [id])
+  patientId            String
+  appointment          Appointment? @relation(fields: [appointmentId], references: [id])
+  appointmentId        String?
+  createdBy            User?        @relation("MedicalRecordCreatedBy", fields: [createdById], references: [id])
+  createdById          String?
+  updatedBy            User?        @relation("MedicalRecordUpdatedBy", fields: [updatedById], references: [id])
+  updatedById          String?
+  visitDate            DateTime
+  summary              String
+  diagnoses            String?
+  treatments           String?
+  prescriptions        String?
+  attachments          String?
+  bodyConditionScore   Int?
+  nextVisitRecommended DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  @@index([patientId])
+  @@index([appointmentId])
+  @@index([createdById])
+  @@index([visitDate])
 }
 
-model User {
-  id           String        @id @default(cuid())
+model VitalSigns {
+  id                     String       @id @default(cuid())
+  patient                Patient      @relation(fields: [patientId], references: [id])
+  patientId              String
+  appointment            Appointment? @relation(fields: [appointmentId], references: [id])
+  appointmentId          String?
+  recordedAt             DateTime
+  temperature            Float?
+  heartRate              Int?
+  respiratoryRate        Int?
+  bloodPressureSystolic  Int?
+  bloodPressureDiastolic Int?
+  weight                 Float?
+  bodyConditionScore     Int?
+  notes                  String?
+  recordedBy             User         @relation("VitalSignsRecordedBy", fields: [recordedById], references: [id])
+  recordedById           String
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  @@index([patientId])
+  @@index([appointmentId])
+  @@index([recordedById])
+  @@index([recordedAt])
+}
+
+model Prescription {
+  id               String   @id @default(cuid())
+  patient          Patient  @relation(fields: [patientId], references: [id])
+  patientId        String
+  medication       String
+  dosage           String
+  frequency        String
+  duration         String
+  instructions     String?
+  prescribedAt     DateTime @default(now())
+  expiresAt        DateTime
+  refillsTotal     Int      @default(0)
+  refillsRemaining Int      @default(0)
+  isControlled     Boolean  @default(false)
+  prescribedBy     User?    @relation("PrescriptionPrescribedBy", fields: [prescribedById], references: [id])
+  prescribedById   String?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([prescribedById])
+  @@index([prescribedAt])
+  @@index([expiresAt])
+}
+
+model FollowUpReminder {
+  id               String       @id @default(cuid())
+  patient          Patient      @relation(fields: [patientId], references: [id])
+  patientId        String
+  appointment      Appointment? @relation(fields: [appointmentId], references: [id])
+  appointmentId    String?
+  type             String
+  title            String
+  description      String?
+  dueDate          DateTime
+  status           String       @default("pending")
+  completedAt      DateTime?
+  completedBy      String?
+  assignedTo       String?
+  priority         String       @default("normal")
+  notifyClient     Boolean      @default(false)
+  clientNotifiedAt DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([patientId])
+  @@index([appointmentId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([assignedTo])
+  @@index([priority])
+}
+
+// ── Tasks & Notes ────────────────────────────────────────────────────────────
+
+model Task {
+  id            String       @id @default(cuid())
+  title         String
+  description   String?
+  type          String       @default("general")
+  patient       Patient?     @relation(fields: [patientId], references: [id])
+  patientId     String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  appointmentId String?
+  owner         Owner?       @relation(fields: [ownerId], references: [id])
+  ownerId       String?
+  assignedToUser User?       @relation("TaskAssignedTo", fields: [assignedTo], references: [id])
+  assignedTo    String?
+  dueDate       DateTime?
+  status        String       @default("pending")
+  completedAt   DateTime?
+  completedBy   String?
+  priority      String       @default("normal")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([patientId])
+  @@index([appointmentId])
+  @@index([ownerId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([dueDate])
+  @@index([priority])
+}
+
+model NoteTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  content   String
+  isCommon  Boolean  @default(false)
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([isCommon])
+}
+
+// ── Patient Data ─────────────────────────────────────────────────────────────
+
+model PatientPhoto {
+  id           String   @id @default(cuid())
+  patient      Patient  @relation(fields: [patientId], references: [id])
+  patientId    String
+  url          String
+  thumbnailUrl String?
+  category     String
+  description  String?
+  takenAt      DateTime
+  uploadedAt   DateTime @default(now())
+  uploadedBy   String
+  fileSize     Int
+  mimeType     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([category])
+  @@index([takenAt])
+}
+
+model Vaccination {
+  id           String   @id @default(cuid())
+  patient      Patient  @relation(fields: [patientId], references: [id])
+  patientId    String
+  type         String
   name         String
-  email        String        @unique
-  role         String
-  passwordHash String?
-  appointments Appointment[]
+  givenDate    DateTime
+  dueDate      DateTime
+  batchNumber  String?
+  veterinarian String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([dueDate])
+}
+
+model WeightRecord {
+  id        String   @id @default(cuid())
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  patientId String
+  weight    Float
+  date      DateTime
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([date])
+}
+
+model PatientAlert {
+  id          String   @id @default(cuid())
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  patientId   String
+  type        String
+  severity    String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([severity])
+}
+
+// ── Lab Results ──────────────────────────────────────────────────────────────
+
+model LabPanel {
+  id          String      @id @default(cuid())
+  name        String
+  category    String
+  description String?
+  tests       LabTest[]
+  labResults  LabResult[]
+  isCommon    Boolean     @default(false)
+  species     String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([category])
+  @@index([isCommon])
+  @@index([species])
+}
+
+model LabTest {
+  id             String           @id @default(cuid())
+  panel          LabPanel         @relation(fields: [panelId], references: [id])
+  panelId        String
+  name           String
+  abbreviation   String?
+  unit           String
+  refRangeDogMin Float?
+  refRangeDogMax Float?
+  refRangeCatMin Float?
+  refRangeCatMax Float?
+  criticalLow    Float?
+  criticalHigh   Float?
+  warningLow     Float?
+  warningHigh    Float?
+  resultValues   LabResultValue[]
+  sortOrder      Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([panelId])
+  @@index([sortOrder])
+}
+
+model LabResult {
+  id             String           @id @default(cuid())
+  patient        Patient          @relation(fields: [patientId], references: [id])
+  patientId      String
+  appointment    Appointment?     @relation(fields: [appointmentId], references: [id])
+  appointmentId  String?
+  panel          LabPanel         @relation(fields: [panelId], references: [id])
+  panelId        String
+  testDate       DateTime
+  receivedDate   DateTime?
+  reviewedDate   DateTime?
+  reviewedBy     String?
+  status         String           @default("pending")
+  values         LabResultValue[]
+  abnormalCount  Int              @default(0)
+  criticalCount  Int              @default(0)
+  notes          String?
+  interpretation String?
+  pdfUrl         String?
+  externalLab    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([patientId])
+  @@index([testDate])
+  @@index([status])
+  @@index([panelId])
+  @@index([appointmentId])
+}
+
+model LabResultValue {
+  id           String    @id @default(cuid())
+  labResult    LabResult @relation(fields: [labResultId], references: [id])
+  labResultId  String
+  test         LabTest   @relation(fields: [testId], references: [id])
+  testId       String
+  value        Float
+  displayValue String
+  status       String    @default("normal")
+  refRangeMin  Float?
+  refRangeMax  Float?
+  previousValue Float?
+  trend        String?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([labResultId])
+  @@index([testId])
+  @@index([status])
+}
+
+// ── Pharmacy ─────────────────────────────────────────────────────────────────
+
+model MedicationTemplate {
+  id           String   @id @default(cuid())
+  name         String
+  category     String
+  dosage       String
+  frequency    String
+  duration     String
+  instructions String?
+  isCommon     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
+  @@index([isCommon])
+}
+
+// ── Billing ──────────────────────────────────────────────────────────────────
+
+model ServiceCatalog {
+  id              String      @id @default(cuid())
+  name            String
+  description     String?
+  serviceType     ServiceType @default(OTHER)
+  defaultPrice    Float
+  durationMinutes Int?
+  isActive        Boolean     @default(true)
+  invoiceItems    InvoiceItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([serviceType])
+  @@index([isActive])
+  @@index([name])
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  invoiceNumber  String        @unique
+  patient        Patient       @relation(fields: [patientId], references: [id])
+  patientId      String
+  owner          Owner         @relation(fields: [ownerId], references: [id])
+  ownerId        String
+  appointment    Appointment?  @relation(fields: [appointmentId], references: [id])
+  appointmentId  String?
+  status         InvoiceStatus @default(DRAFT)
+  issueDate      DateTime
+  dueDate        DateTime
+  subtotal       Float
+  taxAmount      Float         @default(0)
+  discountAmount Float         @default(0)
+  totalAmount    Float
+  notes          String?
+  items          InvoiceItem[]
+  payments       Payment[]
+  createdBy      User          @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+  createdById    String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([patientId])
+  @@index([ownerId])
+  @@index([appointmentId])
+  @@index([invoiceNumber])
+  @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
+}
+
+model InvoiceItem {
+  id               String          @id @default(cuid())
+  invoice          Invoice         @relation(fields: [invoiceId], references: [id])
+  invoiceId        String
+  serviceCatalog   ServiceCatalog? @relation(fields: [serviceCatalogId], references: [id])
+  serviceCatalogId String?
+  description      String
+  quantity         Int
+  unitPrice        Float
+  discountAmount   Float?          @default(0)
+  totalPrice       Float
+  serviceType      ServiceType     @default(OTHER)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([invoiceId])
+  @@index([serviceCatalogId])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id])
+  invoiceId     String
+  amount        Float
+  paymentMethod PaymentMethod @default(CASH)
+  status        PaymentStatus @default(PENDING)
+  transactionId String?
+  paidAt        DateTime?
+  notes         String?
+  processedBy   User?         @relation("PaymentProcessedBy", fields: [processedById], references: [id])
+  processedById String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([paymentMethod])
+  @@index([paidAt])
+}
+
+// ── Communication ────────────────────────────────────────────────────────────
+
+model CommunicationLog {
+  id            String       @id @default(cuid())
+  owner         Owner?       @relation(fields: [ownerId], references: [id])
+  ownerId       String?
+  patient       Patient?     @relation(fields: [patientId], references: [id])
+  patientId     String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  appointmentId String?
+  type          String
+  direction     String
+  content       String
+  status        String
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  errorMessage  String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([ownerId])
+  @@index([patientId])
+  @@index([appointmentId])
+  @@index([type])
+  @@index([status])
+  @@index([sentAt])
+}
+
+model BotConversation {
+  id           String       @id @default(cuid())
+  owner        Owner?       @relation(fields: [ownerId], references: [id])
+  ownerId      String?
+  viberUserId  String?
+  status       String       @default("active")
+  startedAt    DateTime     @default(now())
+  endedAt      DateTime?
+  messages     BotMessage[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([ownerId])
+  @@index([viberUserId])
+  @@index([status])
+}
+
+model BotMessage {
+  id             String          @id @default(cuid())
+  conversation   BotConversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+  direction      String
+  content        String
+  messageType    String?
+  sentAt         DateTime        @default(now())
+  deliveredAt    DateTime?
+  errorMessage   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([conversationId])
+  @@index([sentAt])
+}
+
+// ── System ───────────────────────────────────────────────────────────────────
+
+model PlatformSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  type        String   @default("string")
+  description String?
+  category    String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+  @@index([category])
+}
+
+model AIProviderConfig {
+  id         String   @id @default(cuid())
+  provider   String
+  name       String
+  apiKey     String?
+  baseUrl    String?
+  model      String
+  isDefault  Boolean  @default(false)
+  isActive   Boolean  @default(true)
+  configJson String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([provider])
+  @@index([isActive])
+  @@index([isDefault])
+}
+
+model AiPromptTemplate {
+  id                 String   @id @default(cuid())
+  name               String
+  description        String?
+  systemPrompt       String
+  userPromptTemplate String
+  variablesJson      String?
+  category           String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([category])
+  @@index([isActive])
+  @@index([name])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  user         User?    @relation(fields: [userId], references: [id])
+  userId       String?
+  action       String
+  resourceType String
+  resourceId   String?
+  description  String?
+  ipAddress    String?
+  userAgent    String?
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([resourceId])
+  @@index([createdAt])
 }

@@ -57,7 +57,7 @@ describe('GET /owners/:id', () => {
   it('returns 200 with the owner when found', async () => {
     const app = await buildApp(makeService());
     const res = await request(app.getHttpServer()).get('/owners/own-1').expect(200);
-    expect(res.body.id).toBe('own-1');
+    expect(res.body.data.id).toBe('own-1');
     await app.close();
   });
 });
@@ -104,7 +104,7 @@ describe('PUT /owners/:id', () => {
       .put('/owners/own-1')
       .send({ name: 'Bob' })
       .expect(200);
-    expect(res.body.name).toBe('Bob');
+    expect(res.body.data.name).toBe('Bob');
     await app.close();
   });
 });

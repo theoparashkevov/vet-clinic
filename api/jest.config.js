@@ -1,7 +1,7 @@
 /** @type {import('jest').Config} */
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
-  rootDir: 'src',
+  rootDir: '.',
   testRegex: '.*\\.spec\\.ts$',
   transform: {
     '^.+\\.(t|j)s$': [
@@ -16,7 +16,9 @@ module.exports = {
       },
     ],
   },
-  collectCoverageFrom: ['**/*.(t|j)s'],
-  coverageDirectory: '../coverage',
+  collectCoverageFrom: ['src/**/*.(t|j)s'],
+  coverageDirectory: './coverage',
   testEnvironment: 'node',
+  globalSetup: '<rootDir>/test/global-setup.ts',
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
 };

@@ -170,7 +170,7 @@ describe('PUT /appointments/:id', () => {
       .put('/appointments/appt-1')
       .send({ status: 'completed' })
       .expect(200);
-    expect(res.body.status).toBe('completed');
+    expect(res.body.data.status).toBe('completed');
     await app.close();
   });
 });

@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: hsl(150 30% 98%);
+  --color-foreground: hsl(160 40% 10%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(160 40% 10%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(160 40% 10%);
+  --color-primary: hsl(162 72% 28%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(155 35% 94%);
+  --color-secondary-foreground: hsl(162 72% 22%);
+  --color-muted: hsl(150 20% 93%);
+  --color-muted-foreground: hsl(160 15% 42%);
+  --color-accent: hsl(158 50% 91%);
+  --color-accent-foreground: hsl(162 72% 22%);
+  --color-destructive: hsl(0 65% 52%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(155 20% 86%);
+  --color-input: hsl(155 20% 86%);
+  --color-ring: hsl(162 72% 28%);
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
+
+.dark {
+  --color-background: hsl(160 25% 7%);
+  --color-foreground: hsl(150 25% 95%);
+  --color-card: hsl(160 20% 10%);
+  --color-card-foreground: hsl(150 25% 95%);
+  --color-popover: hsl(160 20% 10%);
+  --color-popover-foreground: hsl(150 25% 95%);
+  --color-primary: hsl(162 65% 42%);
+  --color-primary-foreground: hsl(160 30% 7%);
+  --color-secondary: hsl(155 18% 16%);
+  --color-secondary-foreground: hsl(150 25% 95%);
+  --color-muted: hsl(155 15% 18%);
+  --color-muted-foreground: hsl(150 12% 58%);
+  --color-accent: hsl(158 25% 18%);
+  --color-accent-foreground: hsl(150 25% 95%);
+  --color-destructive: hsl(0 55% 45%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(155 15% 20%);
+  --color-input: hsl(155 15% 20%);
+  --color-ring: hsl(162 65% 42%);
+}

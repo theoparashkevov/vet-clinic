@@ -1,0 +1,12 @@
+{
+  "active_plan": "/home/teo/projects/vet-clinic/.sisyphus/plans/vet-clinic-rewrite.md",
+  "started_at": "2026-04-30T13:02:25.992Z",
+  "session_ids": [
+    "ses_22206d424ffe2Xlo1R29XvCaRC"
+  ],
+  "session_origins": {
+    "ses_22206d424ffe2Xlo1R29XvCaRC": "direct"
+  },
+  "plan_name": "vet-clinic-rewrite",
+  "agent": "atlas"
+}
