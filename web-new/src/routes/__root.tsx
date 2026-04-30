@@ -1,4 +1,6 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router"
+import { ErrorBoundary } from "../components/ErrorBoundary"
+import { Toaster } from "../components/Toaster"
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -7,7 +9,10 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <>
-      <Outlet />
+      <ErrorBoundary>
+        <Outlet />
+      </ErrorBoundary>
+      <Toaster />
     </>
   )
 }

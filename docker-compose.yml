@@ -50,9 +50,9 @@ services:
       retries: 3
       start_period: 40s
 
-  web-modern:
+  web-new:
     build:
-      context: ./web-modern
+      context: ./web-new
       dockerfile: Dockerfile
     container_name: vet-clinic-web
     restart: unless-stopped

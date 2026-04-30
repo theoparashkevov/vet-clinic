@@ -279,7 +279,7 @@ Note: Within Wave 1, T1 MUST complete before T3-T7 can start (they use the schem
 
 ---
 
-- [ ] **T3. Flexible Role/Permission System**
+- [x] **T3. Flexible Role/Permission System**
 
   **What to do**:
   - Create `Role` model (id, name, description, isSystem, createdAt)
@@ -337,7 +337,7 @@ Note: Within Wave 1, T1 MUST complete before T3-T7 can start (they use the schem
 
 ---
 
-- [ ] **T4. Bot Module Scaffolding**
+- [x] **T4. Bot Module Scaffolding**
 
   **What to do**:
   - Create `BotModule` in `api/src/bot/`

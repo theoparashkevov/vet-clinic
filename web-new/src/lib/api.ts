@@ -1,3 +1,4 @@
+import { toast } from "sonner"
 import { useAuthStore } from "../stores/authStore"
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000"
@@ -27,15 +28,32 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     headers.Authorization = `Bearer ${token}`
   }
 
-  const response = await fetch(fullUrl, {
-    ...options,
-    headers,
-  })
+  let response: Response
+  try {
+    response = await fetch(fullUrl, {
+      ...options,
+      headers,
+    })
+  } catch {
+    toast.error("Cannot connect to server.")
+    throw new Error("Cannot connect to server.")
+  }
 
   if (response.status === 401) {
+    toast.error("Session expired. Please log in again.")
     useAuthStore.getState().logout()
     window.location.href = "/login"
     throw new Error("Session expired. Please log in again.")
+  }
+
+  if (response.status === 403) {
+    toast.error("You don't have permission to do that.")
+    throw new Error("You don't have permission to do that.")
+  }
+
+  if (response.status >= 500) {
+    toast.error("Something went wrong. Please try again.")
+    throw new Error("Something went wrong. Please try again.")
   }
 
   if (!response.ok) {
