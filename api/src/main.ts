@@ -5,6 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common';
 import * as express from 'express';
 import * as path from 'path';
+import { AuditLogInterceptor } from './audit-log/audit-log.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,6 +19,10 @@ async function bootstrap() {
   app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
   app.setGlobalPrefix('v1', { exclude: [{ path: 'health', method: RequestMethod.GET }] });
+
+  const auditLogInterceptor = app.get(AuditLogInterceptor);
+  app.useGlobalInterceptors(auditLogInterceptor);
+
   await app.listen(process.env.PORT || 3000);
 }
 

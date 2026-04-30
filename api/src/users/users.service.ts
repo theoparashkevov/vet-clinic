@@ -1,7 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { authUserSelect, publicUserSelect } from './user-selects';
-import { USER_ROLES } from '../auth/roles.constants';
 import { hashPassword } from '../auth/password';
 import { CreateUserDto, ResetPasswordDto, UpdateUserDto } from './dto';
 import { createPaginatedResult, getPaginationParams, PaginatedResult } from '../common/pagination';
@@ -28,7 +27,15 @@ export class UsersService {
 
   listDoctors() {
     return this.prisma.user.findMany({
-      where: { role: USER_ROLES.doctor },
+      where: {
+        userRoles: {
+          some: {
+            role: {
+              name: 'doctor',
+            },
+          },
+        },
+      },
       select: publicUserSelect,
       orderBy: { name: 'asc' },
     });
@@ -50,7 +57,6 @@ export class UsersService {
       data: {
         name: dto.name,
         email: dto.email,
-        role: dto.role,
         passwordHash,
       },
       select: publicUserSelect,
@@ -75,9 +81,9 @@ export class UsersService {
     const user = await this.prisma.user.update({
       where: { id },
       data: {
-        ...(dto.name && { name: dto.name }),
-        ...(dto.email && { email: dto.email }),
-        ...(dto.role && { role: dto.role }),
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.email !== undefined && { email: dto.email }),
+        ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
       select: publicUserSelect,
     });
@@ -88,7 +94,6 @@ export class UsersService {
   async remove(id: string) {
     await this.findByIdOrThrow(id);
 
-    // Check if user has appointments
     const hasAppointments = await this.prisma.appointment.findFirst({
       where: { doctorId: id },
       select: { id: true },

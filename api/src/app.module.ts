@@ -20,6 +20,11 @@ import { ImportModule } from './import/import.module';
 import { LoggerModule } from './logger/logger.module';
 import { PhotosModule } from './photos/photos.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { RolesModule } from './roles/roles.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
+import { SettingsModule } from './settings/settings.module';
+import { BotModule } from './bot/bot.module';
+import { AIModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -43,6 +48,11 @@ import { AnalyticsModule } from './analytics/analytics.module';
     LoggerModule,
     PhotosModule,
     AnalyticsModule,
+    RolesModule,
+    AuditLogModule,
+    SettingsModule,
+    BotModule,
+    AIModule,
   ],
   controllers: [HealthController],
 })

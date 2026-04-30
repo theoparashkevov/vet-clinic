@@ -1,5 +1,4 @@
-import { IsEmail, IsIn, IsOptional, IsString, MinLength } from 'class-validator';
-import { USER_ROLES } from '../auth/roles.constants';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -8,9 +7,6 @@ export class CreateUserDto {
 
   @IsEmail()
   email!: string;
-
-  @IsIn(Object.values(USER_ROLES))
-  role!: string;
 
   @IsString()
   @MinLength(6)
@@ -27,9 +23,8 @@ export class UpdateUserDto {
   @IsOptional()
   email?: string;
 
-  @IsIn(Object.values(USER_ROLES))
   @IsOptional()
-  role?: string;
+  isActive?: boolean;
 }
 
 export class ResetPasswordDto {

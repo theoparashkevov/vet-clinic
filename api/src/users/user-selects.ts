@@ -4,7 +4,18 @@ export const publicUserSelect = {
   id: true,
   name: true,
   email: true,
-  role: true,
+  isSuperAdmin: true,
+  isActive: true,
+  userRoles: {
+    select: {
+      role: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  },
 } satisfies Prisma.UserSelect;
 
 export const authUserSelect = {

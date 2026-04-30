@@ -1,15 +1,14 @@
-import { UserRole } from './roles.constants';
-
 export type AuthUser = {
   sub: string;
   email: string;
-  role: UserRole;
+  roles: string[];
   name: string;
+  isSuperAdmin: boolean;
 };
 
 export type CurrentAuthUser = {
   id: string;
   email: string;
-  role: UserRole;
+  roles: string[];
   name: string;
 };

@@ -30,37 +30,83 @@ async function main() {
   const doctorPasswordHash = hashPassword(demoDoctorPassword);
   const adminPasswordHash = hashPassword(adminPassword);
 
+  const roles = {
+    superadmin: await prisma.role.upsert({
+      where: { name: 'superadmin' },
+      update: {},
+      create: { name: 'superadmin', description: 'Full system access', isSystem: true },
+    }),
+    doctor: await prisma.role.upsert({
+      where: { name: 'doctor' },
+      update: {},
+      create: { name: 'doctor', description: 'Veterinarian with clinical access', isSystem: true },
+    }),
+    nurse: await prisma.role.upsert({
+      where: { name: 'nurse' },
+      update: {},
+      create: { name: 'nurse', description: 'Nursing staff', isSystem: true },
+    }),
+    registrar: await prisma.role.upsert({
+      where: { name: 'registrar' },
+      update: {},
+      create: { name: 'registrar', description: 'Front desk and scheduling', isSystem: true },
+    }),
+    admin: await prisma.role.upsert({
+      where: { name: 'admin' },
+      update: {},
+      create: { name: 'admin', description: 'Clinic administrator', isSystem: true },
+    }),
+    client: await prisma.role.upsert({
+      where: { name: 'client' },
+      update: {},
+      create: { name: 'client', description: 'Pet owner client', isSystem: true },
+    }),
+  };
+  console.log('  Default roles created');
+
   // ── Doctors ──────────────────────────────────────────────────────────────
   const drMaria = await prisma.user.upsert({
     where: { email: 'maria.ivanova@vetclinic.com' },
-    update: { name: 'Dr. Maria Ivanova', role: USER_ROLES.doctor, passwordHash: doctorPasswordHash },
-    create: { name: 'Dr. Maria Ivanova', email: 'maria.ivanova@vetclinic.com', role: USER_ROLES.doctor, passwordHash: doctorPasswordHash },
+    update: { name: 'Dr. Maria Ivanova', passwordHash: doctorPasswordHash },
+    create: { name: 'Dr. Maria Ivanova', email: 'maria.ivanova@vetclinic.com', passwordHash: doctorPasswordHash },
   });
   const drPetar = await prisma.user.upsert({
     where: { email: 'petar.dimitrov@vetclinic.com' },
-    update: { name: 'Dr. Petar Dimitrov', role: USER_ROLES.doctor, passwordHash: doctorPasswordHash },
-    create: { name: 'Dr. Petar Dimitrov', email: 'petar.dimitrov@vetclinic.com', role: USER_ROLES.doctor, passwordHash: doctorPasswordHash },
+    update: { name: 'Dr. Petar Dimitrov', passwordHash: doctorPasswordHash },
+    create: { name: 'Dr. Petar Dimitrov', email: 'petar.dimitrov@vetclinic.com', passwordHash: doctorPasswordHash },
   });
   const drElena = await prisma.user.upsert({
     where: { email: 'elena.georgieva@vetclinic.com' },
-    update: { name: 'Dr. Elena Georgieva', role: USER_ROLES.doctor, passwordHash: doctorPasswordHash },
-    create: { name: 'Dr. Elena Georgieva', email: 'elena.georgieva@vetclinic.com', role: USER_ROLES.doctor, passwordHash: doctorPasswordHash },
+    update: { name: 'Dr. Elena Georgieva', passwordHash: doctorPasswordHash },
+    create: { name: 'Dr. Elena Georgieva', email: 'elena.georgieva@vetclinic.com', passwordHash: doctorPasswordHash },
   });
-  await prisma.user.upsert({
+  const adminUser = await prisma.user.upsert({
     where: { email: 'admin@vetclinic.com' },
-    update: { name: 'Clinic Admin', role: USER_ROLES.admin, passwordHash: adminPasswordHash },
-    create: { name: 'Clinic Admin', email: 'admin@vetclinic.com', role: USER_ROLES.admin, passwordHash: adminPasswordHash },
+    update: { name: 'Clinic Admin', passwordHash: adminPasswordHash },
+    create: { name: 'Clinic Admin', email: 'admin@vetclinic.com', passwordHash: adminPasswordHash },
   });
-  await prisma.user.upsert({
+  const staffUser = await prisma.user.upsert({
     where: { email: 'staff@vetclinic.com' },
-    update: { name: 'Front Desk Staff', role: USER_ROLES.staff, passwordHash: doctorPasswordHash },
-    create: { name: 'Front Desk Staff', email: 'staff@vetclinic.com', role: USER_ROLES.staff, passwordHash: doctorPasswordHash },
+    update: { name: 'Front Desk Staff', passwordHash: doctorPasswordHash },
+    create: { name: 'Front Desk Staff', email: 'staff@vetclinic.com', passwordHash: doctorPasswordHash },
   });
-  await prisma.user.upsert({
+  const clientUser = await prisma.user.upsert({
     where: { email: 'client@vetclinic.com' },
-    update: { name: 'Client Demo', role: USER_ROLES.client, passwordHash: doctorPasswordHash },
-    create: { name: 'Client Demo', email: 'client@vetclinic.com', role: USER_ROLES.client, passwordHash: doctorPasswordHash },
+    update: { name: 'Client Demo', passwordHash: doctorPasswordHash },
+    create: { name: 'Client Demo', email: 'client@vetclinic.com', passwordHash: doctorPasswordHash },
   });
+
+  await prisma.userRole.createMany({
+    data: [
+      { userId: drMaria.id, roleId: roles.doctor.id },
+      { userId: drPetar.id, roleId: roles.doctor.id },
+      { userId: drElena.id, roleId: roles.doctor.id },
+      { userId: adminUser.id, roleId: roles.admin.id },
+      { userId: staffUser.id, roleId: roles.registrar.id },
+      { userId: clientUser.id, roleId: roles.client.id },
+    ],
+  });
+
   console.log('  Doctors: Dr. Ivanova, Dr. Dimitrov, Dr. Georgieva');
   console.log('  Admin user: admin@vetclinic.com');
   console.log('  Staff users: staff@vetclinic.com');

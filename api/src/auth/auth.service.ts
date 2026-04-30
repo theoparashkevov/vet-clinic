@@ -4,7 +4,6 @@ import { LoginDto } from './dto';
 import { UsersService } from '../users/users.service';
 import { AuthUser, CurrentAuthUser } from './auth.types';
 import { verifyPassword } from './password';
-import { UserRole } from './roles.constants';
 
 @Injectable()
 export class AuthService {
@@ -20,11 +19,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    const roles = user.userRoles?.map((ur) => ur.role.name) ?? [];
+
     const payload: AuthUser = {
       sub: user.id,
       email: user.email,
-      role: user.role as UserRole,
+      roles,
       name: user.name,
+      isSuperAdmin: user.isSuperAdmin,
     };
 
     return {
@@ -32,7 +34,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        role: user.role,
+        roles,
         name: user.name,
       },
     };
@@ -45,9 +47,11 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
+    const roles = user.userRoles?.map((ur) => ur.role.name) ?? [];
+
     return {
       ...user,
-      role: user.role as UserRole,
+      roles,
     };
   }
 }
