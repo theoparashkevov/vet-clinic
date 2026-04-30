@@ -128,6 +128,8 @@ export class AppointmentsService {
         startsAt,
         endsAt,
         reason: dto.reason,
+        room: dto.room,
+        notes: dto.notes,
       },
       include: { patient: true, owner: true, doctor: { select: publicUserSelect } },
     });
@@ -179,6 +181,12 @@ export class AppointmentsService {
     if (dto.startsAt !== undefined) data.startsAt = new Date(dto.startsAt);
     if (dto.endsAt !== undefined) data.endsAt = new Date(dto.endsAt);
     if (dto.doctorId !== undefined) data.doctorId = dto.doctorId;
+    if (dto.room !== undefined) data.room = dto.room;
+    if (dto.notes !== undefined) data.notes = dto.notes;
+    if (dto.checkedInAt !== undefined) data.checkedInAt = dto.checkedInAt ? new Date(dto.checkedInAt) : null;
+    if (dto.checkedOutAt !== undefined) data.checkedOutAt = dto.checkedOutAt ? new Date(dto.checkedOutAt) : null;
+    if (dto.cancelledBy !== undefined) data.cancelledBy = dto.cancelledBy;
+    if (dto.cancellationReason !== undefined) data.cancellationReason = dto.cancellationReason;
 
     return this.prisma.appointment.update({
       where: { id },
@@ -187,23 +195,26 @@ export class AppointmentsService {
     });
   }
 
-  async remove(id: string) {
-    await this.get(id);
-
-    try {
-      await this.prisma.appointment.delete({ where: { id } });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2003'
-      ) {
-        throw new ConflictException('Cannot delete appointment with linked medical records');
-      }
-
-      throw error;
+  async cancel(id: string, cancelledBy?: string, cancellationReason?: string) {
+    const existing = await this.prisma.appointment.findUnique({
+      where: { id },
+      select: { id: true, status: true },
+    });
+    if (!existing) throw new NotFoundException('Appointment not found');
+    if (existing.status === 'cancelled') {
+      throw new ConflictException('Appointment is already cancelled');
     }
 
-    return { ok: true };
+    return this.prisma.appointment.update({
+      where: { id },
+      data: {
+        status: 'cancelled',
+        cancelledAt: new Date(),
+        cancelledBy,
+        cancellationReason,
+      },
+      include: { patient: true, owner: true, doctor: { select: publicUserSelect } },
+    });
   }
 
   async getSlots(date: string, doctorId?: string) {
@@ -212,7 +223,6 @@ export class AppointmentsService {
     const dayEnd = new Date(date);
     dayEnd.setHours(23, 59, 59, 999);
 
-    // Fetch existing appointments for this doctor on this date
     const where: Record<string, unknown> = {
       startsAt: { gte: dayStart, lte: dayEnd },
       status: { not: 'cancelled' },
@@ -226,7 +236,6 @@ export class AppointmentsService {
       select: { startsAt: true, endsAt: true },
     });
 
-    // Generate 30-minute slots from 09:00 to 17:30
     const slots: string[] = [];
     const baseDate = new Date(date);
 
@@ -239,7 +248,6 @@ export class AppointmentsService {
         const slotEnd = new Date(slotStart);
         slotEnd.setMinutes(slotEnd.getMinutes() + 30);
 
-        // Check if this slot overlaps with any booked appointment
         const overlaps = booked.some((appt) => {
           return slotStart < appt.endsAt && slotEnd > appt.startsAt;
         });

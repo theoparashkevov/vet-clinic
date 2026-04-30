@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { OwnersService } from './owners.service';
 import { CreateOwnerDto, UpdateOwnerDto } from './dto';
 import { StaffAccess } from '../auth/staff-access.decorator';
@@ -9,8 +9,12 @@ export class OwnersController {
   constructor(private readonly owners: OwnersService) {}
 
   @Get()
-  list() {
-    return this.owners.list();
+  list(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.owners.list(search, { page, limit });
   }
 
   @Get(':id')

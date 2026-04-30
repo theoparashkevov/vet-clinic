@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersModule } from '../users/users.module';
+import { RolesModule } from '../roles/roles.module';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { SuperAdminGuard } from './superadmin.guard';
@@ -19,6 +20,7 @@ const jwtExpiresIn = (process.env.JWT_EXPIRES_IN || '8h') as `${number}h` | `${n
 @Module({
   imports: [
     UsersModule,
+    RolesModule,
     JwtModule.register({
       secret: jwtSecret,
       signOptions: { expiresIn: jwtExpiresIn },

@@ -1,6 +1,9 @@
 import { IsNumber, IsOptional, IsString, IsDateString } from 'class-validator';
 
 export class CreateWeightRecordDto {
+  @IsString()
+  patientId!: string;
+
   @IsNumber()
   weight!: number;
 
@@ -28,6 +31,7 @@ export class UpdateWeightRecordDto {
 
 export interface WeightRecordResponse {
   id: string;
+  patientId: string;
   weight: number;
   date: string;
   notes: string | null;

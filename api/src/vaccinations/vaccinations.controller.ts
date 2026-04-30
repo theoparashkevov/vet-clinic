@@ -2,16 +2,26 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/
 import { VaccinationsService } from './vaccinations.service';
 import { StaffAccess } from '../auth/staff-access.decorator';
 import { CreateVaccinationDto, UpdateVaccinationDto } from './dto';
+import { PaginationQuery, getPaginationParams, createPaginatedResult } from '../common/pagination';
 
 @StaffAccess()
 @Controller('vaccinations')
 export class VaccinationsController {
   constructor(private readonly vaccinationsService: VaccinationsService) {}
 
-  @Get('patients/:patientId')
-  async findByPatient(@Param('patientId') patientId: string) {
-    const vaccinations = await this.vaccinationsService.findByPatient(patientId);
-    return { data: vaccinations };
+  @Get()
+  async list(
+    @Query('patientId') patientId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.vaccinationsService.list({ patientId, page, limit });
+  }
+
+  @Get(':id')
+  async get(@Param('id') id: string) {
+    const vaccination = await this.vaccinationsService.get(id);
+    return { data: vaccination };
   }
 
   @Get('patients/:patientId/status')
@@ -19,12 +29,9 @@ export class VaccinationsController {
     return this.vaccinationsService.getStatusSummary(patientId);
   }
 
-  @Post('patients/:patientId')
-  async create(
-    @Param('patientId') patientId: string,
-    @Body() dto: CreateVaccinationDto,
-  ) {
-    const vaccination = await this.vaccinationsService.create(patientId, dto);
+  @Post()
+  async create(@Body() dto: CreateVaccinationDto) {
+    const vaccination = await this.vaccinationsService.create(dto.patientId, dto);
     return { data: vaccination };
   }
 

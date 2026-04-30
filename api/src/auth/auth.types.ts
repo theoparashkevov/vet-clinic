@@ -11,4 +11,5 @@ export type CurrentAuthUser = {
   email: string;
   roles: string[];
   name: string;
+  isSuperAdmin: boolean;
 };

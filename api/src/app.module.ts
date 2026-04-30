@@ -14,8 +14,10 @@ import { WeightModule } from './weight/weight.module';
 import { ClientModule } from './client/client.module';
 import { PrescriptionsModule } from './prescriptions/prescriptions.module';
 import { RemindersModule } from './reminders/reminders.module';
+import { TasksModule } from './tasks/tasks.module';
 import { SMSModule } from './sms/sms.module';
 import { LabsModule } from './labs/labs.module';
+import { LabResultsModule } from './lab-results/lab-results.module';
 import { ImportModule } from './import/import.module';
 import { LoggerModule } from './logger/logger.module';
 import { PhotosModule } from './photos/photos.module';
@@ -42,8 +44,10 @@ import { AIModule } from './ai/ai.module';
     ClientModule,
     PrescriptionsModule,
     RemindersModule,
+    TasksModule,
     SMSModule,
     LabsModule,
+    LabResultsModule,
     ImportModule,
     LoggerModule,
     PhotosModule,

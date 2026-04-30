@@ -20,11 +20,13 @@ describe('CreateAppointmentDto', () => {
     expect(errors).toHaveLength(0);
   });
 
-  it('passes when optional fields (doctorId, reason) are omitted', async () => {
+  it('passes when optional fields (doctorId, reason, room, notes) are omitted', async () => {
     const dto = plainToInstance(CreateAppointmentDto, VALID_CREATE);
     const errors = await validate(dto);
     expect(errors.some((e) => e.property === 'doctorId')).toBe(false);
     expect(errors.some((e) => e.property === 'reason')).toBe(false);
+    expect(errors.some((e) => e.property === 'room')).toBe(false);
+    expect(errors.some((e) => e.property === 'notes')).toBe(false);
   });
 
   it('fails when patientId is missing', async () => {
@@ -64,6 +66,18 @@ describe('UpdateAppointmentDto', () => {
 
   it('passes with a valid status update', async () => {
     const dto = plainToInstance(UpdateAppointmentDto, { status: 'completed' });
+    const errors = await validate(dto);
+    expect(errors).toHaveLength(0);
+  });
+
+  it('fails when status is not in allowed list', async () => {
+    const dto = plainToInstance(UpdateAppointmentDto, { status: 'invalid' });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'status')).toBe(true);
+  });
+
+  it('passes with no_show status', async () => {
+    const dto = plainToInstance(UpdateAppointmentDto, { status: 'no_show' });
     const errors = await validate(dto);
     expect(errors).toHaveLength(0);
   });

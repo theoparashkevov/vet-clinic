@@ -222,6 +222,7 @@ model MedicalRecord {
   attachments          String?
   bodyConditionScore   Int?
   nextVisitRecommended DateTime?
+  vitalSigns           VitalSigns?
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
 
@@ -232,11 +233,13 @@ model MedicalRecord {
 }
 
 model VitalSigns {
-  id                     String       @id @default(cuid())
-  patient                Patient      @relation(fields: [patientId], references: [id])
+  id                     String         @id @default(cuid())
+  patient                Patient        @relation(fields: [patientId], references: [id])
   patientId              String
-  appointment            Appointment? @relation(fields: [appointmentId], references: [id])
+  appointment            Appointment?   @relation(fields: [appointmentId], references: [id])
   appointmentId          String?
+  medicalRecord          MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+  medicalRecordId        String?        @unique
   recordedAt             DateTime
   temperature            Float?
   heartRate              Int?
@@ -246,13 +249,14 @@ model VitalSigns {
   weight                 Float?
   bodyConditionScore     Int?
   notes                  String?
-  recordedBy             User         @relation("VitalSignsRecordedBy", fields: [recordedById], references: [id])
+  recordedBy             User           @relation("VitalSignsRecordedBy", fields: [recordedById], references: [id])
   recordedById           String
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
 
   @@index([patientId])
   @@index([appointmentId])
+  @@index([medicalRecordId])
   @@index([recordedById])
   @@index([recordedAt])
 }

@@ -29,6 +29,7 @@ function makeService(): Partial<AppointmentsService> {
     get: jest.fn().mockResolvedValue(SAMPLE_APPT),
     create: jest.fn().mockResolvedValue(SAMPLE_APPT),
     update: jest.fn().mockResolvedValue({ ...SAMPLE_APPT, status: 'completed' }),
+    cancel: jest.fn().mockResolvedValue({ ...SAMPLE_APPT, status: 'cancelled', cancelledAt: '2026-03-26T10:00:00.000Z' }),
     getSlots: jest.fn().mockResolvedValue(SAMPLE_SLOTS),
   };
 }
@@ -112,7 +113,6 @@ describe('GET /appointments/slots', () => {
     const app = await buildApp(service);
     await request(app.getHttpServer()).get('/appointments/slots').expect(200);
     const calledDate = (service.getSlots as jest.Mock).mock.calls[0][0];
-    // Should be a YYYY-MM-DD string (today's date)
     expect(calledDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     await app.close();
   });
@@ -140,7 +140,7 @@ describe('POST /appointments', () => {
     const app = await buildApp(makeService());
     await request(app.getHttpServer())
       .post('/appointments')
-      .send({ patientId: 'p1' }) // missing ownerId, startsAt, endsAt
+      .send({ patientId: 'p1' })
       .expect(400);
     await app.close();
   });
@@ -171,6 +171,23 @@ describe('PUT /appointments/:id', () => {
       .send({ status: 'completed' })
       .expect(200);
     expect(res.body.data.status).toBe('completed');
+    await app.close();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DELETE /appointments/:id
+// ---------------------------------------------------------------------------
+describe('DELETE /appointments/:id', () => {
+  it('returns 200 with cancelled appointment', async () => {
+    const service = makeService();
+    const app = await buildApp(service);
+    const res = await request(app.getHttpServer())
+      .delete('/appointments/appt-1')
+      .send({ cancellationReason: 'Client requested' })
+      .expect(200);
+    expect(res.body.data.status).toBe('cancelled');
+    expect(service.cancel).toHaveBeenCalledWith('appt-1', undefined, 'Client requested');
     await app.close();
   });
 });

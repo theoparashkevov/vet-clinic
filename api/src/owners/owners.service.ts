@@ -1,17 +1,47 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOwnerDto, UpdateOwnerDto } from './dto';
+import { createPaginatedResult, getPaginationParams, PaginatedResult } from '../common/pagination';
 
 @Injectable()
 export class OwnersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  list() {
-    return this.prisma.owner.findMany({ orderBy: { createdAt: 'desc' } });
+  async list(
+    search?: string,
+    pagination?: { page?: string; limit?: string },
+  ): Promise<PaginatedResult<any>> {
+    const where = search
+      ? {
+          OR: [
+            { name: { contains: search } },
+            { phone: { contains: search } },
+            { email: { contains: search } },
+          ],
+        }
+      : undefined;
+
+    const { page, limit, skip } = getPaginationParams(pagination ?? {});
+
+    const [data, total] = await Promise.all([
+      this.prisma.owner.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.owner.count({ where }),
+    ]);
+
+    return createPaginatedResult(data, total, page, limit);
   }
 
   async get(id: string) {
-    const found = await this.prisma.owner.findUnique({ where: { id } });
+    const found = await this.prisma.owner.findUnique({
+      where: { id },
+      include: { patients: true },
+    });
     if (!found) throw new NotFoundException('Owner not found');
     return found;
   }
@@ -27,7 +57,16 @@ export class OwnersService {
 
   async remove(id: string) {
     await this.get(id);
-    await this.prisma.owner.delete({ where: { id } });
+
+    try {
+      await this.prisma.owner.delete({ where: { id } });
+    } catch (error: any) {
+      if (error?.code === 'P2003') {
+        throw new ConflictException('Cannot delete owner with linked patients or appointments');
+      }
+      throw error;
+    }
+
     return { ok: true };
   }
 }

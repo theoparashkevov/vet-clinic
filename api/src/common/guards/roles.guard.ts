@@ -2,8 +2,9 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import { SUPERADMIN_KEY } from '../../auth/superadmin.decorator';
 
-export type AuthenticatedRequest = Request & { user?: { roles?: string[] } };
+export type AuthenticatedRequest = Request & { user?: { roles?: string[]; isSuperAdmin?: boolean } };
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -15,12 +16,25 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    if (!requiredRoles || requiredRoles.length === 0) {
+    const requiresSuperAdmin = this.reflector.getAllAndOverride<boolean>(SUPERADMIN_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const user = request.user;
+    const userRoles = user?.roles ?? [];
+
+    if (requiresSuperAdmin) {
+      if (!user?.isSuperAdmin) {
+        throw new ForbiddenException('Superadmin access required');
+      }
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const userRoles = request.user?.roles ?? [];
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
+    }
 
     const hasRole = requiredRoles.some((role) => userRoles.includes(role));
     if (!hasRole) {

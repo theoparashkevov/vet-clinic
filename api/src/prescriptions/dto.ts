@@ -2,23 +2,36 @@ import { IsString, IsNumber, IsOptional, IsBoolean, IsDateString, Min, Max } fro
 
 export class CreatePrescriptionDto {
   @IsString()
-  medication!: string;
+  @IsOptional()
+  patientId?: string;
 
   @IsString()
-  dosage!: string;
+  @IsOptional()
+  medicationTemplateId?: string;
 
   @IsString()
-  frequency!: string;
+  @IsOptional()
+  medication?: string;
 
   @IsString()
-  duration!: string;
+  @IsOptional()
+  dosage?: string;
+
+  @IsString()
+  @IsOptional()
+  frequency?: string;
+
+  @IsString()
+  @IsOptional()
+  duration?: string;
 
   @IsString()
   @IsOptional()
   instructions?: string;
 
   @IsDateString()
-  expiresAt!: string;
+  @IsOptional()
+  expiresAt?: string;
 
   @IsNumber()
   @IsOptional()

@@ -3,6 +3,8 @@ import { PatientsService } from './patients.service';
 import { CreatePatientDto, UpdatePatientDto } from './dto';
 import { StaffAccess } from '../auth/staff-access.decorator';
 import { PaginationQuery } from '../common/pagination';
+import { VaccinationsService } from '../vaccinations/vaccinations.service';
+import { WeightService } from '../weight/weight.service';
 
 /**
  * PatientsController
@@ -22,7 +24,11 @@ import { PaginationQuery } from '../common/pagination';
 @StaffAccess()
 @Controller('patients')
 export class PatientsController {
-  constructor(private readonly patients: PatientsService) {}
+  constructor(
+    private readonly patients: PatientsService,
+    private readonly vaccinations: VaccinationsService,
+    private readonly weight: WeightService,
+  ) {}
 
   /**
    * GET /v1/patients
@@ -122,5 +128,17 @@ export class PatientsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.patients.remove(id);
+  }
+
+  @Get(':id/vaccinations')
+  async getVaccinations(@Param('id') id: string) {
+    const vaccinations = await this.vaccinations.findByPatient(id);
+    return { data: vaccinations };
+  }
+
+  @Get(':id/weight-records')
+  async getWeightRecords(@Param('id') id: string) {
+    const records = await this.weight.findByPatient(id);
+    return { data: records };
   }
 }

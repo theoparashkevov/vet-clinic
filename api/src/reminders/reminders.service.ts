@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFollowUpReminderDto, UpdateFollowUpReminderDto, CreateFromAppointmentDto } from './dto';
+import { createPaginatedResult, getPaginationParams } from '../common/pagination';
 
 @Injectable()
 export class RemindersService {
@@ -13,6 +14,8 @@ export class RemindersService {
     status?: string;
     priority?: string;
     dueBefore?: string;
+    page?: string;
+    limit?: string;
   }) {
     const where: Prisma.FollowUpReminderWhereInput = {};
 
@@ -24,8 +27,50 @@ export class RemindersService {
       where.dueDate = { lte: new Date(filters.dueBefore) };
     }
 
-    return this.prisma.followUpReminder.findMany({
-      where,
+    const { page, limit, skip } = getPaginationParams({ page: filters.page, limit: filters.limit });
+
+    const [data, total] = await Promise.all([
+      this.prisma.followUpReminder.findMany({
+        where,
+        include: {
+          patient: {
+            select: {
+              id: true,
+              name: true,
+              species: true,
+              owner: {
+                select: {
+                  id: true,
+                  name: true,
+                  phone: true,
+                },
+              },
+            },
+          },
+          appointment: {
+            select: {
+              id: true,
+              startsAt: true,
+              reason: true,
+            },
+          },
+        },
+        orderBy: [
+          { priority: 'desc' },
+          { dueDate: 'asc' },
+        ],
+        skip,
+        take: limit,
+      }),
+      this.prisma.followUpReminder.count({ where }),
+    ]);
+
+    return createPaginatedResult(data, total, page, limit);
+  }
+
+  async get(id: string) {
+    const reminder = await this.prisma.followUpReminder.findUnique({
+      where: { id },
       include: {
         patient: {
           select: {
@@ -49,11 +94,40 @@ export class RemindersService {
           },
         },
       },
+    });
+    if (!reminder) throw new NotFoundException('Reminder not found');
+    return reminder;
+  }
+
+  async getOverdue() {
+    const now = new Date();
+    const reminders = await this.prisma.followUpReminder.findMany({
+      where: {
+        status: { in: ['pending', 'overdue'] },
+        dueDate: { lt: now },
+      },
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            species: true,
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
       orderBy: [
         { priority: 'desc' },
         { dueDate: 'asc' },
       ],
     });
+    return { data: reminders };
   }
 
   async getMyReminders(userId: string) {

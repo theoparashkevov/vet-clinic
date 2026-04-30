@@ -1,10 +1,34 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWeightRecordDto, UpdateWeightRecordDto, WeightRecordResponse, WeightSummary } from './dto';
+import { createPaginatedResult, getPaginationParams } from '../common/pagination';
 
 @Injectable()
 export class WeightService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async list(filters: { patientId?: string; page?: string; limit?: string }) {
+    const where = filters.patientId ? { patientId: filters.patientId } : {};
+    const { page, limit, skip } = getPaginationParams({ page: filters.page, limit: filters.limit });
+
+    const [data, total] = await Promise.all([
+      this.prisma.weightRecord.findMany({
+        where,
+        orderBy: { date: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.weightRecord.count({ where }),
+    ]);
+
+    return createPaginatedResult(data.map(r => this.toResponse(r)), total, page, limit);
+  }
+
+  async get(id: string): Promise<WeightRecordResponse> {
+    const record = await this.prisma.weightRecord.findUnique({ where: { id } });
+    if (!record) throw new NotFoundException('Weight record not found');
+    return this.toResponse(record);
+  }
 
   async findByPatient(patientId: string): Promise<WeightRecordResponse[]> {
     const records = await this.prisma.weightRecord.findMany({
@@ -12,14 +36,7 @@ export class WeightService {
       orderBy: { date: 'desc' },
     });
 
-    return records.map(r => ({
-      id: r.id,
-      weight: r.weight,
-      date: r.date.toISOString(),
-      notes: r.notes,
-      createdAt: r.createdAt.toISOString(),
-      updatedAt: r.updatedAt.toISOString(),
-    }));
+    return records.map(r => this.toResponse(r));
   }
 
   async getSummary(patientId: string): Promise<WeightSummary> {
@@ -39,12 +56,12 @@ export class WeightService {
 
     const current = records[0].weight;
     const previous = records.length > 1 ? records[1].weight : null;
-    
+
     let trend = null;
     if (previous !== null) {
       const diff = current - previous;
       const percentage = (diff / previous) * 100;
-      
+
       if (Math.abs(percentage) < 2) {
         trend = {
           direction: 'stable' as const,
@@ -70,26 +87,13 @@ export class WeightService {
       current,
       previous,
       trend,
-      records: records.map(r => ({
-        id: r.id,
-        weight: r.weight,
-        date: r.date.toISOString(),
-        notes: r.notes,
-        createdAt: r.createdAt.toISOString(),
-        updatedAt: r.updatedAt.toISOString(),
-      })),
+      records: records.map(r => this.toResponse(r)),
     };
   }
 
   async create(patientId: string, dto: CreateWeightRecordDto): Promise<WeightRecordResponse> {
-    // Verify patient exists
-    const patient = await this.prisma.patient.findUnique({
-      where: { id: patientId },
-    });
-
-    if (!patient) {
-      throw new NotFoundException('Patient not found');
-    }
+    const patient = await this.prisma.patient.findUnique({ where: { id: patientId } });
+    if (!patient) throw new NotFoundException('Patient not found');
 
     const record = await this.prisma.weightRecord.create({
       data: {
@@ -100,24 +104,12 @@ export class WeightService {
       },
     });
 
-    return {
-      id: record.id,
-      weight: record.weight,
-      date: record.date.toISOString(),
-      notes: record.notes,
-      createdAt: record.createdAt.toISOString(),
-      updatedAt: record.updatedAt.toISOString(),
-    };
+    return this.toResponse(record);
   }
 
   async update(id: string, dto: UpdateWeightRecordDto): Promise<WeightRecordResponse> {
-    const existing = await this.prisma.weightRecord.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      throw new NotFoundException('Weight record not found');
-    }
+    const existing = await this.prisma.weightRecord.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Weight record not found');
 
     const record = await this.prisma.weightRecord.update({
       where: { id },
@@ -128,27 +120,24 @@ export class WeightService {
       },
     });
 
-    return {
-      id: record.id,
-      weight: record.weight,
-      date: record.date.toISOString(),
-      notes: record.notes,
-      createdAt: record.createdAt.toISOString(),
-      updatedAt: record.updatedAt.toISOString(),
-    };
+    return this.toResponse(record);
   }
 
   async remove(id: string): Promise<void> {
-    const existing = await this.prisma.weightRecord.findUnique({
-      where: { id },
-    });
+    const existing = await this.prisma.weightRecord.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Weight record not found');
+    await this.prisma.weightRecord.delete({ where: { id } });
+  }
 
-    if (!existing) {
-      throw new NotFoundException('Weight record not found');
-    }
-
-    await this.prisma.weightRecord.delete({
-      where: { id },
-    });
+  private toResponse(r: any): WeightRecordResponse {
+    return {
+      id: r.id,
+      patientId: r.patientId,
+      weight: r.weight,
+      date: r.date.toISOString(),
+      notes: r.notes,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    };
   }
 }

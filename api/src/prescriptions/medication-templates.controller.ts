@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StaffAccess } from '../auth/staff-access.decorator';
 
 @StaffAccess()
-@Controller('medication-templates')
+@Controller('medications')
 export class MedicationTemplatesController {
   constructor(private readonly prisma: PrismaService) {}
 

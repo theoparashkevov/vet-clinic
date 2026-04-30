@@ -2,6 +2,9 @@ import { IsString, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateVaccinationDto {
   @IsString()
+  patientId!: string;
+
+  @IsString()
   name!: string;
 
   @IsString()
@@ -16,6 +19,14 @@ export class CreateVaccinationDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsString()
+  @IsOptional()
+  batchNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  veterinarian?: string;
 }
 
 export class UpdateVaccinationDto {
@@ -38,16 +49,28 @@ export class UpdateVaccinationDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsString()
+  @IsOptional()
+  batchNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  veterinarian?: string;
 }
 
 export type VaccinationStatus = 'current' | 'due-soon' | 'overdue';
 
 export interface VaccinationResponse {
   id: string;
+  patientId: string;
   name: string;
+  type: string;
   administeredAt: string;
   dueDate: string;
   notes: string | null;
+  batchNumber: string | null;
+  veterinarian: string | null;
   status: VaccinationStatus;
   createdAt: string;
   updatedAt: string;

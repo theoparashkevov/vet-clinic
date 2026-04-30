@@ -41,17 +41,13 @@ describe('AppointmentsService.getSlots', () => {
     const result = await svc.getSlots('2026-03-26');
 
     expect(result.date).toBe('2026-03-26');
-    // 9 hours × 2 slots = 18 total (09:00 … 17:30, guard `minute > 30` never triggers
-    // because the minute loop only produces 0 and 30)
     expect(result.slots).toHaveLength(18);
   });
 
   it('removes a slot that is exactly booked', async () => {
     const baseDate = '2026-03-26';
-    // 09:00–09:30 is booked
     const booked = [
       {
-        // Date strings without timezone are interpreted as local time.
         startsAt: new Date(`${baseDate}T09:00:00`),
         endsAt: new Date(`${baseDate}T09:30:00`),
       },
@@ -62,7 +58,6 @@ describe('AppointmentsService.getSlots', () => {
     const result = await svc.getSlots(baseDate);
 
     expect(result.slots).toHaveLength(17);
-    // The 09:00 local slot should be absent
     expect(
       result.slots.some((s) => new Date(s).getHours() === 9 && new Date(s).getMinutes() === 0),
     ).toBe(false);
@@ -70,7 +65,6 @@ describe('AppointmentsService.getSlots', () => {
 
   it('removes a slot that is partially overlapped by a booking', async () => {
     const baseDate = '2026-03-26';
-    // Booking starts at 09:15 — overlaps with both 09:00 and 09:30 slots
     const booked = [
       {
         startsAt: new Date(`${baseDate}T09:15:00`),
@@ -82,22 +76,17 @@ describe('AppointmentsService.getSlots', () => {
 
     const result = await svc.getSlots(baseDate);
 
-    // Both 09:00 and 09:30 overlap with the 09:15–09:45 booking
     expect(result.slots).toHaveLength(16);
   });
 
   it('does not remove a slot for a cancelled appointment (filtered by DB query)', async () => {
-    // The service passes `status: { not: 'cancelled' }` to the DB.
-    // We simulate the DB already honouring that filter — findMany returns empty.
     const prisma = makePrisma({ findMany: jest.fn().mockResolvedValue([]) });
     const svc = new AppointmentsService(prisma);
 
     const result = await svc.getSlots('2026-03-26');
 
-    // All 18 slots available since no non-cancelled bookings returned
     expect(result.slots).toHaveLength(18);
 
-    // Verify the query included the status filter
     const callArg = (prisma.appointment.findMany as jest.Mock).mock.calls[0][0];
     expect(callArg.where.status).toEqual({ not: 'cancelled' });
   });
@@ -123,8 +112,6 @@ describe('AppointmentsService.getSlots', () => {
   });
 
   it('last generated slot starts at 17:30 and first starts at 09:00', async () => {
-    // The loop runs hour=9..17, minute=[0,30], with guard `if (hour===17 && minute>30) continue`
-    // Since minutes are only 0 and 30, the guard never fires; 17:30 IS included.
     const prisma = makePrisma();
     const svc = new AppointmentsService(prisma);
 
@@ -140,7 +127,6 @@ describe('AppointmentsService.getSlots', () => {
 
   it('returns no slots when the entire day is blocked', async () => {
     const baseDate = '2026-03-26';
-    // One long appointment covers 09:00 to 18:00
     const booked = [
       {
         startsAt: new Date(`${baseDate}T09:00:00`),
@@ -179,7 +165,6 @@ describe('AppointmentsService.list', () => {
     const where = (prisma.appointment.findMany as jest.Mock).mock.calls[0][0].where;
     expect(where.startsAt.gte).toBeInstanceOf(Date);
     expect(where.startsAt.lte).toBeInstanceOf(Date);
-    // gte should be midnight, lte should be end of day
     expect((where.startsAt.gte as Date).getHours()).toBe(0);
     expect((where.startsAt.lte as Date).getHours()).toBe(23);
   });
@@ -248,6 +233,25 @@ describe('AppointmentsService.create', () => {
     expect(data.startsAt).toBeInstanceOf(Date);
     expect(data.endsAt).toBeInstanceOf(Date);
   });
+
+  it('includes room and notes when provided', async () => {
+    const created = { ...SAMPLE_APPT, room: 'Room A', notes: 'Bring records' };
+    const prisma = makePrisma({ create: jest.fn().mockResolvedValue(created) });
+    const svc = new AppointmentsService(prisma);
+
+    await svc.create({
+      patientId: 'p1',
+      ownerId: 'o1',
+      startsAt: '2026-03-26T09:00:00.000Z',
+      endsAt: '2026-03-26T09:30:00.000Z',
+      room: 'Room A',
+      notes: 'Bring records',
+    });
+
+    const data = (prisma.appointment.create as jest.Mock).mock.calls[0][0].data;
+    expect(data.room).toBe('Room A');
+    expect(data.notes).toBe('Bring records');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -288,5 +292,42 @@ describe('AppointmentsService.update', () => {
     const data = (prisma.appointment.update as jest.Mock).mock.calls[0][0].data;
     expect(data.startsAt).toBeInstanceOf(Date);
     expect(data.endsAt).toBeInstanceOf(Date);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// cancel
+// ---------------------------------------------------------------------------
+describe('AppointmentsService.cancel', () => {
+  it('sets status to cancelled and sets cancelledAt', async () => {
+    const prisma = makePrisma({
+      findUnique: jest.fn().mockResolvedValue(SAMPLE_APPT),
+      update: jest.fn().mockResolvedValue({ ...SAMPLE_APPT, status: 'cancelled', cancelledAt: new Date() }),
+    });
+    const svc = new AppointmentsService(prisma);
+
+    await svc.cancel('appt-1', 'user-1', 'Client requested');
+
+    const data = (prisma.appointment.update as jest.Mock).mock.calls[0][0].data;
+    expect(data.status).toBe('cancelled');
+    expect(data.cancelledAt).toBeInstanceOf(Date);
+    expect(data.cancelledBy).toBe('user-1');
+    expect(data.cancellationReason).toBe('Client requested');
+  });
+
+  it('throws NotFoundException when appointment does not exist', async () => {
+    const prisma = makePrisma({ findUnique: jest.fn().mockResolvedValue(null) });
+    const svc = new AppointmentsService(prisma);
+
+    await expect(svc.cancel('bad-id')).rejects.toThrow(NotFoundException);
+  });
+
+  it('throws ConflictException when appointment is already cancelled', async () => {
+    const prisma = makePrisma({
+      findUnique: jest.fn().mockResolvedValue({ ...SAMPLE_APPT, status: 'cancelled' }),
+    });
+    const svc = new AppointmentsService(prisma);
+
+    await expect(svc.cancel('appt-1')).rejects.toThrow('Appointment is already cancelled');
   });
 });

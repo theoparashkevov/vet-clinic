@@ -16,8 +16,15 @@ export class RemindersController {
     @Query('assignedTo') assignedTo?: string,
     @Query('status') status?: string,
     @Query('priority') priority?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.reminders.list({ patientId, assignedTo, status, priority });
+    return this.reminders.list({ patientId, assignedTo, status, priority, page, limit });
+  }
+
+  @Get('overdue')
+  getOverdue() {
+    return this.reminders.getOverdue();
   }
 
   @Get('my-reminders')
@@ -28,6 +35,12 @@ export class RemindersController {
   @Get('stats')
   getStats(@CurrentUser() user: AuthUser) {
     return this.reminders.getStats(user.sub);
+  }
+
+  @Get(':id')
+  async get(@Param('id') id: string) {
+    const reminder = await this.reminders.get(id);
+    return { data: reminder };
   }
 
   @Post()

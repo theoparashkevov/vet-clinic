@@ -2,10 +2,61 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePrescriptionDto, UpdatePrescriptionDto, CreateFromTemplateDto } from './dto';
+import { createPaginatedResult, getPaginationParams } from '../common/pagination';
 
 @Injectable()
 export class PrescriptionsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async list(filters: {
+    patientId?: string;
+    medication?: string;
+    prescribedById?: string;
+    active?: boolean;
+    isControlled?: boolean;
+    page?: string;
+    limit?: string;
+  }) {
+    const where: Prisma.PrescriptionWhereInput = {};
+
+    if (filters.patientId) {
+      where.patientId = filters.patientId;
+    }
+
+    if (filters.medication) {
+      where.medication = { contains: filters.medication };
+    }
+
+    if (filters.prescribedById) {
+      where.prescribedById = filters.prescribedById;
+    }
+
+    if (filters.active !== undefined) {
+      where.expiresAt = filters.active ? { gte: new Date() } : { lt: new Date() };
+    }
+
+    if (filters.isControlled !== undefined) {
+      where.isControlled = filters.isControlled;
+    }
+
+    const { page, limit, skip } = getPaginationParams({
+      page: filters.page,
+      limit: filters.limit,
+    });
+
+    const [data, total] = await Promise.all([
+      this.prisma.prescription.findMany({
+        where,
+        orderBy: { prescribedAt: 'desc' },
+        skip,
+        take: limit,
+        include: { patient: { select: { name: true, species: true } } },
+      }),
+      this.prisma.prescription.count({ where }),
+    ]);
+
+    return createPaginatedResult(data, total, page, limit);
+  }
 
   async listForPatient(patientId: string) {
     const patient = await this.prisma.patient.findUnique({
@@ -35,7 +86,12 @@ export class PrescriptionsService {
     return prescription;
   }
 
-  async create(patientId: string, dto: CreatePrescriptionDto, userId?: string) {
+  async create(dto: CreatePrescriptionDto, userId?: string) {
+    const patientId = dto.patientId;
+    if (!patientId) {
+      throw new NotFoundException('Patient ID is required');
+    }
+
     const patient = await this.prisma.patient.findUnique({
       where: { id: patientId },
       include: { owner: true },
@@ -45,7 +101,32 @@ export class PrescriptionsService {
       throw new NotFoundException('Patient not found');
     }
 
-    // Get veterinarian name from user if not provided
+    let medication = dto.medication;
+    let dosage = dto.dosage;
+    let frequency = dto.frequency;
+    let duration = dto.duration;
+    let instructions = dto.instructions;
+
+    if (dto.medicationTemplateId) {
+      const template = await this.prisma.medicationTemplate.findUnique({
+        where: { id: dto.medicationTemplateId },
+      });
+
+      if (!template) {
+        throw new NotFoundException('Medication template not found');
+      }
+
+      medication = template.name;
+      dosage = template.dosage;
+      frequency = template.frequency;
+      duration = template.duration;
+      instructions = template.instructions ?? instructions;
+    }
+
+    if (!medication || !dosage || !frequency || !duration) {
+      throw new ConflictException('Medication, dosage, frequency, and duration are required when not using a template');
+    }
+
     let veterinarian = dto.veterinarian;
     if (!veterinarian && userId) {
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -55,15 +136,16 @@ export class PrescriptionsService {
     return this.prisma.prescription.create({
       data: {
         patientId,
-        medication: dto.medication,
-        dosage: dto.dosage,
-        frequency: dto.frequency,
-        duration: dto.duration,
-        instructions: dto.instructions,
-        expiresAt: new Date(dto.expiresAt),
+        medication,
+        dosage,
+        frequency,
+        duration,
+        instructions,
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         refillsTotal: dto.refillsTotal ?? 0,
         refillsRemaining: dto.refillsTotal ?? 0,
         isControlled: dto.isControlled ?? false,
+        prescribedById: userId,
         veterinarian: veterinarian || 'Unknown',
         notes: dto.notes,
       },
@@ -79,7 +161,6 @@ export class PrescriptionsService {
       throw new NotFoundException('Medication template not found');
     }
 
-    // Get veterinarian name from user if not provided
     let veterinarian = dto.veterinarian;
     if (!veterinarian && userId) {
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -98,6 +179,7 @@ export class PrescriptionsService {
         refillsTotal: 0,
         refillsRemaining: 0,
         isControlled: false,
+        prescribedById: userId,
         veterinarian: veterinarian || 'Unknown',
         notes: dto.notes,
       },
@@ -184,12 +266,10 @@ export class PrescriptionsService {
     const allergies = patient.allergies?.toLowerCase() || '';
     const currentMeds = patient.prescriptions.map(p => p.medication.toLowerCase());
 
-    // Check allergies
     if (allergies.includes(medicationName.toLowerCase())) {
-      warnings.push(`⚠️ ALLERGY ALERT: Patient is allergic to ${medicationName}`);
+      warnings.push(`ALLERGY ALERT: Patient is allergic to ${medicationName}`);
     }
 
-    // Common dangerous combinations
     const drugPairs: Record<string, string[]> = {
       'carprofen': ['aspirin', 'meloxicam', 'deramaxx', 'previcox'],
       'meloxicam': ['carprofen', 'aspirin', 'prednisone'],
@@ -203,22 +283,20 @@ export class PrescriptionsService {
       for (const currentMed of currentMeds) {
         for (const dangerous of drugPairs[medLower]) {
           if (currentMed.includes(dangerous)) {
-            warnings.push(`⚠️ DRUG INTERACTION: ${medicationName} + ${currentMed} may cause GI ulceration or kidney damage`);
+            warnings.push(`DRUG INTERACTION: ${medicationName} + ${currentMed} may cause GI ulceration or kidney damage`);
           }
         }
       }
     }
 
-    // NSAID + Kidney disease check
     const nsaids = ['carprofen', 'meloxicam', 'deramaxx', 'previcox', 'aspirin'];
     const conditions = patient.chronicConditions?.toLowerCase() || '';
     if (nsaids.some(n => medLower.includes(n)) && conditions.includes('kidney')) {
-      warnings.push('⚠️ CONTRAINDICATION: NSAIDs may worsen kidney disease - consider alternatives');
+      warnings.push('CONTRAINDICATION: NSAIDs may worsen kidney disease - consider alternatives');
     }
 
-    // NSAID + Dehydration risk
     if (nsaids.some(n => medLower.includes(n)) && conditions.includes('dehydration')) {
-      warnings.push('⚠️ CAUTION: NSAIDs in dehydrated patients increase kidney risk - ensure hydration');
+      warnings.push('CAUTION: NSAIDs in dehydrated patients increase kidney risk - ensure hydration');
     }
 
     return warnings;

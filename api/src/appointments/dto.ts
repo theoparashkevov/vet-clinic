@@ -21,6 +21,14 @@ export class CreateAppointmentDto {
   @IsString()
   @IsOptional()
   reason?: string;
+
+  @IsString()
+  @IsOptional()
+  room?: string;
+
+  @IsString()
+  @IsOptional()
+  notes?: string;
 }
 
 export class UpdateAppointmentDto {
@@ -44,4 +52,28 @@ export class UpdateAppointmentDto {
   @IsString()
   @IsOptional()
   doctorId?: string;
+
+  @IsString()
+  @IsOptional()
+  room?: string;
+
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  @IsDateString()
+  @IsOptional()
+  checkedInAt?: string;
+
+  @IsDateString()
+  @IsOptional()
+  checkedOutAt?: string;
+
+  @IsString()
+  @IsOptional()
+  cancelledBy?: string;
+
+  @IsString()
+  @IsOptional()
+  cancellationReason?: string;
 }

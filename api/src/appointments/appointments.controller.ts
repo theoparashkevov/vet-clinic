@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto';
 import { StaffAccess } from '../auth/staff-access.decorator';
+import { Roles } from '../common/decorators/roles.decorator';
 import { PaginationQuery } from '../common/pagination';
 
 @StaffAccess()
@@ -49,7 +50,13 @@ export class AppointmentsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.appointments.remove(id);
+  @Roles('admin', 'doctor', 'registrar')
+  async cancel(
+    @Param('id') id: string,
+    @Body('cancelledBy') cancelledBy?: string,
+    @Body('cancellationReason') cancellationReason?: string,
+  ) {
+    const appointment = await this.appointments.cancel(id, cancelledBy, cancellationReason);
+    return { data: appointment };
   }
 }

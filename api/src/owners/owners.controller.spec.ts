@@ -11,7 +11,7 @@ const SAMPLE_OWNER = { id: 'own-1', name: 'Alice', phone: '555-1234', email: 'al
 
 function makeService(): Partial<OwnersService> {
   return {
-    list: jest.fn().mockResolvedValue([SAMPLE_OWNER]),
+    list: jest.fn().mockResolvedValue({ data: [SAMPLE_OWNER], meta: { total: 1, page: 1, limit: 10, totalPages: 1 } }),
     get: jest.fn().mockResolvedValue(SAMPLE_OWNER),
     create: jest.fn().mockResolvedValue(SAMPLE_OWNER),
     update: jest.fn().mockResolvedValue({ ...SAMPLE_OWNER, name: 'Bob' }),
@@ -42,10 +42,11 @@ async function buildApp(service: Partial<OwnersService>): Promise<INestApplicati
 // GET /owners
 // ---------------------------------------------------------------------------
 describe('GET /owners', () => {
-  it('returns 200 with a list of owners', async () => {
+  it('returns 200 with a paginated list of owners', async () => {
     const app = await buildApp(makeService());
     const res = await request(app.getHttpServer()).get('/owners').expect(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.meta).toBeDefined();
     await app.close();
   });
 });
