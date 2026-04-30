@@ -15,8 +15,8 @@
     "prisma:create-migration": "prisma migrate dev --create-only --name init",
     "prisma:push": "prisma db push --force-reset",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test": "jest --runInBand",
+    "test:coverage": "jest --coverage --runInBand"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",

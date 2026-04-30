@@ -2,11 +2,20 @@
   "active_plan": "/home/teo/projects/vet-clinic/.sisyphus/plans/vet-clinic-rewrite.md",
   "started_at": "2026-04-30T13:02:25.992Z",
   "session_ids": [
-    "ses_22206d424ffe2Xlo1R29XvCaRC"
+    "ses_22206d424ffe2Xlo1R29XvCaRC",
+    "ses_220526d1fffelPPO27yuPcmreB",
+    "ses_220523ec3ffeu5fervEaqhpjD0",
+    "ses_22051d50cffe6zRGtklqR9u7Hy",
+    "ses_220518db1ffeNBsgaGD1cSZDWV"
   ],
   "session_origins": {
-    "ses_22206d424ffe2Xlo1R29XvCaRC": "direct"
+    "ses_22206d424ffe2Xlo1R29XvCaRC": "direct",
+    "ses_220526d1fffelPPO27yuPcmreB": "appended",
+    "ses_220523ec3ffeu5fervEaqhpjD0": "appended",
+    "ses_22051d50cffe6zRGtklqR9u7Hy": "appended",
+    "ses_220518db1ffeNBsgaGD1cSZDWV": "appended"
   },
   "plan_name": "vet-clinic-rewrite",
-  "agent": "atlas"
+  "agent": "atlas",
+  "task_sessions": {}
 }

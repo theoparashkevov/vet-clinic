@@ -10,19 +10,8 @@ import { AuditLogInterceptor } from '../../src/audit-log/audit-log.interceptor';
 describe('Happy Path Integration Test', () => {
   let app: INestApplication;
   let prisma: PrismaClient;
-  let doctorToken: string;
-  let superadminToken: string;
-  let doctorId: string;
-  let superadminId: string;
-  let ownerId: string;
-  let patientId: string;
-  let appointmentId: string;
-  let medicalRecordId: string;
-  let prescriptionId: string;
-  let invoiceId: string;
 
   beforeAll(async () => {
-    // Create PrismaClient AFTER setup.ts has set DATABASE_URL
     prisma = new PrismaClient();
 
     const moduleRef = await Test.createTestingModule({
@@ -45,8 +34,14 @@ describe('Happy Path Integration Test', () => {
     app.useGlobalInterceptors(auditLogInterceptor);
 
     await app.init();
+  });
 
-    // Seed required roles
+  afterAll(async () => {
+    await app.close();
+    await prisma.$disconnect();
+  });
+
+  it('covers the full happy path', async () => {
     const roleNames = ['doctor', 'admin', 'superadmin', 'nurse', 'registrar', 'client'];
     for (const name of roleNames) {
       await prisma.role.upsert({
@@ -69,7 +64,7 @@ describe('Happy Path Integration Test', () => {
         },
       },
     });
-    doctorId = doctorUser.id;
+    const doctorId = doctorUser.id;
 
     const superadminUser = await prisma.user.create({
       data: {
@@ -79,16 +74,16 @@ describe('Happy Path Integration Test', () => {
         isSuperAdmin: true,
       },
     });
-    superadminId = superadminUser.id;
-  });
 
-  afterAll(async () => {
-    await app.close();
-    await prisma.$disconnect();
-  });
+    let doctorToken: string;
+    let superadminToken: string;
+    let ownerId: string;
+    let patientId: string;
+    let appointmentId: string;
+    let medicalRecordId: string;
+    let prescriptionId: string;
+    let invoiceId: string;
 
-  it('covers the full happy path', async () => {
-    // ── Step 1: Doctor logs in and gets JWT token ──────────────────────────
     const loginRes = await request(app.getHttpServer())
       .post('/v1/auth/login')
       .send({ email: 'doctor@test.com', password: 'doctorpass123' })
@@ -102,7 +97,6 @@ describe('Happy Path Integration Test', () => {
     expect(loginRes.body.user.isSuperAdmin).toBe(false);
     doctorToken = loginRes.body.token;
 
-    // ── Step 2: Doctor views today's appointments ──────────────────────────
     const today = new Date().toISOString().slice(0, 10);
     const apptListRes = await request(app.getHttpServer())
       .get(`/v1/appointments?date=${today}`)
@@ -113,7 +107,6 @@ describe('Happy Path Integration Test', () => {
     expect(apptListRes.body.meta).toBeDefined();
     expect(apptListRes.body.meta.total).toBe(0);
 
-    // ── Step 3: Doctor creates a new patient (with owner) ──────────────────
     const ownerRes = await request(app.getHttpServer())
       .post('/v1/owners')
       .set('Authorization', `Bearer ${doctorToken}`)
@@ -145,7 +138,6 @@ describe('Happy Path Integration Test', () => {
     expect(patientRes.body.data.ownerId).toBe(ownerId);
     patientId = patientRes.body.data.id;
 
-    // ── Step 4: Doctor books an appointment for the patient ────────────────
     const slotStart = `${today}T10:00:00.000Z`;
     const slotEnd = `${today}T10:30:00.000Z`;
 
@@ -168,7 +160,6 @@ describe('Happy Path Integration Test', () => {
     expect(appointmentRes.body.data.reason).toBe('Annual checkup');
     appointmentId = appointmentRes.body.data.id;
 
-    // ── Step 5: Doctor creates a medical record for the appointment ────────
     const medicalRecordRes = await request(app.getHttpServer())
       .post('/v1/medical-records')
       .set('Authorization', `Bearer ${doctorToken}`)
@@ -190,7 +181,6 @@ describe('Happy Path Integration Test', () => {
     expect(medicalRecordRes.body.data.createdBy.id).toBe(doctorId);
     medicalRecordId = medicalRecordRes.body.data.id;
 
-    // ── Step 6: Doctor creates a prescription ──────────────────────────────
     const prescriptionRes = await request(app.getHttpServer())
       .post(`/v1/patients/${patientId}/prescriptions`)
       .set('Authorization', `Bearer ${doctorToken}`)
@@ -210,7 +200,6 @@ describe('Happy Path Integration Test', () => {
     expect(prescriptionRes.body.duration).toBe('14 days');
     prescriptionId = prescriptionRes.body.id;
 
-    // ── Step 7: Doctor creates an invoice ──────────────────────────────────
     const invoiceRes = await request(app.getHttpServer())
       .post('/v1/invoices')
       .set('Authorization', `Bearer ${doctorToken}`)
@@ -241,7 +230,6 @@ describe('Happy Path Integration Test', () => {
     expect(invoiceRes.body.data.items[0].unitPrice).toBe(50);
     invoiceId = invoiceRes.body.data.id;
 
-    // ── Step 8: Superadmin logs in and views audit logs ────────────────────
     const superadminLoginRes = await request(app.getHttpServer())
       .post('/v1/auth/login')
       .send({ email: 'superadmin@test.com', password: 'superadminpass123' })
@@ -253,7 +241,6 @@ describe('Happy Path Integration Test', () => {
     expect(superadminLoginRes.body.user.isSuperAdmin).toBe(true);
     superadminToken = superadminLoginRes.body.token;
 
-    // Allow async audit-log writes to finish
     await new Promise((r) => setTimeout(r, 300));
 
     const auditLogRes = await request(app.getHttpServer())
