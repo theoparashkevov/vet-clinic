@@ -88,11 +88,11 @@ EOF
 fi
 
 # ── Web .env.local ────────────────────────────────────────────────────────────
-if [ ! -f web-modern/.env.local ]; then
-  cat > web-modern/.env.local <<'EOF'
+if [ ! -f web-new/.env.local ]; then
+  cat > web-new/.env.local <<'EOF'
 VITE_API_URL=http://localhost:3000/v1
 EOF
-  info "Set web-modern/.env.local"
+  info "Set web-new/.env.local"
 fi
 
 # ── Prisma client ─────────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ fi
 if [ "$BUILD" -eq 1 ]; then
   info "Building production bundles..."
   cd api && npm run build && cd ..
-  cd web-modern && npm run build && cd ..
+  cd web-new && npm run build && cd ..
   success "Build complete!"
   exit 0
 fi
@@ -147,7 +147,7 @@ success "╔══════════════════════�
 success "║           Vet Clinic Platform - Starting Up               ║"
 success "╠════════════════════════════════════════════════════════════╣"
 success "║  API Server:  http://localhost:3000                       ║"
-success "║  Web App:     http://localhost:3001                       ║"
+success "║  Web App:     http://localhost:3001 (NEW)                 ║"
 success "╠════════════════════════════════════════════════════════════╣"
 success "║  Login: admin@vetclinic.com / admin123                    ║"
 success "║  Or:     maria.ivanova@vetclinic.com / demo12345         ║"
@@ -159,10 +159,14 @@ if [ "$API_ONLY" -eq 1 ]; then
   cd api && npm run start:dev
 elif [ "$WEB_ONLY" -eq 1 ]; then
   info "Starting Web server only..."
-  cd web-modern && npm run dev
+  cd web-new && npm run dev
 else
   info "Starting both API and Web servers..."
   info "Press Ctrl+C to stop"
   echo ""
-  npm run dev
+  cd api && npm run start:dev &
+  API_PID=$!
+  cd ../web-new && npm run dev &
+  WEB_PID=$!
+  wait $API_PID $WEB_PID
 fi
