@@ -58,7 +58,7 @@ export const Route = createFileRoute("/_authenticated/appointments/")({
 })
 
 const STATUS_OPTIONS = [
-  { value: "", label: "All statuses" },
+  { value: "all", label: "All statuses" },
   { value: "scheduled", label: "Scheduled" },
   { value: "confirmed", label: "Confirmed" },
   { value: "completed", label: "Completed" },
@@ -132,8 +132,8 @@ function useAppointments(filters: {
       const params = new URLSearchParams()
       if (filters.dateFrom) params.set("dateFrom", filters.dateFrom)
       if (filters.dateTo) params.set("dateTo", filters.dateTo)
-      if (filters.doctorId) params.set("doctorId", filters.doctorId)
-      if (filters.status) params.set("status", filters.status)
+      if (filters.doctorId && filters.doctorId !== "all") params.set("doctorId", filters.doctorId)
+      if (filters.status && filters.status !== "all") params.set("status", filters.status)
       params.set("page", String(filters.page))
       params.set("limit", String(filters.limit))
       const res = await fetchWithAuth(`/v1/appointments?${params.toString()}`)
@@ -189,8 +189,8 @@ function useCancelAppointment() {
 function AppointmentsListPage() {
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
-  const [doctorId, setDoctorId] = useState("")
-  const [status, setStatus] = useState("")
+  const [doctorId, setDoctorId] = useState("all")
+  const [status, setStatus] = useState("all")
   const [page, setPage] = useState(1)
   const limit = 10
 
@@ -213,13 +213,13 @@ function AppointmentsListPage() {
   const appointments = data?.data ?? []
   const meta = data?.meta
 
-  const hasFilters = dateFrom || dateTo || doctorId || status
+  const hasFilters = dateFrom || dateTo || doctorId !== "all" || status !== "all"
 
   function clearFilters() {
     setDateFrom("")
     setDateTo("")
-    setDoctorId("")
-    setStatus("")
+    setDoctorId("all")
+    setStatus("all")
     setPage(1)
   }
 
@@ -272,7 +272,7 @@ function AppointmentsListPage() {
               <SelectValue placeholder="All doctors" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All doctors</SelectItem>
+              <SelectItem value="all">All doctors</SelectItem>
               {doctors?.map((d) => (
                 <SelectItem key={d.id} value={d.id}>
                   {d.name}

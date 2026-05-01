@@ -90,7 +90,7 @@ fi
 # ── Web .env.local ────────────────────────────────────────────────────────────
 if [ ! -f web-new/.env.local ]; then
   cat > web-new/.env.local <<'EOF'
-VITE_API_URL=http://localhost:3000/v1
+VITE_API_URL=http://localhost:3000
 EOF
   info "Set web-new/.env.local"
 fi
@@ -164,9 +164,9 @@ else
   info "Starting both API and Web servers..."
   info "Press Ctrl+C to stop"
   echo ""
-  cd api && npm run start:dev &
+  (cd api && npm run start:dev) &
   API_PID=$!
-  cd ../web-new && npm run dev &
+  (cd web-new && npm run dev) &
   WEB_PID=$!
   wait $API_PID $WEB_PID
 fi
