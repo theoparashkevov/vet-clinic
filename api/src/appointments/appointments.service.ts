@@ -54,7 +54,7 @@ export class AppointmentsService {
   }
 
   async list(
-    filters: { date?: string; doctorId?: string; status?: string; patientId?: string },
+    filters: { date?: string; dateFrom?: string; dateTo?: string; doctorId?: string; status?: string; patientId?: string },
     pagination?: { page?: string; limit?: string }
   ): Promise<PaginatedResult<any>> {
     const where: Record<string, unknown> = {};
@@ -65,6 +65,19 @@ export class AppointmentsService {
       const end = new Date(filters.date);
       end.setHours(23, 59, 59, 999);
       where.startsAt = { gte: start, lte: end };
+    } else if (filters.dateFrom || filters.dateTo) {
+      const range: Record<string, Date> = {};
+      if (filters.dateFrom) {
+        const start = new Date(filters.dateFrom);
+        start.setHours(0, 0, 0, 0);
+        range.gte = start;
+      }
+      if (filters.dateTo) {
+        const end = new Date(filters.dateTo);
+        end.setHours(23, 59, 59, 999);
+        range.lte = end;
+      }
+      where.startsAt = range;
     }
 
     if (filters.doctorId) {

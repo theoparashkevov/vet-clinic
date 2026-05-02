@@ -174,9 +174,10 @@ function useUpdateAppointment() {
 function useCancelAppointment() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
       const res = await fetchWithAuth(`/v1/appointments/${id}`, {
         method: "DELETE",
+        body: JSON.stringify({ cancellationReason: reason || undefined }),
       })
       return res.data as Appointment
     },
@@ -235,7 +236,7 @@ function AppointmentsListPage() {
 
   function confirmCancel() {
     if (!cancelTarget) return
-    cancelMutation.mutate(cancelTarget.id, {
+    cancelMutation.mutate({ id: cancelTarget.id, reason: cancelReason }, {
       onSuccess: () => {
         setCancelDialogOpen(false)
         setCancelTarget(null)
