@@ -224,6 +224,7 @@ model MedicalRecord {
   nextVisitRecommended DateTime?
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
+  vitalSigns           VitalSigns?
 
   @@index([patientId])
   @@index([appointmentId])
@@ -232,11 +233,13 @@ model MedicalRecord {
 }
 
 model VitalSigns {
-  id                     String       @id @default(cuid())
-  patient                Patient      @relation(fields: [patientId], references: [id])
+  id                     String        @id @default(cuid())
+  patient                Patient       @relation(fields: [patientId], references: [id])
   patientId              String
-  appointment            Appointment? @relation(fields: [appointmentId], references: [id])
+  appointment            Appointment?  @relation(fields: [appointmentId], references: [id])
   appointmentId          String?
+  medicalRecord          MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+  medicalRecordId        String?       @unique
   recordedAt             DateTime
   temperature            Float?
   heartRate              Int?
@@ -246,10 +249,10 @@ model VitalSigns {
   weight                 Float?
   bodyConditionScore     Int?
   notes                  String?
-  recordedBy             User         @relation("VitalSignsRecordedBy", fields: [recordedById], references: [id])
+  recordedBy             User          @relation("VitalSignsRecordedBy", fields: [recordedById], references: [id])
   recordedById           String
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
 
   @@index([patientId])
   @@index([appointmentId])
@@ -666,6 +669,8 @@ model BotConversation {
   ownerId      String?
   viberUserId  String?
   status       String       @default("active")
+  state        String       @default("idle")
+  context      String?
   startedAt    DateTime     @default(now())
   endedAt      DateTime?
   messages     BotMessage[]
