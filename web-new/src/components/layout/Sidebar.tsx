@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Stethoscope,
+  ClipboardList,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 import { useAuthStore } from "../../stores/authStore"
@@ -29,6 +30,7 @@ const navItems: NavItem[] = [
   { label: "Medical Records", to: "/medical-records", icon: FileText, roles: ["doctor", "nurse"] },
   { label: "Lab Results", to: "/lab-results", icon: FlaskConical, roles: ["doctor", "nurse"] },
   { label: "Prescriptions", to: "/prescriptions", icon: Pill, roles: ["doctor"] },
+  { label: "Tasks", to: "/tasks", icon: ClipboardList, roles: ["doctor", "nurse", "registrar", "admin"] },
   { label: "Billing", to: "/billing", icon: CreditCard, roles: ["registrar", "admin"] },
   { label: "Admin", to: "/admin", icon: Shield, roles: ["superadmin"] },
 ]

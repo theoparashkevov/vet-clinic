@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -10,6 +10,7 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  Eye,
 } from 'lucide-react'
 import { fetchWithAuth } from '../../lib/api'
 import { PatientFormModal } from '../../components/patients/PatientFormModal'
@@ -224,14 +225,14 @@ function PatientsPage() {
               patients.map((patient) => (
                 <TableRow key={patient.id}>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <Link to="/patients/$id" params={{ id: patient.id }} className="flex items-center gap-2 hover:underline">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                         <PawPrint className="h-4 w-4 text-primary" />
                       </div>
                       <span className="text-sm font-medium">
                         {patient.name}
                       </span>
-                    </div>
+                    </Link>
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">{patient.species}</Badge>
@@ -253,6 +254,12 @@ function PatientsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link to="/patients/$id" params={{ id: patient.id }}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleOpenEdit(patient)}
                         >

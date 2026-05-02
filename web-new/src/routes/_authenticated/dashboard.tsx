@@ -105,7 +105,7 @@ const statCards = [
 ]
 
 const quickActions = [
-  { label: "New Appointment", to: "/appointments", icon: CalendarPlus, variant: "default" as const },
+  { label: "New Appointment", to: "/appointments/new", icon: CalendarPlus, variant: "default" as const },
   { label: "New Patient", to: "/patients", icon: Plus, variant: "outline" as const },
   { label: "Medical Record", to: "/medical-records", icon: FileText, variant: "outline" as const },
 ]
