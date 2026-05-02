@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BotHandler } from '../interfaces/bot-handler.interface';
+import { BotHandler, ConversationWithState } from '../interfaces/bot-handler.interface';
 import { NormalizedMessage, BotResponse } from '../interfaces/bot-adapter.interface';
 import { BotConversation } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -12,12 +12,12 @@ export class AppointmentHandler implements BotHandler {
     private readonly conversationService: ConversationService,
   ) {}
 
-  canHandle(message: NormalizedMessage, conversation: BotConversation): boolean {
+  canHandle(message: NormalizedMessage, conversation: ConversationWithState): boolean {
     const text = (message.text || '').trim().toLowerCase();
     return conversation.state === 'menu' && text === 'appointments';
   }
 
-  async handle(_message: NormalizedMessage, conversation: BotConversation): Promise<BotResponse> {
+  async handle(_message: NormalizedMessage, conversation: ConversationWithState): Promise<BotResponse> {
     if (!conversation.ownerId) {
       await this.conversationService.updateState(conversation.id, 'idle');
       return { text: 'Your account is not linked. Please provide your phone number to continue.' };

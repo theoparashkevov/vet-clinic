@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
+// Conversation state is tracked in-memory per session since the schema
+// does not persist state/context fields on BotConversation.
+const conversationState = new Map<string, { state: string; context: Record<string, unknown> }>();
+
 @Injectable()
 export class ConversationService {
   constructor(private readonly prisma: PrismaService) {}
@@ -18,12 +22,14 @@ export class ConversationService {
         data: {
           viberUserId: externalId,
           status: 'active',
-          state: 'idle',
         },
       });
+      conversationState.set(conversation.id, { state: 'idle', context: {} });
     }
 
-    return conversation;
+    // Attach in-memory state to the returned object
+    const memState = conversationState.get(conversation.id) ?? { state: 'idle', context: {} };
+    return Object.assign({}, conversation, { state: memState.state, context: memState.context });
   }
 
   async createMessage(data: {
@@ -43,10 +49,13 @@ export class ConversationService {
   }
 
   async findConversationById(id: string) {
-    return this.prisma.botConversation.findUnique({
+    const conversation = await this.prisma.botConversation.findUnique({
       where: { id },
       include: { messages: true },
     });
+    if (!conversation) return null;
+    const memState = conversationState.get(id) ?? { state: 'idle', context: {} };
+    return Object.assign({}, conversation, { state: memState.state, context: memState.context });
   }
 
   async updateConversationStatus(id: string, status: string) {
@@ -57,14 +66,14 @@ export class ConversationService {
   }
 
   async updateState(id: string, state: string, context?: Record<string, unknown>) {
-    const data: Record<string, unknown> = { state };
-    if (context !== undefined) {
-      data.context = JSON.stringify(context);
-    }
-    return this.prisma.botConversation.update({
-      where: { id },
-      data,
+    const existing = conversationState.get(id) ?? { state: 'idle', context: {} };
+    conversationState.set(id, {
+      state,
+      context: context !== undefined ? context : existing.context,
     });
+    const conversation = await this.prisma.botConversation.findUnique({ where: { id } });
+    const memState = conversationState.get(id)!;
+    return Object.assign({}, conversation, { state: memState.state, context: memState.context });
   }
 
   async linkOwner(id: string, ownerId: string) {
@@ -75,18 +84,7 @@ export class ConversationService {
   }
 
   async getContext(id: string): Promise<Record<string, unknown>> {
-    const conversation = await this.prisma.botConversation.findUnique({
-      where: { id },
-      select: { context: true },
-    });
-    if (conversation?.context) {
-      try {
-        return JSON.parse(conversation.context) as Record<string, unknown>;
-      } catch {
-        return {};
-      }
-    }
-    return {};
+    return conversationState.get(id)?.context ?? {};
   }
 
   async listMessages(conversationId: string) {

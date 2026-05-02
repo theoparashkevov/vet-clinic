@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BotHandler } from '../interfaces/bot-handler.interface';
+import { BotHandler, ConversationWithState } from '../interfaces/bot-handler.interface';
 import { NormalizedMessage, BotResponse } from '../interfaces/bot-adapter.interface';
 import { BotConversation } from '@prisma/client';
 import { ConversationService } from '../services/conversation.service';
@@ -8,13 +8,13 @@ import { ConversationService } from '../services/conversation.service';
 export class MenuHandler implements BotHandler {
   constructor(private readonly conversationService: ConversationService) {}
 
-  canHandle(_message: NormalizedMessage, conversation: BotConversation): boolean {
+  canHandle(_message: NormalizedMessage, conversation: ConversationWithState): boolean {
     if (conversation.state === 'phone_verified') return true;
     if (conversation.state === 'menu') return true;
     return false;
   }
 
-  async handle(_message: NormalizedMessage, conversation: BotConversation): Promise<BotResponse> {
+  async handle(_message: NormalizedMessage, conversation: ConversationWithState): Promise<BotResponse> {
     await this.conversationService.updateState(conversation.id, 'menu');
 
     return {

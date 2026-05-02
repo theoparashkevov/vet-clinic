@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BotHandler } from '../interfaces/bot-handler.interface';
+import { BotHandler, ConversationWithState } from '../interfaces/bot-handler.interface';
 import { NormalizedMessage, BotResponse } from '../interfaces/bot-adapter.interface';
 import { BotConversation } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -12,7 +12,7 @@ export class IdentityHandler implements BotHandler {
     private readonly conversationService: ConversationService,
   ) {}
 
-  canHandle(message: NormalizedMessage, conversation: BotConversation): boolean {
+  canHandle(message: NormalizedMessage, conversation: ConversationWithState): boolean {
     const text = (message.text || '').trim();
     const isPhone = /^\+?[\d\s\-]{6,20}$/.test(text.replace(/\s/g, ''));
 
@@ -23,7 +23,7 @@ export class IdentityHandler implements BotHandler {
     return false;
   }
 
-  async handle(message: NormalizedMessage, conversation: BotConversation): Promise<BotResponse> {
+  async handle(message: NormalizedMessage, conversation: ConversationWithState): Promise<BotResponse> {
     const text = (message.text || '').trim();
 
     if (conversation.state === 'idle') {
