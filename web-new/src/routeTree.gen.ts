@@ -23,7 +23,7 @@ import { Route as AuthenticatedAppointmentsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBillingIndexRouteImport } from './routes/_authenticated/billing.index'
 import { Route as AuthenticatedAppointmentsIndexRouteImport } from './routes/_authenticated/appointments.index'
-import { Route as AuthenticatedPatientsIdRouteImport } from './routes/_authenticated/patients.$id'
+import { Route as AuthenticatedPatientsIdRouteImport } from './routes/_authenticated/patients_.$id'
 import { Route as AuthenticatedBillingInvoicesRouteImport } from './routes/_authenticated/billing.invoices'
 import { Route as AuthenticatedAppointmentsNewRouteImport } from './routes/_authenticated/appointments.new'
 import { Route as AuthenticatedAppointmentsCalendarRouteImport } from './routes/_authenticated/appointments.calendar'
@@ -106,9 +106,9 @@ const AuthenticatedAppointmentsIndexRoute =
     getParentRoute: () => AuthenticatedAppointmentsRoute,
   } as any)
 const AuthenticatedPatientsIdRoute = AuthenticatedPatientsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedPatientsRoute,
+  id: '/patients_/$id',
+  path: '/patients/$id',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedBillingInvoicesRoute =
   AuthenticatedBillingInvoicesRouteImport.update({
@@ -156,7 +156,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/lab-results': typeof AuthenticatedLabResultsRoute
   '/medical-records': typeof AuthenticatedMedicalRecordsRoute
-  '/patients': typeof AuthenticatedPatientsRouteWithChildren
+  '/patients': typeof AuthenticatedPatientsRoute
   '/prescriptions': typeof AuthenticatedPrescriptionsRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
@@ -176,7 +176,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/lab-results': typeof AuthenticatedLabResultsRoute
   '/medical-records': typeof AuthenticatedMedicalRecordsRoute
-  '/patients': typeof AuthenticatedPatientsRouteWithChildren
+  '/patients': typeof AuthenticatedPatientsRoute
   '/prescriptions': typeof AuthenticatedPrescriptionsRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
@@ -200,14 +200,14 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/lab-results': typeof AuthenticatedLabResultsRoute
   '/_authenticated/medical-records': typeof AuthenticatedMedicalRecordsRoute
-  '/_authenticated/patients': typeof AuthenticatedPatientsRouteWithChildren
+  '/_authenticated/patients': typeof AuthenticatedPatientsRoute
   '/_authenticated/prescriptions': typeof AuthenticatedPrescriptionsRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
   '/_authenticated/appointments/calendar': typeof AuthenticatedAppointmentsCalendarRoute
   '/_authenticated/appointments/new': typeof AuthenticatedAppointmentsNewRoute
   '/_authenticated/billing/invoices': typeof AuthenticatedBillingInvoicesRouteWithChildren
-  '/_authenticated/patients/$id': typeof AuthenticatedPatientsIdRoute
+  '/_authenticated/patients_/$id': typeof AuthenticatedPatientsIdRoute
   '/_authenticated/appointments/': typeof AuthenticatedAppointmentsIndexRoute
   '/_authenticated/billing/': typeof AuthenticatedBillingIndexRoute
   '/_authenticated/billing/invoices/$id': typeof AuthenticatedBillingInvoicesIdRoute
@@ -274,7 +274,7 @@ export interface FileRouteTypes {
     | '/_authenticated/appointments/calendar'
     | '/_authenticated/appointments/new'
     | '/_authenticated/billing/invoices'
-    | '/_authenticated/patients/$id'
+    | '/_authenticated/patients_/$id'
     | '/_authenticated/appointments/'
     | '/_authenticated/billing/'
     | '/_authenticated/billing/invoices/$id'
@@ -387,12 +387,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppointmentsIndexRouteImport
       parentRoute: typeof AuthenticatedAppointmentsRoute
     }
-    '/_authenticated/patients/$id': {
-      id: '/_authenticated/patients/$id'
-      path: '/$id'
+    '/_authenticated/patients_/$id': {
+      id: '/_authenticated/patients_/$id'
+      path: '/patients/$id'
       fullPath: '/patients/$id'
       preLoaderRoute: typeof AuthenticatedPatientsIdRouteImport
-      parentRoute: typeof AuthenticatedPatientsRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/billing/invoices': {
       id: '/_authenticated/billing/invoices'
@@ -490,19 +490,6 @@ const AuthenticatedBillingRouteChildren: AuthenticatedBillingRouteChildren = {
 const AuthenticatedBillingRouteWithChildren =
   AuthenticatedBillingRoute._addFileChildren(AuthenticatedBillingRouteChildren)
 
-interface AuthenticatedPatientsRouteChildren {
-  AuthenticatedPatientsIdRoute: typeof AuthenticatedPatientsIdRoute
-}
-
-const AuthenticatedPatientsRouteChildren: AuthenticatedPatientsRouteChildren = {
-  AuthenticatedPatientsIdRoute: AuthenticatedPatientsIdRoute,
-}
-
-const AuthenticatedPatientsRouteWithChildren =
-  AuthenticatedPatientsRoute._addFileChildren(
-    AuthenticatedPatientsRouteChildren,
-  )
-
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAppointmentsRoute: typeof AuthenticatedAppointmentsRouteWithChildren
@@ -510,9 +497,10 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLabResultsRoute: typeof AuthenticatedLabResultsRoute
   AuthenticatedMedicalRecordsRoute: typeof AuthenticatedMedicalRecordsRoute
-  AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRouteWithChildren
+  AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRoute
   AuthenticatedPrescriptionsRoute: typeof AuthenticatedPrescriptionsRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
+  AuthenticatedPatientsIdRoute: typeof AuthenticatedPatientsIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -522,9 +510,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLabResultsRoute: AuthenticatedLabResultsRoute,
   AuthenticatedMedicalRecordsRoute: AuthenticatedMedicalRecordsRoute,
-  AuthenticatedPatientsRoute: AuthenticatedPatientsRouteWithChildren,
+  AuthenticatedPatientsRoute: AuthenticatedPatientsRoute,
   AuthenticatedPrescriptionsRoute: AuthenticatedPrescriptionsRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
+  AuthenticatedPatientsIdRoute: AuthenticatedPatientsIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
