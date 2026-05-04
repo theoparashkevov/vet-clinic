@@ -37,7 +37,7 @@ export class AppointmentsService {
     if (doctorId) or.push({ doctorId });
 
     const where: Prisma.AppointmentWhereInput = {
-      status: { not: 'cancelled' },
+      status: { notIn: ['cancelled', 'no_show', 'rescheduled'] },
       ...(excludeId ? { id: { not: excludeId } } : {}),
       AND: [{ startsAt: { lt: endsAt } }, { endsAt: { gt: startsAt } }],
       OR: or,
@@ -54,7 +54,7 @@ export class AppointmentsService {
   }
 
   async list(
-    filters: { date?: string; dateFrom?: string; dateTo?: string; doctorId?: string; status?: string; patientId?: string },
+    filters: { date?: string; dateFrom?: string; dateTo?: string; doctorId?: string; status?: string; patientId?: string; ownerId?: string; patientName?: string; ownerName?: string },
     pagination?: { page?: string; limit?: string }
   ): Promise<PaginatedResult<any>> {
     const where: Record<string, unknown> = {};
@@ -90,6 +90,14 @@ export class AppointmentsService {
 
     if (filters.patientId) {
       where.patientId = filters.patientId;
+    } else if (filters.patientName) {
+      where.patient = { name: { contains: filters.patientName } };
+    }
+
+    if (filters.ownerId) {
+      where.ownerId = filters.ownerId;
+    } else if (filters.ownerName) {
+      where.owner = { name: { contains: filters.ownerName } };
     }
 
     const { page, limit, skip } = getPaginationParams(pagination ?? {});
@@ -169,8 +177,8 @@ export class AppointmentsService {
 
     this.assertValidTimeWindow(nextStartsAt, nextEndsAt);
 
-    const becomingBooked = nextStatus !== 'cancelled';
-    const wasCancelled = existing.status === 'cancelled';
+    const becomingBooked = !['cancelled', 'no_show', 'rescheduled'].includes(nextStatus);
+    const wasCancelled = ['cancelled', 'no_show', 'rescheduled'].includes(existing.status);
     const needsOverlapCheck =
       becomingBooked &&
       (dto.startsAt !== undefined ||
@@ -189,7 +197,18 @@ export class AppointmentsService {
     }
 
     const data: Record<string, unknown> = {};
-    if (dto.status !== undefined) data.status = dto.status;
+    if (dto.status !== undefined) {
+      data.status = dto.status;
+      if (dto.status === 'arrived' && existing.status !== 'arrived') {
+        data.checkedInAt = new Date();
+      }
+      if (dto.status === 'completed' && existing.status !== 'completed') {
+        data.checkedOutAt = new Date();
+      }
+      if (dto.status === 'cancelled' && existing.status !== 'cancelled') {
+        data.cancelledAt = new Date();
+      }
+    }
     if (dto.reason !== undefined) data.reason = dto.reason;
     if (dto.startsAt !== undefined) data.startsAt = new Date(dto.startsAt);
     if (dto.endsAt !== undefined) data.endsAt = new Date(dto.endsAt);

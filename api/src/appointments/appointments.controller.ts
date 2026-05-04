@@ -18,10 +18,13 @@ export class AppointmentsController {
     @Query('doctorId') doctorId?: string,
     @Query('status') status?: string,
     @Query('patientId') patientId?: string,
+    @Query('ownerId') ownerId?: string,
+    @Query('patientName') patientName?: string,
+    @Query('ownerName') ownerName?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.appointments.list({ date, dateFrom, dateTo, doctorId, status, patientId }, { page, limit });
+    return this.appointments.list({ date, dateFrom, dateTo, doctorId, status, patientId, ownerId, patientName, ownerName }, { page, limit });
   }
 
   @Get('slots')

@@ -17,35 +17,30 @@ import {
   X,
   ClipboardList,
   Loader2,
+  UserX,
+  CalendarX,
 } from "lucide-react"
 import { fetchWithAuth } from "../../lib/api"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Textarea } from "../../components/ui/textarea"
-import { Badge } from "../../components/ui/badge"
 import { Skeleton } from "../../components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select"
-
+  STATUS_LABELS,
+  STATUS_COLORS,
+  STATUS_DOT_COLORS,
+  isTerminal,
+  isPast,
+  normalizeStatus,
+  type AppointmentStatus,
+} from "../../lib/appointment-status"
+import { cn } from "../../lib/utils"
 
 export const Route = createFileRoute("/_authenticated/appointments/$id")({
   component: AppointmentDetailPage,
 })
-
-const STATUS_OPTIONS = [
-  { value: "scheduled", label: "Scheduled" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "no_show", label: "No Show" },
-]
 
 interface Appointment {
   id: string
@@ -70,39 +65,29 @@ interface Appointment {
   updatedAt: string
 }
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
   })
 }
 
-function formatTime(dateStr: string) {
-  const d = new Date(dateStr)
-  return d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
+function formatTime(d: string) {
+  return new Date(d).toLocaleTimeString("en-US", {
+    hour: "numeric", minute: "2-digit", hour12: true,
   })
 }
 
-function getStatusBadgeVariant(status: string) {
-  switch (status.toLowerCase()) {
-    case "confirmed":
-    case "completed":
-      return "default"
-    case "scheduled":
-      return "secondary"
-    case "cancelled":
-      return "destructive"
-    case "no_show":
-      return "outline"
-    default:
-      return "outline"
-  }
+function StatusBadge({ status }: { status: string }) {
+  const normalized = normalizeStatus(status)
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium",
+      STATUS_COLORS[normalized]
+    )}>
+      <span className={cn("h-2 w-2 rounded-full", STATUS_DOT_COLORS[normalized])} />
+      {STATUS_LABELS[normalized]}
+    </span>
+  )
 }
 
 function useAppointment(id: string) {
@@ -128,6 +113,7 @@ function useUpdateAppointment(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments", "detail", id] })
       queryClient.invalidateQueries({ queryKey: ["appointments", "list"] })
+      queryClient.invalidateQueries({ queryKey: ["appointments", "calendar"] })
     },
   })
 }
@@ -138,43 +124,33 @@ function AppointmentDetailPage() {
   const updateMutation = useUpdateAppointment(id)
 
   const [isEditing, setIsEditing] = useState(false)
-  const [editStatus, setEditStatus] = useState("")
   const [editNotes, setEditNotes] = useState("")
   const [editReason, setEditReason] = useState("")
   const [editRoom, setEditRoom] = useState("")
 
+  const [cancelExpanded, setCancelExpanded] = useState(false)
+  const [cancelReason, setCancelReason] = useState("")
+  const [rescheduleExpanded, setRescheduleExpanded] = useState(false)
+
   function startEditing() {
     if (!appointment) return
-    setEditStatus(appointment.status)
     setEditNotes(appointment.notes ?? "")
     setEditReason(appointment.reason ?? "")
     setEditRoom(appointment.room ?? "")
     setIsEditing(true)
   }
 
-  function cancelEditing() {
-    setIsEditing(false)
-  }
-
   function saveChanges() {
     const data: Record<string, unknown> = {}
-    if (editStatus !== appointment?.status) data.status = editStatus
     if (editNotes !== (appointment?.notes ?? "")) data.notes = editNotes || null
     if (editReason !== (appointment?.reason ?? "")) data.reason = editReason || null
     if (editRoom !== (appointment?.room ?? "")) data.room = editRoom || null
-
-    if (Object.keys(data).length === 0) {
-      setIsEditing(false)
-      return
-    }
-
-    updateMutation.mutate(data, {
-      onSuccess: () => setIsEditing(false),
-    })
+    if (Object.keys(data).length === 0) { setIsEditing(false); return }
+    updateMutation.mutate(data, { onSuccess: () => setIsEditing(false) })
   }
 
-  function handleQuickStatus(newStatus: string) {
-    updateMutation.mutate({ status: newStatus })
+  function transition(status: AppointmentStatus, extra?: Record<string, unknown>) {
+    updateMutation.mutate({ status, ...extra })
   }
 
   if (isLoading || !appointment) {
@@ -192,56 +168,51 @@ function AppointmentDetailPage() {
     )
   }
 
-  const canEdit = appointment.status !== "cancelled" && appointment.status !== "completed"
+  const status = normalizeStatus(appointment.status)
+  const terminal = isTerminal(status)
+  const pastStart = isPast(appointment.startsAt)
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/appointments">
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Back to appointments
-          </Link>
-        </Button>
-      </div>
+      <Button variant="ghost" size="sm" asChild>
+        <Link to="/appointments">
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          Back to appointments
+        </Link>
+      </Button>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Appointment Details
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            ID: {appointment.id}
-          </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-bold tracking-tight">Appointment Details</h1>
+          <div className="flex items-center gap-3">
+            <StatusBadge status={appointment.status} />
+            <span className="text-xs text-muted-foreground">ID: {appointment.id}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {!isEditing && canEdit && (
-            <Button variant="outline" size="sm" onClick={startEditing}>
-              <Edit3 className="mr-2 h-4 w-4" />
-              Edit
+        {!terminal && !isEditing && (
+          <Button variant="outline" size="sm" onClick={startEditing}>
+            <Edit3 className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+        )}
+        {isEditing && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
+              <X className="mr-2 h-4 w-4" /> Cancel
             </Button>
-          )}
-          {isEditing && (
-            <>
-              <Button variant="outline" size="sm" onClick={cancelEditing}>
-                <X className="mr-2 h-4 w-4" />
-                Cancel
-              </Button>
-              <Button size="sm" onClick={saveChanges} disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Save
-              </Button>
-            </>
-          )}
-        </div>
+            <Button size="sm" onClick={saveChanges} disabled={updateMutation.isPending}>
+              {updateMutation.isPending
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <Save className="mr-2 h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
+          {/* Date & Time */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -265,12 +236,13 @@ function AppointmentDetailPage() {
               {appointment.room && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4" />
-                  Room: {appointment.room}
+                  Room {appointment.room}
                 </div>
               )}
             </CardContent>
           </Card>
 
+          {/* Patient & Owner */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -285,7 +257,7 @@ function AppointmentDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">{appointment.patient.name}</p>
-                  <p className="text-xs text-muted-foreground">{appointment.patient.species}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{appointment.patient.species}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -305,6 +277,7 @@ function AppointmentDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Doctor */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -318,9 +291,7 @@ function AppointmentDetailPage() {
                   <Stethoscope className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">
-                    {appointment.doctor?.name ?? "Unassigned"}
-                  </p>
+                  <p className="text-sm font-medium">{appointment.doctor?.name ?? "Unassigned"}</p>
                   {appointment.doctor?.email && (
                     <p className="text-xs text-muted-foreground">{appointment.doctor.email}</p>
                   )}
@@ -329,6 +300,7 @@ function AppointmentDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Reason & Notes */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -339,48 +311,28 @@ function AppointmentDetailPage() {
             <CardContent className="space-y-3">
               {isEditing ? (
                 <>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="edit-reason">Reason</Label>
-                    <Input
-                      id="edit-reason"
-                      value={editReason}
-                      onChange={(e) => setEditReason(e.target.value)}
-                    />
+                    <Input id="edit-reason" value={editReason} onChange={(e) => setEditReason(e.target.value)} />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="edit-notes">Notes</Label>
-                    <Textarea
-                      id="edit-notes"
-                      value={editNotes}
-                      onChange={(e) => setEditNotes(e.target.value)}
-                    />
+                    <Textarea id="edit-notes" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="edit-room">Room</Label>
-                    <Input
-                      id="edit-room"
-                      value={editRoom}
-                      onChange={(e) => setEditRoom(e.target.value)}
-                    />
+                    <Input id="edit-room" value={editRoom} onChange={(e) => setEditRoom(e.target.value)} />
                   </div>
                 </>
               ) : (
                 <>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Reason
-                    </p>
-                    <p className="mt-1 text-sm">
-                      {appointment.reason ?? "No reason provided"}
-                    </p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Reason</p>
+                    <p className="mt-1 text-sm">{appointment.reason ?? <span className="italic text-muted-foreground">No reason provided</span>}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Notes
-                    </p>
-                    <p className="mt-1 text-sm">
-                      {appointment.notes ?? "No notes"}
-                    </p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Notes</p>
+                    <p className="mt-1 text-sm">{appointment.notes ?? <span className="italic text-muted-foreground">No notes</span>}</p>
                   </div>
                 </>
               )}
@@ -388,71 +340,133 @@ function AppointmentDetailPage() {
           </Card>
         </div>
 
+        {/* Sidebar */}
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {isEditing ? (
-                <Select value={editStatus} onValueChange={setEditStatus}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Badge variant={getStatusBadgeVariant(appointment.status)} className="text-sm">
-                  {appointment.status}
-                </Badge>
-              )}
+          {/* Actions */}
+          {!terminal && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {!cancelExpanded && !rescheduleExpanded && (
+                  <>
+                    {status === "scheduled" && (
+                      <Button
+                        className="w-full"
+                        onClick={() => transition("arrived")}
+                        disabled={updateMutation.isPending}
+                      >
+                        {updateMutation.isPending
+                          ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                        Mark Arrived
+                      </Button>
+                    )}
 
-              {!isEditing && canEdit && (
-                <div className="space-y-2 pt-2">
-                  {appointment.status === "scheduled" && (
+                    {status === "arrived" && (
+                      <Button
+                        className="w-full"
+                        onClick={() => transition("completed")}
+                        disabled={updateMutation.isPending}
+                      >
+                        {updateMutation.isPending
+                          ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                        Complete Visit
+                      </Button>
+                    )}
+
+                    {status === "scheduled" && pastStart && (
+                      <Button
+                        variant="outline"
+                        className="w-full text-muted-foreground"
+                        onClick={() => transition("no_show")}
+                        disabled={updateMutation.isPending}
+                      >
+                        <UserX className="mr-2 h-4 w-4" />
+                        Mark No Show
+                      </Button>
+                    )}
+
+                    {status === "scheduled" && (
+                      <Button
+                        variant="outline"
+                        className="w-full text-muted-foreground"
+                        onClick={() => { setRescheduleExpanded(true); setCancelExpanded(false) }}
+                      >
+                        <CalendarX className="mr-2 h-4 w-4" />
+                        Reschedule
+                      </Button>
+                    )}
+
                     <Button
                       variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleQuickStatus("confirmed")}
-                    >
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Mark as arrived
-                    </Button>
-                  )}
-                  {(appointment.status === "scheduled" || appointment.status === "confirmed") && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleQuickStatus("completed")}
-                    >
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Mark as completed
-                    </Button>
-                  )}
-                  {appointment.status !== "cancelled" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={() => handleQuickStatus("cancelled")}
+                      className="w-full text-destructive hover:bg-destructive/10"
+                      onClick={() => { setCancelExpanded(true); setRescheduleExpanded(false); setCancelReason("") }}
                     >
                       <Ban className="mr-2 h-4 w-4" />
-                      Cancel appointment
+                      Cancel Appointment
                     </Button>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </>
+                )}
 
+                {cancelExpanded && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Cancel appointment</p>
+                    <Textarea
+                      placeholder="Reason (optional)"
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      rows={2}
+                      className="resize-none text-sm"
+                    />
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => setCancelExpanded(false)}>
+                        Keep
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1"
+                        disabled={updateMutation.isPending}
+                        onClick={() => transition("cancelled", cancelReason ? { cancellationReason: cancelReason } : undefined)}
+                      >
+                        {updateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Confirm
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {rescheduleExpanded && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Mark as rescheduled?</p>
+                    <p className="text-xs text-muted-foreground">
+                      This appointment will be marked rescheduled. You can then book a new one for {appointment.patient.name}.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => setRescheduleExpanded(false)}>
+                        Keep
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        disabled={updateMutation.isPending}
+                        onClick={() => transition("rescheduled")}
+                      >
+                        {updateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Confirm
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Medical records */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Medical Record</CardTitle>
@@ -468,6 +482,7 @@ function AppointmentDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Metadata */}
           <div className="rounded-lg border bg-card p-4 space-y-2 text-xs text-muted-foreground">
             <div className="flex justify-between">
               <span>Created</span>
@@ -477,11 +492,28 @@ function AppointmentDetailPage() {
               <span>Last updated</span>
               <span>{new Date(appointment.updatedAt).toLocaleString()}</span>
             </div>
+            {appointment.checkedInAt && (
+              <div className="flex justify-between text-blue-600">
+                <span>Arrived</span>
+                <span>{new Date(appointment.checkedInAt).toLocaleString()}</span>
+              </div>
+            )}
+            {appointment.checkedOutAt && (
+              <div className="flex justify-between text-emerald-600">
+                <span>Completed</span>
+                <span>{new Date(appointment.checkedOutAt).toLocaleString()}</span>
+              </div>
+            )}
             {appointment.cancelledAt && (
-              <div className="flex justify-between text-destructive">
+              <div className="flex justify-between text-destructive/80">
                 <span>Cancelled</span>
                 <span>{new Date(appointment.cancelledAt).toLocaleString()}</span>
               </div>
+            )}
+            {appointment.cancellationReason && (
+              <p className="text-destructive/70 pt-1 border-t">
+                Reason: {appointment.cancellationReason}
+              </p>
             )}
           </div>
         </div>
