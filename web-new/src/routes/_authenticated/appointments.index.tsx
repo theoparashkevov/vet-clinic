@@ -39,6 +39,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../
 import { cn } from "../../lib/utils"
 
 export const Route = createFileRoute("/_authenticated/appointments/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    dateFrom: (search.dateFrom as string) ?? "",
+    dateTo: (search.dateTo as string) ?? "",
+  }),
   component: AppointmentsListPage,
 })
 
@@ -162,8 +166,9 @@ function useDoctors() {
 }
 
 function AppointmentsListPage() {
-  const [dateFrom, setDateFrom] = useState("")
-  const [dateTo, setDateTo] = useState("")
+  const { dateFrom: initialDateFrom, dateTo: initialDateTo } = Route.useSearch()
+  const [dateFrom, setDateFrom] = useState(initialDateFrom)
+  const [dateTo, setDateTo] = useState(initialDateTo)
   const [doctorId, setDoctorId] = useState("all")
   const [status, setStatus] = useState("all")
   const [patientSearch, setPatientSearch] = useState("")

@@ -318,7 +318,7 @@ function DashboardPage() {
                     </button>
                   ))}
                   <Button variant="ghost" size="sm" className="ml-2 gap-1 text-xs" asChild>
-                    <Link to="/appointments">
+                    <Link to="/appointments" search={{ dateFrom: today, dateTo: today }}>
                       All <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </Button>
