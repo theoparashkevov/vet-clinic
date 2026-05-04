@@ -43,7 +43,7 @@ export class PatientsService {
   async list(
     search?: string,
     pagination?: { page?: string; limit?: string },
-    filters?: { species?: string; status?: string },
+    filters?: { species?: string; status?: string; ownerId?: string },
   ): Promise<PaginatedResult<any>> {
     const conditions: any[] = []
     if (search) {
@@ -57,6 +57,7 @@ export class PatientsService {
     }
     if (filters?.species) conditions.push({ species: filters.species })
     if (filters?.status) conditions.push({ status: filters.status })
+    if (filters?.ownerId) conditions.push({ ownerId: filters.ownerId })
     const where = conditions.length ? { AND: conditions } : undefined;
 
     // Parse and validate pagination parameters

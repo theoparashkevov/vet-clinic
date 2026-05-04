@@ -51,8 +51,9 @@ export class PatientsController {
     @Query('limit') limit?: string,
     @Query('species') species?: string,
     @Query('status') status?: string,
+    @Query('ownerId') ownerId?: string,
   ) {
-    return this.patients.list(search, { page, limit }, { species, status });
+    return this.patients.list(search, { page, limit }, { species, status, ownerId });
   }
 
   /**

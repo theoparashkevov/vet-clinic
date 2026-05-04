@@ -27,6 +27,7 @@ export class OwnersService {
     const [data, total] = await Promise.all([
       this.prisma.owner.findMany({
         where,
+        include: { _count: { select: { patients: true } } },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
