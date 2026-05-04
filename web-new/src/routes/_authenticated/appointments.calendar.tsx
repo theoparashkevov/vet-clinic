@@ -11,6 +11,7 @@ import {
 import { fetchWithAuth } from "../../lib/api"
 import { Button } from "../../components/ui/button"
 import { Skeleton } from "../../components/ui/skeleton"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../components/ui/tooltip"
 import {
   Select,
   SelectContent,
@@ -277,32 +278,46 @@ function AppointmentsCalendarPage() {
                             const durationMinutes =
                               (new Date(booked.endsAt).getTime() - new Date(booked.startsAt).getTime()) / 60000
                             const heightRem = (durationMinutes / 60) * 4
+                            const startLabel = new Date(booked.startsAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
+                            const endLabel = new Date(booked.endsAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
 
                             return (
-                              <button
-                                key={`${hour}-${minute}`}
-                                type="button"
-                                onClick={() => setSelectedId(booked.id)}
-                                className={cn(
-                                  "absolute left-0.5 right-0.5 rounded-md border px-1.5 py-1 text-xs text-left transition-opacity hover:opacity-90 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-ring",
-                                  getCalendarColor(booked.status)
-                                )}
-                                style={{
-                                  top: `${(hour - 9) * 4 + (minute === 30 ? 2 : 0)}rem`,
-                                  height: `${Math.max(heightRem, 1.75)}rem`,
-                                }}
-                              >
-                                <div className="flex items-center gap-1 font-medium truncate leading-tight">
-                                  <PawPrint className="h-3 w-3 shrink-0" />
-                                  {booked.patient?.name}
-                                </div>
-                                {durationMinutes >= 45 && (
-                                  <div className="flex items-center gap-1 truncate opacity-75 leading-tight mt-0.5">
-                                    <Stethoscope className="h-3 w-3 shrink-0" />
-                                    {booked.doctor?.name ?? "Unassigned"}
-                                  </div>
-                                )}
-                              </button>
+                              <TooltipProvider key={`${hour}-${minute}`} delayDuration={500}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedId(booked.id)}
+                                      className={cn(
+                                        "absolute left-0.5 right-0.5 rounded-md border px-1.5 py-1 text-xs text-left transition-all hover:shadow-md hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-ring",
+                                        getCalendarColor(booked.status)
+                                      )}
+                                      style={{
+                                        top: `${(hour - 9) * 4 + (minute === 30 ? 2 : 0)}rem`,
+                                        height: `${Math.max(heightRem, 1.75)}rem`,
+                                      }}
+                                    >
+                                      <div className="flex items-center gap-1 font-medium truncate leading-tight">
+                                        <PawPrint className="h-3 w-3 shrink-0" />
+                                        {booked.patient?.name}
+                                      </div>
+                                      {durationMinutes >= 45 && (
+                                        <div className="flex items-center gap-1 truncate opacity-75 leading-tight mt-0.5">
+                                          <Stethoscope className="h-3 w-3 shrink-0" />
+                                          {booked.doctor?.name ?? "Unassigned"}
+                                        </div>
+                                      )}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="space-y-1">
+                                    <p className="font-medium">{booked.patient?.name} · {booked.owner?.name}</p>
+                                    <p className="text-muted-foreground">{startLabel} – {endLabel}</p>
+                                    {booked.doctor && <p className="text-muted-foreground">{booked.doctor.name}</p>}
+                                    {booked.reason && <p className="text-muted-foreground italic">{booked.reason}</p>}
+                                    <p className="capitalize opacity-70">{normalizeStatus(booked.status)}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             )
                           }
 

@@ -18,11 +18,13 @@ import {
   Phone,
   Mail,
 } from "lucide-react"
+import { toast } from "sonner"
 import { fetchWithAuth } from "../../lib/api"
 import { Button } from "../ui/button"
 import { Separator } from "../ui/separator"
 import { Textarea } from "../ui/textarea"
 import { Skeleton } from "../ui/skeleton"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import {
   Sheet,
   SheetContent,
@@ -77,18 +79,36 @@ function formatTime(d: string) {
   })
 }
 
+const STATUS_DESCRIPTIONS: Record<AppointmentStatus, string> = {
+  scheduled: "Appointment is booked and waiting for confirmation",
+  arrived: "Patient has checked in at reception",
+  completed: "Visit has been completed",
+  no_show: "Patient did not arrive for their appointment",
+  cancelled: "Appointment was cancelled",
+  rescheduled: "Appointment has been moved to a new time",
+}
+
 function StatusBadge({ status }: { status: string }) {
   const normalized = normalizeStatus(status)
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-        STATUS_COLORS[normalized]
-      )}
-    >
-      <span className={cn("h-1.5 w-1.5 rounded-full", STATUS_DOT_COLORS[normalized])} />
-      {STATUS_LABELS[normalized]}
-    </span>
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className={cn(
+              "inline-flex cursor-default items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+              STATUS_COLORS[normalized]
+            )}
+          >
+            <span className={cn("h-1.5 w-1.5 rounded-full", STATUS_DOT_COLORS[normalized])} />
+            {STATUS_LABELS[normalized]}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          {STATUS_DESCRIPTIONS[normalized]}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 
@@ -141,11 +161,26 @@ export function AppointmentDetailSheet({ appointmentId, onClose }: AppointmentDe
   const terminal = status ? isTerminal(status) : false
   const pastStart = appointment ? isPast(appointment.startsAt) : false
 
+  const TRANSITION_TOASTS: Partial<Record<AppointmentStatus, string>> = {
+    arrived: `${appointment?.patient.name ?? "Patient"} marked as arrived`,
+    completed: `Visit completed for ${appointment?.patient.name ?? "patient"}`,
+    no_show: `${appointment?.patient.name ?? "Patient"} marked as no show`,
+    cancelled: "Appointment cancelled",
+    rescheduled: "Appointment marked as rescheduled",
+  }
+
   function handleTransition(nextStatus: AppointmentStatus, cancelReason?: string) {
     if (!appointment) return
     transition.mutate(
       { id: appointment.id, status: nextStatus, cancellationReason: cancelReason },
-      { onSuccess: () => setInlineAction(null) }
+      {
+        onSuccess: () => {
+          setInlineAction(null)
+          const message = TRANSITION_TOASTS[nextStatus]
+          if (message) toast.success(message)
+        },
+        onError: () => toast.error("Failed to update appointment"),
+      }
     )
   }
 
@@ -301,71 +336,98 @@ export function AppointmentDetailSheet({ appointmentId, onClose }: AppointmentDe
             {/* Actions footer */}
             <div className="border-t bg-card p-4 space-y-3">
               {!terminal && inlineAction === null && (
-                <div className="space-y-2">
-                  {status === "scheduled" && (
-                    <Button
-                      className="w-full"
-                      onClick={() => handleTransition("arrived")}
-                      disabled={transition.isPending}
-                    >
-                      {transition.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                      )}
-                      Mark Arrived
-                    </Button>
-                  )}
-
-                  {status === "arrived" && (
-                    <Button
-                      className="w-full"
-                      onClick={() => handleTransition("completed")}
-                      disabled={transition.isPending}
-                    >
-                      {transition.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                      )}
-                      Complete Visit
-                    </Button>
-                  )}
-
-                  <div className="flex gap-2">
-                    {status === "scheduled" && pastStart && (
-                      <Button
-                        variant="outline"
-                        className="flex-1 text-muted-foreground"
-                        onClick={() => handleTransition("no_show")}
-                        disabled={transition.isPending}
-                      >
-                        <UserX className="mr-2 h-4 w-4" />
-                        No Show
-                      </Button>
-                    )}
+                <TooltipProvider delayDuration={400}>
+                  <div className="space-y-2">
                     {status === "scheduled" && (
-                      <Button
-                        variant="outline"
-                        className="flex-1 text-muted-foreground"
-                        onClick={() => setInlineAction("reschedule")}
-                        disabled={transition.isPending}
-                      >
-                        <CalendarX className="mr-2 h-4 w-4" />
-                        Reschedule
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            className="w-full"
+                            onClick={() => handleTransition("arrived")}
+                            disabled={transition.isPending}
+                          >
+                            {transition.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                            )}
+                            Mark Arrived
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Patient has checked in at reception</TooltipContent>
+                      </Tooltip>
                     )}
-                    <Button
-                      variant="outline"
-                      className="flex-1 text-destructive hover:bg-destructive/10"
-                      onClick={openCancel}
-                      disabled={transition.isPending}
-                    >
-                      <Ban className="mr-2 h-4 w-4" />
-                      Cancel
-                    </Button>
+
+                    {status === "arrived" && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            className="w-full"
+                            onClick={() => handleTransition("completed")}
+                            disabled={transition.isPending}
+                          >
+                            {transition.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                            )}
+                            Complete Visit
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Mark the visit as finished</TooltipContent>
+                      </Tooltip>
+                    )}
+
+                    <div className="flex gap-2">
+                      {status === "scheduled" && pastStart && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="flex-1 text-muted-foreground"
+                              onClick={() => handleTransition("no_show")}
+                              disabled={transition.isPending}
+                            >
+                              <UserX className="mr-2 h-4 w-4" />
+                              No Show
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Patient did not arrive for their appointment</TooltipContent>
+                        </Tooltip>
+                      )}
+                      {status === "scheduled" && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="flex-1 text-muted-foreground"
+                              onClick={() => setInlineAction("reschedule")}
+                              disabled={transition.isPending}
+                            >
+                              <CalendarX className="mr-2 h-4 w-4" />
+                              Reschedule
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Mark as rescheduled and book a new slot</TooltipContent>
+                        </Tooltip>
+                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="flex-1 text-destructive hover:bg-destructive/10"
+                            onClick={openCancel}
+                            disabled={transition.isPending}
+                          >
+                            <Ban className="mr-2 h-4 w-4" />
+                            Cancel
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Cancel this appointment</TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
-                </div>
+                </TooltipProvider>
               )}
 
               {/* Inline cancel form */}

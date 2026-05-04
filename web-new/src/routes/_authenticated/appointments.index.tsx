@@ -35,6 +35,7 @@ import {
   normalizeStatus,
 } from "../../lib/appointment-status"
 import { AppointmentDetailSheet } from "../../components/appointments/AppointmentDetailSheet"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../components/ui/tooltip"
 import { cn } from "../../lib/utils"
 
 export const Route = createFileRoute("/_authenticated/appointments/")({
@@ -77,18 +78,36 @@ function formatTime(d: string) {
   return new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
 }
 
+const STATUS_DESCRIPTIONS: Record<string, string> = {
+  scheduled: "Booked — awaiting arrival",
+  arrived: "Checked in at reception",
+  completed: "Visit finished",
+  no_show: "Patient did not arrive",
+  cancelled: "Appointment was cancelled",
+  rescheduled: "Moved to a new time",
+}
+
 function StatusBadge({ status }: { status: string }) {
   const normalized = normalizeStatus(status)
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-        STATUS_COLORS[normalized]
-      )}
-    >
-      <span className={cn("h-1.5 w-1.5 rounded-full", STATUS_DOT_COLORS[normalized])} />
-      {STATUS_LABELS[normalized]}
-    </span>
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className={cn(
+              "inline-flex cursor-default items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-opacity hover:opacity-80",
+              STATUS_COLORS[normalized]
+            )}
+          >
+            <span className={cn("h-1.5 w-1.5 rounded-full", STATUS_DOT_COLORS[normalized])} />
+            {STATUS_LABELS[normalized]}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          {STATUS_DESCRIPTIONS[normalized] ?? normalized}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 
