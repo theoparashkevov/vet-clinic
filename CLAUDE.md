@@ -4,10 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository overview
 
-Monorepo (npm workspaces) for a veterinary clinic platform with three packages:
+Monorepo (npm workspaces) for a veterinary clinic platform with two packages:
 - `api/` — NestJS + Prisma + PostgreSQL REST API
-- `web/` — Next.js 14 (App Router) + MUI frontend
-- `bot/` — Viber chatbot adapter (placeholder)
+- `web-new/` — Vite + React + TanStack Router + shadcn/ui frontend
 
 ## Commands
 
@@ -15,20 +14,21 @@ Monorepo (npm workspaces) for a veterinary clinic platform with three packages:
 
 ```bash
 # Start the database
-docker compose up -d db
+docker compose -f .docker/docker-compose.yml up -d db
 
 # API (port 3000)
 cd api && npm run start:dev
 
-# Web (port 3001 or 3000 if api isn't running)
-cd web && npm run dev
+# Web (port 3001)
+cd web-new && npm run dev
 ```
 
 ### Docker
 
 ```bash
-docker compose up -d db        # PostgreSQL only
-docker compose up api          # API + DB
+docker compose -f .docker/docker-compose.yml up -d db   # PostgreSQL only
+docker compose -f .docker/docker-compose.yml up api      # API + DB
+docker compose -f .docker/docker-compose.prod.yml up     # Production stack
 ```
 
 ### Database (run from repo root or api/)
@@ -45,8 +45,8 @@ npm run prisma:create-migration   # Create a new migration without applying it
 ### Build
 
 ```bash
-cd api && npm run build   # tsc → dist/
-cd web && npm run build   # next build
+cd api && npm run build       # tsc → dist/
+cd web-new && npm run build   # vite build
 ```
 
 ### Tests
@@ -73,13 +73,14 @@ Module layout follows NestJS conventions: each domain (`owners/`, `appointments/
 **Not yet implemented (referenced by frontend):**
 - `GET /v1/patients`
 
-### Web (`web/`)
+### Web (`web-new/`)
 
-Next.js 14 App Router. Pages live in `web/app/`. All data fetching is client-side via `useEffect` + `fetch`.
+Vite + React SPA. Routes live in `web-new/src/routes/` and are file-based via TanStack Router. All data fetching uses TanStack Query (`useQuery`/`useMutation`) through `fetchWithAuth` from `src/lib/api.ts`.
 
-- API base URL: `NEXT_PUBLIC_API_URL` env var (defaults to `http://localhost:3000`)
-- UI library: MUI v5 with Emotion
-- Nav: Home (`/`), Patients (`/patients`), Appointments (`/appointments`)
+- API calls proxied through Vite dev server (`/v1` → `http://localhost:3000`); env var `VITE_API_URL` used for production builds
+- UI library: shadcn/ui (Radix UI primitives + Tailwind CSS)
+- Auth: JWT stored in `localStorage`, `_authenticated` layout guard wraps all protected routes
+- Nav: Dashboard, Patients, Appointments, Tasks, Billing, Medical Records, Lab Results, Prescriptions, Admin
 
 ### Database
 
@@ -98,6 +99,6 @@ Connection string: `DATABASE_URL=postgresql://vet:vet@localhost:5432/vet?schema=
 | `DATABASE_URL` | `api/` | see `api/.env.example` |
 | `PORT` | `api/` | `3000` |
 | `NODE_ENV` | `api/` | — |
-| `NEXT_PUBLIC_API_URL` | `web/` | `http://localhost:3000` |
+| `VITE_API_URL` | `web-new/` | `http://localhost:3000` |
 
 Copy `api/.env.example` → `api/.env` before running locally.

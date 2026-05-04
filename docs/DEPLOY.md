@@ -15,7 +15,7 @@ cp .env.example .env
 nano .env
 
 # 4. Start the application
-docker compose up -d
+docker compose -f .docker/docker-compose.yml up -d
 ```
 
 ## Demo Mode Configuration
@@ -93,13 +93,13 @@ DEMO_MODE=false
 
 ```bash
 # Pull latest images
-docker compose pull
+docker compose -f .docker/docker-compose.prod.yml pull
 
 # Start services
-docker compose up -d
+docker compose -f .docker/docker-compose.prod.yml up -d
 
 # View logs
-docker compose logs -f
+docker compose -f .docker/docker-compose.prod.yml logs -f
 
 # Check health
 curl http://localhost:3000/health
@@ -119,7 +119,7 @@ cp .env.example .env.demo
 # DEMO_MAX_OPERATIONS_PER_HOUR=50
 
 # Deploy demo
-docker compose --env-file .env.demo up -d
+docker compose -f .docker/docker-compose.prod.yml --env-file .env.demo up -d
 
 # Access at: http://your-server-ip
 # Demo credentials: admin@vetclinic.com / demo12345
@@ -134,8 +134,8 @@ docker compose --env-file .env.demo up -d
 git pull origin main
 
 # Rebuild and restart
-docker compose down
-docker compose up -d --build
+docker compose -f .docker/docker-compose.prod.yml down
+docker compose -f .docker/docker-compose.prod.yml up -d --build
 ```
 
 ### Backup Database
@@ -152,24 +152,24 @@ cat backup_20240101.sql | docker exec -i vet-clinic-db psql -U vet vet
 
 ```bash
 # All services
-docker compose logs -f
+docker compose -f .docker/docker-compose.prod.yml logs -f
 
 # Specific service
-docker compose logs -f api
-docker compose logs -f web-modern
+docker compose -f .docker/docker-compose.prod.yml logs -f api
+docker compose -f .docker/docker-compose.prod.yml logs -f web-new
 ```
 
 ### Reset Demo Data
 
 ```bash
 # Stop services
-docker compose down
+docker compose -f .docker/docker-compose.prod.yml down
 
 # Remove database volume (WARNING: deletes all data)
 docker volume rm vet-clinic_postgres_data
 
 # Restart (will re-seed if DEMO_MODE=true)
-docker compose up -d
+docker compose -f .docker/docker-compose.prod.yml up -d
 ```
 
 ## Troubleshooting
@@ -178,7 +178,7 @@ docker compose up -d
 
 ```bash
 # Check logs
-docker compose logs
+docker compose -f .docker/docker-compose.prod.yml logs
 
 # Check disk space
 df -h
@@ -191,7 +191,7 @@ free -m
 
 ```bash
 # Check if database is healthy
-docker compose ps
+docker compose -f .docker/docker-compose.prod.yml ps
 
 # Connect to database
 docker exec -it vet-clinic-db psql -U vet vet
@@ -200,7 +200,7 @@ docker exec -it vet-clinic-db psql -U vet vet
 ### Port conflicts
 
 ```bash
-# Change ports in docker-compose.yml
+# Change ports in .docker/docker-compose.prod.yml
 # Or stop services using ports 80, 443, 3000, 5432
 sudo lsof -i :80
 sudo lsof -i :3000

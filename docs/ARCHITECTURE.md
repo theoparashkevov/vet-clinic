@@ -2,28 +2,26 @@
 
 Status: v0.1 (draft) – optimized for small, iterative 15‑min cycles
 
-## Tech Stack (proposed)
-- Frontend: Next.js (App Router) + TypeScript + Material UI (or Mantine)
+## Tech Stack
+- Frontend: Vite + React + TypeScript + TanStack Router + TanStack Query + shadcn/ui (Radix UI + Tailwind CSS)
 - Backend: Node.js (NestJS) + TypeScript
 - Database: PostgreSQL (Prisma ORM)
-- Messaging: Viber Bot API integration service (Node.js)
-- AI Layer: Tool-enabled LLM endpoints (OpenAI-compatible client)
-- Auth: JWT (doctors/staff), session cookies for web; API keys/tokens for bot service
-- Infra/Dev: Docker Compose for local, GitHub Actions for CI, Fly.io/Render/Heroku for quick staging
+- Messaging: Viber Bot API integration (planned — not yet implemented)
+- AI Layer: Tool-enabled LLM endpoints (planned)
+- Auth: JWT (doctors/staff); `_authenticated` layout guard on frontend
+- Infra/Dev: Docker Compose for local + production, GitHub Actions for CI
 
 ## High-Level Components
-- web/ (Next.js):
-  - Doctor dashboard (patients, visits, appointments)
-  - Client booking (guest-first), optional account portal
+- web-new/ (Vite + React):
+  - Doctor dashboard (patients, visits, appointments, billing, tasks)
+  - File-based routing via TanStack Router; data fetching via TanStack Query
 - api/ (NestJS):
-  - Modules: auth, patients, owners, appointments, medical-records, inventory (later), billing (later)
-  - Tool endpoints for AI assistant (e.g., POST /tools/create-appointment)
-- bot/ (Viber service):
-  - Webhook receiver, message parser, stateful prompt flow, calls api/tools
+  - Modules: auth, patients, owners, appointments, medical-records, billing, tasks, analytics
+  - Tool endpoints for AI assistant (planned)
 - db/ (Prisma):
   - Schema: patients, owners, appointments, medical_records, users, roles, clinics
 - docs/:
-  - PROJECT_PLAN.md, ORCHESTRATION.md, ARCHITECTURE.md, BACKLOG.md, ADRs/
+  - PROJECT_PLAN.md, ORCHESTRATION.md, ARCHITECTURE.md, BACKLOG.md, ADRs/, tech-specs/
 
 ## Folder Structure (monorepo)
 ```
@@ -36,26 +34,31 @@ vet-clinic/
         owners/
         medical-records/
         auth/
-        tools/
+        analytics/
     prisma/
       schema.prisma
     Dockerfile
-  web/
-    app/
-    components/
-    lib/
-    Dockerfile
-  bot/
+  web-new/
     src/
+      routes/
+        _authenticated/
+      components/
+      lib/
     Dockerfile
   docs/
     PROJECT_PLAN.md
     ORCHESTRATION.md
     ARCHITECTURE.md
     BACKLOG.md
+    DEPLOY.md
     adr/
+    tech-specs/
+  scripts/
+    kill_process.sh
+  .docker/
+    docker-compose.yml
+    docker-compose.prod.yml
   .github/workflows/
-  docker-compose.yml
   README.md
 ```
 

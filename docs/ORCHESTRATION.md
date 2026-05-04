@@ -45,9 +45,9 @@ Priorities: usability, speed, simplicity, automation, modern UX.
 ## Agent Delegation Model
 - Orchestrator delegates; does not implement all code directly
 - Specialized agents:
-  - Backend Agent: API, business logic, integrations, LLM tools, messaging
-  - Frontend Agent: UI, doctor dashboard, patient mgmt, booking, responsive UX
-  - DevOps/DB Agent: schema, infra, Docker, CI/CD, env config
+  - Backend Agent: API (NestJS, `api/`), business logic, integrations, LLM tools, messaging
+  - Frontend Agent: UI (Vite + React, `web-new/`), doctor dashboard, patient mgmt, booking, responsive UX
+  - DevOps/DB Agent: schema, infra, Docker Compose (`.docker/`), CI/CD, env config
 - Tasks must be clear, narrowly scoped
 
 ## Architectural Responsibility

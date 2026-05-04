@@ -4,7 +4,7 @@ Legend: [A]=Architect/Orchestrator, [B]=Backend Agent, [F]=Frontend Agent, [D]=D
 
 ## Highest Priority (Cycle 1–3)
 1. [A] Create monorepo scaffolding (folders, minimal READMEs)
-   - Accept: api/, web/, bot/, docs/, docker-compose.yml placeholders committed
+   - Accept: api/, web-new/, docs/, .docker/ placeholders committed
    - Status: DONE (C1)
 2. [D] Initialize Prisma schema (owners, patients, appointments, medical_records, users)
    - Accept: schema.prisma + migration, docker-compose with Postgres
@@ -14,8 +14,9 @@ Legend: [A]=Architect/Orchestrator, [B]=Backend Agent, [F]=Frontend Agent, [D]=D
    - Status: PARTIAL — app compiles; GET /health live; appointments controller added; other modules + stubs pending
 4. [B] Tool endpoints: create_appointment, get_available_slots, create_client_profile (mocked)
    - Accept: validated payloads, returns mocked data, unit tests for DTO validation
-5. [F] Next.js app bootstrap with doctor dashboard shell
+5. [F] Vite + React app bootstrap with doctor dashboard shell (web-new/)
    - Accept: layout, nav, placeholder pages (Patients, Appointments)
+   - Status: DONE
 
 ## Next (Cycle 4–6)
 6. [B] Implement appointments slots logic (configurable clinic hours)
@@ -35,9 +36,9 @@ Legend: [A]=Architect/Orchestrator, [B]=Backend Agent, [F]=Frontend Agent, [D]=D
     - Accept: minimal flow: question → collect fields → call create_appointment (mock)
 
 ## Quality/Infra
-12. [D] Dockerfiles for api/web/bot + docker-compose (api+db up)
-    - Accept: `docker compose up` serves API + Postgres; web builds
-    - Status: PARTIAL — api Dockerfile added; compose runs db+api
+12. [D] Dockerfiles for api/web-new + docker-compose (api+db up)
+    - Accept: `docker compose -f .docker/docker-compose.yml up` serves API + Postgres; web builds
+    - Status: PARTIAL — api Dockerfile added; compose runs db+api; prod compose in .docker/
 13. [D] GitHub Actions: lint/test/build on PR
     - Accept: basic CI passing
 
