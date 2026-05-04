@@ -90,7 +90,7 @@ function useDoctors() {
     queryFn: async (): Promise<Doctor[]> => {
       try {
         const res = await fetchWithAuth("/v1/doctors")
-        return (res as { data?: Doctor[] }).data ?? []
+        return Array.isArray(res) ? res : []
       } catch {
         return []
       }

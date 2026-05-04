@@ -45,8 +45,8 @@ export class PatientsService {
     const where = search
       ? {
           OR: [
-            { name: { contains: search, mode: 'insensitive' as const } },
-            { species: { contains: search, mode: 'insensitive' as const } },
+            { name: { contains: search } },
+            { species: { contains: search } },
           ],
         }
       : undefined;

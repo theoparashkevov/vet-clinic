@@ -96,16 +96,20 @@ async function main() {
     create: { name: 'Client Demo', email: 'client@vetclinic.com', passwordHash: doctorPasswordHash },
   });
 
-  await prisma.userRole.createMany({
-    data: [
-      { userId: drMaria.id, roleId: roles.doctor.id },
-      { userId: drPetar.id, roleId: roles.doctor.id },
-      { userId: drElena.id, roleId: roles.doctor.id },
-      { userId: adminUser.id, roleId: roles.admin.id },
-      { userId: staffUser.id, roleId: roles.registrar.id },
-      { userId: clientUser.id, roleId: roles.client.id },
-    ],
-  });
+  for (const { userId, roleId } of [
+    { userId: drMaria.id, roleId: roles.doctor.id },
+    { userId: drPetar.id, roleId: roles.doctor.id },
+    { userId: drElena.id, roleId: roles.doctor.id },
+    { userId: adminUser.id, roleId: roles.admin.id },
+    { userId: staffUser.id, roleId: roles.registrar.id },
+    { userId: clientUser.id, roleId: roles.client.id },
+  ]) {
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId, roleId } },
+      update: {},
+      create: { userId, roleId },
+    });
+  }
 
   console.log('  Doctors: Dr. Ivanova, Dr. Dimitrov, Dr. Georgieva');
   console.log('  Admin user: admin@vetclinic.com');
