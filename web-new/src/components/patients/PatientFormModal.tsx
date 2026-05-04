@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { motion, AnimatePresence } from "framer-motion"
 import { X, PawPrint, UserPlus, Users } from "lucide-react"
+import { modalVariants, backdropVariants } from "../../lib/animations"
 import { fetchWithAuth } from "../../lib/api"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
@@ -137,12 +139,26 @@ export function PatientFormModal({ patient, open, onClose, onSuccess }: PatientF
     setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
   }, [])
 
-  if (!open) return null
-
   return (
+    <AnimatePresence>
+      {open && (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <Card className="relative z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
+      <motion.div
+        className="fixed inset-0 bg-black/50"
+        variants={backdropVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={onClose}
+      />
+      <motion.div
+        className="relative z-50 w-full max-w-2xl m-4"
+        variants={modalVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+      >
+      <Card className="w-full max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <PawPrint className="h-5 w-5 text-primary" />
@@ -315,6 +331,9 @@ export function PatientFormModal({ patient, open, onClose, onSuccess }: PatientF
           </form>
         </CardContent>
       </Card>
+      </motion.div>
     </div>
+      )}
+    </AnimatePresence>
   )
 }
