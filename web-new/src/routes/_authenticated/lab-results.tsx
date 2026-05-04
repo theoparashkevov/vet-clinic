@@ -148,14 +148,14 @@ function getStatusBadgeVariant(status: string) {
 function getValueStatusColor(status: string) {
   switch (status.toLowerCase()) {
     case "normal":
-      return "text-emerald-600"
+      return "text-emerald-600 dark:text-emerald-400"
     case "low":
     case "high":
-      return "text-amber-600"
+      return "text-amber-600 dark:text-amber-400"
     case "critical_low":
     case "critical_high":
     case "critical":
-      return "text-red-600"
+      return "text-red-600 dark:text-red-400"
     default:
       return "text-foreground"
   }
@@ -164,14 +164,14 @@ function getValueStatusColor(status: string) {
 function getValueStatusBg(status: string) {
   switch (status.toLowerCase()) {
     case "normal":
-      return "bg-emerald-50"
+      return "bg-emerald-50 dark:bg-emerald-900/20"
     case "low":
     case "high":
-      return "bg-amber-50"
+      return "bg-amber-50 dark:bg-amber-900/20"
     case "critical_low":
     case "critical_high":
     case "critical":
-      return "bg-red-50"
+      return "bg-red-50 dark:bg-red-900/20"
     default:
       return "bg-transparent"
   }
@@ -273,19 +273,19 @@ function LabResultsPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     {result.criticalCount > 0 && (
-                      <div className="flex items-center gap-1 text-xs text-red-600">
+                      <div className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
                         <AlertTriangle className="h-3.5 w-3.5" />
                         {result.criticalCount} critical
                       </div>
                     )}
                     {result.abnormalCount > 0 && result.criticalCount === 0 && (
-                      <div className="flex items-center gap-1 text-xs text-amber-600">
+                      <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
                         <Activity className="h-3.5 w-3.5" />
                         {result.abnormalCount} abnormal
                       </div>
                     )}
                     {result.abnormalCount === 0 && result.criticalCount === 0 && (
-                      <div className="flex items-center gap-1 text-xs text-emerald-600">
+                      <div className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         All normal
                       </div>
@@ -482,13 +482,13 @@ function LabResultDetail({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Normal</span>
-                <span className="text-sm font-medium text-emerald-600">
+                <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
                   {result.values.filter((v) => v.status === "normal").length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Abnormal</span>
-                <span className="text-sm font-medium text-amber-600">
+                <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
                   {result.values.filter(
                     (v) => v.status === "low" || v.status === "high"
                   ).length}
@@ -496,7 +496,7 @@ function LabResultDetail({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Critical</span>
-                <span className="text-sm font-medium text-red-600">
+                <span className="text-sm font-medium text-red-600 dark:text-red-400">
                   {result.values.filter(
                     (v) =>
                       v.status === "critical_low" ||

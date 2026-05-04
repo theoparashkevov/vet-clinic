@@ -153,10 +153,10 @@ const fadeUp = {
 // ─── Stat cards config ────────────────────────────────────────────────────────
 
 const statCards = [
-  { key: "todayAppointments" as const, label: "Today's Appointments", icon: CalendarDays, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40" },
-  { key: "totalPatients" as const, label: "Total Patients", icon: PawPrint, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
-  { key: "pendingTasks" as const, label: "Pending Tasks", icon: ClipboardList, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
-  { key: "overdueReminders" as const, label: "Overdue Reminders", icon: AlertTriangle, color: "text-rose-600", bg: "bg-rose-50 dark:bg-rose-950/40" },
+  { key: "todayAppointments" as const, label: "Today's Appointments", icon: CalendarDays, color: "text-primary", bg: "bg-primary/10" },
+  { key: "totalPatients" as const, label: "Total Patients", icon: PawPrint, color: "text-primary", bg: "bg-primary/10" },
+  { key: "pendingTasks" as const, label: "Pending Tasks", icon: ClipboardList, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/20" },
+  { key: "overdueReminders" as const, label: "Overdue Reminders", icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10" },
 ]
 
 const VISIT_COUNTS = [5, 10, 20]
