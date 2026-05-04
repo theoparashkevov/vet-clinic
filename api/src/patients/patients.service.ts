@@ -40,16 +40,24 @@ export class PatientsService {
    * @param pagination - Optional { page, limit } for pagination
    * @returns PaginatedResult with patient data and owner details
    */
-  async list(search?: string, pagination?: { page?: string; limit?: string }): Promise<PaginatedResult<any>> {
-    // Build search filter - case-insensitive partial match on name OR species
-    const where = search
-      ? {
-          OR: [
-            { name: { contains: search } },
-            { species: { contains: search } },
-          ],
-        }
-      : undefined;
+  async list(
+    search?: string,
+    pagination?: { page?: string; limit?: string },
+    filters?: { species?: string; status?: string },
+  ): Promise<PaginatedResult<any>> {
+    const conditions: any[] = []
+    if (search) {
+      conditions.push({
+        OR: [
+          { name: { contains: search } },
+          { species: { contains: search } },
+          { owner: { name: { contains: search } } },
+        ],
+      })
+    }
+    if (filters?.species) conditions.push({ species: filters.species })
+    if (filters?.status) conditions.push({ status: filters.status })
+    const where = conditions.length ? { AND: conditions } : undefined;
 
     // Parse and validate pagination parameters
     const { page, limit, skip } = getPaginationParams(pagination ?? {});

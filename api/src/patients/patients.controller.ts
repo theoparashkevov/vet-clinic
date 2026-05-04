@@ -49,8 +49,10 @@ export class PatientsController {
     @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('species') species?: string,
+    @Query('status') status?: string,
   ) {
-    return this.patients.list(search, { page, limit });
+    return this.patients.list(search, { page, limit }, { species, status });
   }
 
   /**
