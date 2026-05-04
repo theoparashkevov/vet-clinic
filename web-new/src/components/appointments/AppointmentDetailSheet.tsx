@@ -17,6 +17,7 @@ import {
   Loader2,
   Phone,
   Mail,
+  X,
 } from "lucide-react"
 import { toast } from "sonner"
 import { fetchWithAuth } from "../../lib/api"
@@ -26,12 +27,13 @@ import { Textarea } from "../ui/textarea"
 import { Skeleton } from "../ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "../ui/sheet"
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "../ui/drawer"
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -190,8 +192,12 @@ export function AppointmentDetailSheet({ appointmentId, onClose }: AppointmentDe
   }
 
   return (
-    <Sheet open={!!appointmentId} onOpenChange={(open) => { if (!open) { onClose(); setInlineAction(null) } }}>
-      <SheetContent className="flex flex-col p-0 overflow-hidden">
+    <Drawer
+      open={!!appointmentId}
+      onOpenChange={(open) => { if (!open) { onClose(); setInlineAction(null) } }}
+      direction="right"
+    >
+      <DrawerContent direction="right" className="flex flex-col p-0 overflow-hidden">
         {isLoading || !appointment ? (
           <div className="flex flex-col gap-4 p-6">
             <Skeleton className="h-6 w-3/4" />
@@ -204,23 +210,27 @@ export function AppointmentDetailSheet({ appointmentId, onClose }: AppointmentDe
         ) : (
           <>
             {/* Header */}
-            <SheetHeader className="border-b bg-card">
+            <DrawerHeader className="border-b bg-card">
+              <DrawerClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </DrawerClose>
               <div className="flex items-start justify-between pr-8">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                       <PawPrint className="h-4 w-4 text-primary" />
                     </div>
-                    <SheetTitle className="text-lg">
+                    <DrawerTitle className="text-lg">
                       {appointment.patient.name}
-                    </SheetTitle>
+                    </DrawerTitle>
                   </div>
-                  <SheetDescription className="flex items-center gap-2">
+                  <DrawerDescription className="flex items-center gap-2">
                     <span className="capitalize">{appointment.patient.species}</span>
                     {appointment.patient.breed && (
                       <span className="text-muted-foreground/60">· {appointment.patient.breed}</span>
                     )}
-                  </SheetDescription>
+                  </DrawerDescription>
                 </div>
                 <StatusBadge status={appointment.status} />
               </div>
@@ -235,7 +245,7 @@ export function AppointmentDetailSheet({ appointmentId, onClose }: AppointmentDe
                   {formatTime(appointment.startsAt)} – {formatTime(appointment.endsAt)}
                 </div>
               </div>
-            </SheetHeader>
+            </DrawerHeader>
 
             {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto">
@@ -504,7 +514,7 @@ export function AppointmentDetailSheet({ appointmentId, onClose }: AppointmentDe
             </div>
           </>
         )}
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   )
 }
