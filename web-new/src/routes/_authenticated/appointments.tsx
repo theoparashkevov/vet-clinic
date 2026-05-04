@@ -33,11 +33,9 @@ function AppointmentsLayout() {
             Manage appointments and bookings.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/appointments/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Appointment
-          </Link>
+        <Button render={<Link to="/appointments/new" />}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Appointment
         </Button>
       </div>
 

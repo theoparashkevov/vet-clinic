@@ -213,8 +213,8 @@ function OwnerProfilePage() {
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
         <Users className="mb-4 h-12 w-12 opacity-25" />
         <p className="text-lg font-medium">Owner not found</p>
-        <Button asChild variant="link" className="mt-2">
-          <Link to="/owners">Back to Owners</Link>
+        <Button variant="link" className="mt-2" render={<Link to="/owners" />}>
+          Back to Owners
         </Button>
       </div>
     )
@@ -233,11 +233,9 @@ function OwnerProfilePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/owners">
-              <ArrowLeft className="mr-1.5 h-4 w-4" />
-              Owners
-            </Link>
+          <Button variant="outline" size="sm" render={<Link to="/owners" />}>
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            Owners
           </Button>
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
             <Users className="h-5 w-5 text-primary" />
@@ -365,8 +363,8 @@ function OwnerProfilePage() {
                 <CalendarDays className="h-4 w-4" />
                 Upcoming Appointments
               </CardTitle>
-              <Button size="sm" asChild>
-                <Link to="/appointments/new">New</Link>
+              <Button size="sm" render={<Link to="/appointments/new" />}>
+                New
               </Button>
             </CardHeader>
             <CardContent>

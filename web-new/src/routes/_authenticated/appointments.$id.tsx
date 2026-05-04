@@ -174,11 +174,9 @@ function AppointmentDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" size="sm" asChild>
-        <Link to="/appointments">
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          Back to appointments
-        </Link>
+      <Button variant="ghost" size="sm" render={<Link to="/appointments" />}>
+        <ArrowLeft className="mr-1 h-4 w-4" />
+        Back to appointments
       </Button>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -473,11 +471,9 @@ function AppointmentDetailPage() {
               <CardDescription>Link to visit record</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" size="sm" className="w-full" asChild>
-                <Link to="/medical-records" search={{ patientId: appointment.patientId }}>
-                  <ClipboardList className="mr-2 h-4 w-4" />
-                  View Medical Records
-                </Link>
+              <Button variant="outline" size="sm" className="w-full" render={<Link to="/medical-records" search={{ patientId: appointment.patientId }} />}>
+                <ClipboardList className="mr-2 h-4 w-4" />
+                View Medical Records
               </Button>
             </CardContent>
           </Card>

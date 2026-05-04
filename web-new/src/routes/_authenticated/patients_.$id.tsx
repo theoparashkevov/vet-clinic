@@ -219,8 +219,8 @@ function PatientDetailPage() {
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
         <PawPrint className="mb-4 h-12 w-12 opacity-30" />
         <p className="text-lg font-medium">Patient not found</p>
-        <Button asChild variant="link" className="mt-2">
-          <Link to="/patients">Back to Patients</Link>
+        <Button variant="link" className="mt-2" render={<Link to="/patients" />}>
+          Back to Patients
         </Button>
       </div>
     )
@@ -235,11 +235,9 @@ function PatientDetailPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/patients">
-              <ArrowLeft className="mr-1.5 h-4 w-4" />
-              Patients
-            </Link>
+          <Button variant="outline" size="sm" render={<Link to="/patients" />}>
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            Patients
           </Button>
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
             <PawPrint className="h-5 w-5 text-primary" />
@@ -387,10 +385,8 @@ function PatientDetailPage() {
                     <TooltipProvider delayDuration={300}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                            <Link to="/owners/$id" params={{ id: patient.ownerId }}>
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </Link>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" render={<Link to="/owners/$id" params={{ id: patient.ownerId }} />}>
+                            <ExternalLink className="h-3.5 w-3.5" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>View owner profile</TooltipContent>
@@ -456,8 +452,8 @@ function PatientDetailPage() {
                 <CalendarDays className="h-4 w-4" />
                 Appointments
               </CardTitle>
-              <Button size="sm" asChild>
-                <Link to="/appointments/new">New</Link>
+              <Button size="sm" render={<Link to="/appointments/new" />}>
+                New
               </Button>
             </CardHeader>
             <CardContent>

@@ -70,11 +70,9 @@ function InvoicesListPage() {
             Manage billing and track payments.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/billing/invoices/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Invoice
-          </Link>
+        <Button render={<Link to="/billing/invoices/new" />}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Invoice
         </Button>
       </div>
 

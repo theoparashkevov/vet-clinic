@@ -154,11 +154,9 @@ function CreateInvoicePage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/billing/invoices">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Link>
+        <Button variant="outline" size="sm" render={<Link to="/billing/invoices" />}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
         </Button>
       </div>
 
@@ -410,8 +408,8 @@ function CreateInvoicePage() {
         </div>
 
         <div className="flex items-center justify-end gap-4">
-          <Button type="button" variant="outline" asChild>
-            <Link to="/billing/invoices">Cancel</Link>
+          <Button type="button" variant="outline" render={<Link to="/billing/invoices" />}>
+            Cancel
           </Button>
           <Button type="submit" disabled={createMutation.isPending}>
             {createMutation.isPending ? "Creating..." : "Create Invoice"}
