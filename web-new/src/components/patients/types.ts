@@ -164,6 +164,7 @@ export interface LabResult {
   patientId: string
   appointmentId?: string | null
   panelId: string
+  panel?: { name: string } | null
   testDate: string
   receivedDate?: string | null
   reviewedDate?: string | null
