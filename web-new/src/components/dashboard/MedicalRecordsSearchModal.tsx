@@ -48,7 +48,7 @@ export function MedicalRecordsSearchModal({ open, onClose }: Props) {
   function handleSelect(patientId: string) {
     onClose()
     setSearch("")
-    navigate({ to: "/patients/$id", params: { id: patientId } })
+    navigate({ to: "/patients/$id", params: { id: patientId }, search: { tab: "records" } })
   }
 
   function handleClose() {

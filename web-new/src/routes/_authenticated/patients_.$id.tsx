@@ -41,6 +41,9 @@ import {
 import { cn } from "../../lib/utils"
 
 export const Route = createFileRoute("/_authenticated/patients_/$id")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (search.tab as string) ?? "overview",
+  }),
   component: PatientDetailPage,
 })
 
@@ -182,6 +185,7 @@ function EmptyState({ icon: Icon, text }: { icon: React.ElementType; text: strin
 
 function PatientDetailPage() {
   const { id } = Route.useParams()
+  const { tab } = Route.useSearch()
   const { data: patient, isLoading, refetch } = usePatient(id)
   const { data: appointments = [] } = usePatientAppointments(id)
   const { data: records = [] } = usePatientMedicalRecords(id)
@@ -292,7 +296,7 @@ function PatientDetailPage() {
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue={tab}>
         <TabsList className="w-full justify-start gap-0.5 overflow-x-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="appointments" className="gap-1.5">
