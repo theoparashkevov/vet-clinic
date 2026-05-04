@@ -31,12 +31,12 @@ interface DashboardStats {
 
 interface Appointment {
   id: string
-  date: string
-  time: string
+  startsAt: string
+  endsAt: string
   status: string
-  patient: { name: string; species: string }
-  doctor: { name: string }
-  reason?: string
+  patient: { id: string; name: string; species: string }
+  doctor: { id: string; name: string } | null
+  reason?: string | null
 }
 
 function useDashboardStats() {
