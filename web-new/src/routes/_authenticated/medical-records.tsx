@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import {
   FileText,
   Plus,
@@ -20,6 +20,8 @@ import {
   ShieldAlert,
   CheckCircle2,
   Clock,
+  Info,
+  TrendingUp,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { fetchWithAuth } from "../../lib/api"
@@ -330,6 +332,7 @@ type Selected =
   | { type: "record"; id: string }
   | { type: "lab"; id: string }
   | { type: "rx"; id: string }
+  | { type: "patient-info" }
   | null
 
 function MedicalHistoryPage() {
@@ -373,14 +376,26 @@ function MedicalHistoryPage() {
         </Button>
       </div>
 
-      {/* Patient filter */}
-      <PatientSearch
-        patients={patients ?? []}
-        value={patientFilter}
-        onChange={setPatientFilter}
-        placeholder="Filter by patient…"
-        className="max-w-sm"
-      />
+      {/* Patient filter + info button */}
+      <div className="flex items-center gap-3">
+        <PatientSearch
+          patients={patients ?? []}
+          value={patientFilter}
+          onChange={setPatientFilter}
+          placeholder="Filter by patient…"
+          className="max-w-sm"
+        />
+        {patientFilter && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelected({ type: "patient-info" })}
+          >
+            <Info className="mr-2 h-4 w-4" />
+            Patient Info
+          </Button>
+        )}
+      </div>
 
       {/* Tabs */}
       <Tabs defaultValue="records">
@@ -404,29 +419,29 @@ function MedicalHistoryPage() {
 
         {/* ── Records ── */}
         <TabsContent value="records" className="mt-4">
-          <div className="space-y-3">
-            {recordsLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i}><CardContent className="p-5">
-                  <Skeleton className="h-5 w-48" /><Skeleton className="mt-2 h-4 w-full" />
-                </CardContent></Card>
-              ))
-            ) : records && records.length > 0 ? (
-              records.map((r) => (
-                <MedicalRecordRow
-                  key={r.id}
-                  record={r}
-                  onClick={() => setSelected({ type: "record", id: r.id })}
-                />
-              ))
-            ) : (
-              <EmptyState icon={FileText} text="No medical records found." action={
-                <Button variant="outline" size="sm" onClick={() => setView("create")}>
-                  <Plus className="mr-2 h-4 w-4" />Create first record
-                </Button>
-              } />
-            )}
-          </div>
+          {recordsLoading ? (
+            <div className="space-y-6 pl-10">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex gap-4">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-20 w-full rounded-xl" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : records && records.length > 0 ? (
+            <RecordsTimeline
+              records={records}
+              onSelect={(id) => setSelected({ type: "record", id })}
+            />
+          ) : (
+            <EmptyState icon={FileText} text="No medical records found." action={
+              <Button variant="outline" size="sm" onClick={() => setView("create")}>
+                <Plus className="mr-2 h-4 w-4" />Create first record
+              </Button>
+            } />
+          )}
         </TabsContent>
 
         {/* ── Lab Results ── */}
@@ -553,6 +568,14 @@ function MedicalHistoryPage() {
         selectedId={selected?.type === "rx" ? selected.id : null}
         onClose={() => setSelected(null)}
       />
+      <PatientInfoDrawer
+        open={selected?.type === "patient-info"}
+        onClose={() => setSelected(null)}
+        patient={patients?.find((p) => p.id === patientFilter)}
+        records={records ?? []}
+        labCount={labResults?.length ?? 0}
+        rxCount={prescriptions?.length ?? 0}
+      />
     </div>
   )
 }
@@ -610,6 +633,275 @@ function EmptyState({
       <p className="mt-3 text-sm">{text}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
+  )
+}
+
+// ─── timeline ────────────────────────────────────────────────────────────────
+
+function RecordsTimeline({
+  records,
+  onSelect,
+}: {
+  records: MedicalRecord[]
+  onSelect: (id: string) => void
+}) {
+  const sorted = useMemo(
+    () => [...records].sort((a, b) => new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime()),
+    [records]
+  )
+
+  return (
+    <div>
+      {sorted.map((record, idx) => (
+        <div key={record.id} className="flex gap-4">
+          {/* Left: dot + connecting line */}
+          <div className="flex flex-col items-center">
+            <div className="mt-3.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-background z-10">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+            </div>
+            {idx < sorted.length - 1 && (
+              <div className="mt-1 w-px flex-1 bg-border" style={{ minHeight: "1.5rem" }} />
+            )}
+          </div>
+
+          {/* Right: date label + card */}
+          <div className="flex-1 min-w-0 pb-5">
+            <p className="mt-2 mb-2 font-mono text-xs font-semibold tracking-wider text-muted-foreground">
+              {record.visitDate.slice(0, 10)}
+            </p>
+            <MedicalRecordRow record={record} onClick={() => onSelect(record.id)} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── patient info drawer ──────────────────────────────────────────────────────
+
+function WeightChart({ points }: { points: { date: string; weight: number }[] }) {
+  if (points.length === 0) {
+    return (
+      <p className="py-6 text-center text-sm text-muted-foreground">No weight data recorded.</p>
+    )
+  }
+
+  if (points.length === 1) {
+    return (
+      <div className="flex items-baseline gap-2 py-2">
+        <span className="text-3xl font-bold tabular-nums">{points[0].weight}</span>
+        <span className="text-sm text-muted-foreground">kg · {points[0].date}</span>
+      </div>
+    )
+  }
+
+  const W = 400, H = 130
+  const pl = 36, pr = 8, pt = 10, pb = 22
+  const iW = W - pl - pr, iH = H - pt - pb
+
+  const weights = points.map((p) => p.weight)
+  const minW = Math.min(...weights)
+  const maxW = Math.max(...weights)
+  const pad = (maxW - minW) * 0.12 || 1
+  const lo = minW - pad, hi = maxW + pad
+
+  const cx = (i: number) => pl + (i / (points.length - 1)) * iW
+  const cy = (w: number) => pt + iH - ((w - lo) / (hi - lo)) * iH
+
+  const linePath = points
+    .map((p, i) => `${i === 0 ? "M" : "L"}${cx(i).toFixed(1)},${cy(p.weight).toFixed(1)}`)
+    .join(" ")
+  const areaPath = `${linePath} L${cx(points.length - 1).toFixed(1)},${pt + iH} L${pl},${pt + iH} Z`
+
+  const midIdx = Math.floor(points.length / 2)
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full text-muted-foreground"
+      role="img"
+      aria-label="Weight history chart"
+    >
+      <path d={areaPath} className="fill-primary/10" />
+      <path
+        d={linePath}
+        className="stroke-primary"
+        fill="none"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {points.map((p, i) => (
+        <circle key={i} cx={cx(i)} cy={cy(p.weight)} r="3.5" className="fill-primary" />
+      ))}
+      {/* axes */}
+      <line x1={pl} y1={pt} x2={pl} y2={pt + iH} stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+      <line x1={pl} y1={pt + iH} x2={pl + iW} y2={pt + iH} stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+      {/* y labels: max and min */}
+      <text x={pl - 4} y={cy(maxW) + 4} textAnchor="end" fontSize="9" fill="currentColor">
+        {maxW % 1 === 0 ? maxW : maxW.toFixed(1)}
+      </text>
+      <text x={pl - 4} y={cy(minW) + 4} textAnchor="end" fontSize="9" fill="currentColor">
+        {minW % 1 === 0 ? minW : minW.toFixed(1)}
+      </text>
+      {/* x labels */}
+      <text x={pl} y={H - 4} fontSize="9" fill="currentColor">
+        {points[0].date}
+      </text>
+      {points.length > 2 && (
+        <text x={cx(midIdx)} y={H - 4} textAnchor="middle" fontSize="9" fill="currentColor">
+          {points[midIdx].date}
+        </text>
+      )}
+      <text x={pl + iW} y={H - 4} textAnchor="end" fontSize="9" fill="currentColor">
+        {points[points.length - 1].date}
+      </text>
+    </svg>
+  )
+}
+
+function PatientInfoDrawer({
+  open,
+  onClose,
+  patient,
+  records,
+  labCount,
+  rxCount,
+}: {
+  open: boolean | undefined
+  onClose: () => void
+  patient: Patient | undefined
+  records: MedicalRecord[]
+  labCount: number
+  rxCount: number
+}) {
+  const weightPoints = useMemo(
+    () =>
+      records
+        .filter((r) => r.vitalSigns?.weight != null)
+        .map((r) => ({ date: r.visitDate.slice(0, 10), weight: r.vitalSigns!.weight! }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    [records]
+  )
+
+  const latestRecord = useMemo(
+    () =>
+      records.length > 0
+        ? [...records].sort((a, b) => new Date(b.visitDate).getTime() - new Date(a.visitDate).getTime())[0]
+        : null,
+    [records]
+  )
+
+  return (
+    <DrawerShell open={!!open} onClose={onClose}>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b px-5 py-4">
+        {patient ? (
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold leading-tight">{patient.name}</h2>
+              <p className="text-sm capitalize text-muted-foreground">
+                {patient.species}
+                {patient.owner ? ` · ${patient.owner.name}` : ""}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-11 w-11 rounded-full" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+        )}
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+        {/* Counts */}
+        <div className="grid grid-cols-3 gap-3">
+          <StatTile label="Records" value={records.length} colorClass="text-foreground" />
+          <StatTile label="Lab Results" value={labCount} colorClass="text-foreground" />
+          <StatTile label="Prescriptions" value={rxCount} colorClass="text-foreground" />
+        </div>
+
+        {/* Latest vitals */}
+        {latestRecord?.vitalSigns && (
+          <>
+            <Separator />
+            <section>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Latest Vitals · {latestRecord.visitDate.slice(0, 10)}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {latestRecord.vitalSigns.temperature != null && (
+                  <span className="flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1 text-xs">
+                    <Thermometer className="h-3.5 w-3.5 text-muted-foreground" />
+                    {latestRecord.vitalSigns.temperature}°C
+                  </span>
+                )}
+                {latestRecord.vitalSigns.heartRate != null && (
+                  <span className="flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1 text-xs">
+                    <Heart className="h-3.5 w-3.5 text-muted-foreground" />
+                    {latestRecord.vitalSigns.heartRate} bpm
+                  </span>
+                )}
+                {latestRecord.vitalSigns.weight != null && (
+                  <span className="flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1 text-xs">
+                    <Weight className="h-3.5 w-3.5 text-muted-foreground" />
+                    {latestRecord.vitalSigns.weight} kg
+                  </span>
+                )}
+                {latestRecord.vitalSigns.respiratoryRate != null && (
+                  <span className="flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1 text-xs">
+                    <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+                    {latestRecord.vitalSigns.respiratoryRate} /min
+                  </span>
+                )}
+                {latestRecord.vitalSigns.bodyConditionScore != null && (
+                  <span className="flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1 text-xs">
+                    BCS {latestRecord.vitalSigns.bodyConditionScore}/9
+                  </span>
+                )}
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* Weight history chart */}
+        <Separator />
+        <section>
+          <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <TrendingUp className="h-3.5 w-3.5" />
+            Weight History (kg)
+          </p>
+          <WeightChart points={weightPoints} />
+        </section>
+
+        {/* Next recommended visit */}
+        {latestRecord?.nextVisitRecommended && (
+          <>
+            <Separator />
+            <section>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Next Visit
+              </p>
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                {formatDate(latestRecord.nextVisitRecommended)}
+              </div>
+            </section>
+          </>
+        )}
+      </div>
+    </DrawerShell>
   )
 }
 
