@@ -8,7 +8,6 @@ import {
   Calendar,
   User,
   Clock,
-  Search,
   ShieldAlert,
   RefreshCcw,
 } from "lucide-react"
@@ -22,6 +21,14 @@ import { Textarea } from "../../components/ui/textarea"
 import { Skeleton } from "../../components/ui/skeleton"
 import { Separator } from "../../components/ui/separator"
 import { toast } from "sonner"
+import { PatientSearch } from "../../components/patients/PatientSearch"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select"
 
 export const Route = createFileRoute("/_authenticated/prescriptions")({
   component: PrescriptionsPage,
@@ -241,21 +248,13 @@ function PrescriptionsPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <select
-            value={patientFilter}
-            onChange={(e) => setPatientFilter(e.target.value)}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent pl-9 pr-8 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            <option value="">All patients</option>
-            {patients?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.species})
-              </option>
-            ))}
-          </select>
-        </div>
+        <PatientSearch
+          patients={patients ?? []}
+          value={patientFilter}
+          onChange={setPatientFilter}
+          placeholder="Filter by patient…"
+          className="max-w-sm flex-1"
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -613,21 +612,13 @@ function CreatePrescriptionForm({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="patientId">Patient *</Label>
-              <select
-                id="patientId"
-                required
+              <Label>Patient *</Label>
+              <PatientSearch
+                patients={patients}
                 value={form.patientId}
-                onChange={(e) => updateField("patientId", e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">Select patient</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.species})
-                  </option>
-                ))}
-              </select>
+                onChange={(id) => updateField("patientId", id)}
+                placeholder="Select patient…"
+              />
             </div>
 
             <div className="flex items-center gap-4">
@@ -653,21 +644,22 @@ function CreatePrescriptionForm({
 
             {useTemplate ? (
               <div className="space-y-2">
-                <Label htmlFor="template">Medication Template *</Label>
-                <select
-                  id="template"
-                  required={useTemplate}
-                  value={selectedTemplateId}
-                  onChange={(e) => handleTemplateChange(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                <Label>Medication Template *</Label>
+                <Select
+                  value={selectedTemplateId || undefined}
+                  onValueChange={handleTemplateChange}
                 >
-                  <option value="">Select template</option>
-                  {templates?.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.category})
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates?.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name} ({t.category})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {selectedTemplate && (
                   <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
                     <p>

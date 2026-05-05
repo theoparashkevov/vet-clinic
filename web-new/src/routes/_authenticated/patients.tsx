@@ -4,10 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Search,
   Plus,
-  MoreHorizontal,
   PawPrint,
   Pencil,
   Trash2,
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -36,19 +36,13 @@ import {
   TableRow,
 } from '../../components/ui/table'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../../components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../../components/ui/dialog'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select'
+import { modalVariants, backdropVariants } from '../../lib/animations'
 
 export const Route = createFileRoute('/_authenticated/patients')({
   component: PatientsPage,
@@ -348,15 +342,16 @@ function PatientsPage() {
                 className="pl-9"
               />
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => handleStatusFilter(e.target.value)}
-              className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              {STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            <Select value={statusFilter || '__all__'} onValueChange={(v) => handleStatusFilter(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value || '__all__'}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Species pills */}
@@ -398,7 +393,7 @@ function PatientsPage() {
                   <TableHead>Owner</TableHead>
                   <TableHead>Age</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[52px]"></TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -445,24 +440,14 @@ function PatientsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleOpenEdit(patient)}>
-                              <Pencil className="mr-2 h-4 w-4" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => { setDeletePatientTarget(patient); setDeletePatientOpen(true) }}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center justify-end gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleOpenEdit(patient)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setDeletePatientTarget(patient); setDeletePatientOpen(true) }}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -580,21 +565,9 @@ function PatientsPage() {
                             </Badge>
                           </TableCell>
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => { setDeleteOwnerTarget(owner); setDeleteOwnerOpen(true) }}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { setDeleteOwnerTarget(owner); setDeleteOwnerOpen(true) }}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                         {isExpanded && (
@@ -635,40 +608,123 @@ function PatientsPage() {
       />
 
       {/* Delete patient confirmation */}
-      <Dialog open={deletePatientOpen} onOpenChange={setDeletePatientOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Patient</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete <strong>{deletePatientTarget?.name}</strong>? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletePatientOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleConfirmDeletePatient} disabled={deletePatientMutation.isPending}>
-              {deletePatientMutation.isPending ? 'Deleting…' : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AnimatePresence>
+        {deletePatientOpen && deletePatientTarget && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div
+              className="fixed inset-0 bg-black/50"
+              variants={backdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={() => setDeletePatientOpen(false)}
+            />
+            <motion.div
+              className="relative z-10 w-full max-w-md"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className="rounded-xl border bg-card p-6 shadow-2xl">
+                <div className="mb-5 flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold">Delete Patient</h2>
+                    <p className="mt-0.5 text-sm text-muted-foreground">This action cannot be undone.</p>
+                  </div>
+                </div>
+                <div className="mb-5 flex items-center gap-3 rounded-lg border bg-muted/40 px-4 py-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <PawPrint className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium leading-tight">{deletePatientTarget.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {deletePatientTarget.species}{deletePatientTarget.breed ? ` · ${deletePatientTarget.breed}` : ''}{deletePatientTarget.owner ? ` · ${deletePatientTarget.owner.name}` : ''}
+                    </p>
+                  </div>
+                  <Badge variant={statusBadgeVariant(deletePatientTarget.status)} className="ml-auto shrink-0 capitalize text-xs">
+                    {deletePatientTarget.status}
+                  </Badge>
+                </div>
+                <p className="mb-6 text-sm text-muted-foreground">
+                  Deleting <strong className="text-foreground">{deletePatientTarget.name}</strong> will permanently remove all associated records, appointments, and history.
+                </p>
+                <div className="flex gap-3">
+                  <Button variant="outline" className="flex-1" onClick={() => setDeletePatientOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="destructive" className="flex-1" onClick={handleConfirmDeletePatient} disabled={deletePatientMutation.isPending}>
+                    {deletePatientMutation.isPending ? 'Deleting…' : 'Delete Patient'}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Delete owner confirmation */}
-      <Dialog open={deleteOwnerOpen} onOpenChange={setDeleteOwnerOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Owner</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete <strong>{deleteOwnerTarget?.name}</strong>? This will fail if the owner has linked patients.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOwnerOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleConfirmDeleteOwner} disabled={deleteOwnerMutation.isPending}>
-              {deleteOwnerMutation.isPending ? 'Deleting…' : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AnimatePresence>
+        {deleteOwnerOpen && deleteOwnerTarget && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div
+              className="fixed inset-0 bg-black/50"
+              variants={backdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={() => setDeleteOwnerOpen(false)}
+            />
+            <motion.div
+              className="relative z-10 w-full max-w-md"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className="rounded-xl border bg-card p-6 shadow-2xl">
+                <div className="mb-5 flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold">Delete Owner</h2>
+                    <p className="mt-0.5 text-sm text-muted-foreground">This action cannot be undone.</p>
+                  </div>
+                </div>
+                <div className="mb-5 flex items-center gap-3 rounded-lg border bg-muted/40 px-4 py-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium leading-tight">{deleteOwnerTarget.name}</p>
+                    {deleteOwnerTarget._count?.patients != null && (
+                      <p className="text-xs text-muted-foreground">
+                        {deleteOwnerTarget._count.patients} linked patient{deleteOwnerTarget._count.patients !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <p className="mb-6 text-sm text-muted-foreground">
+                  Deleting <strong className="text-foreground">{deleteOwnerTarget.name}</strong> will fail if they still have linked patients — remove or reassign those first.
+                </p>
+                <div className="flex gap-3">
+                  <Button variant="outline" className="flex-1" onClick={() => setDeleteOwnerOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="destructive" className="flex-1" onClick={handleConfirmDeleteOwner} disabled={deleteOwnerMutation.isPending}>
+                    {deleteOwnerMutation.isPending ? 'Deleting…' : 'Delete Owner'}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
