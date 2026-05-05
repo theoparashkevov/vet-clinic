@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedVisitRouteImport } from './routes/_authenticated/visit'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedPrescriptionsRouteImport } from './routes/_authenticated/prescriptions'
 import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticated/patients'
@@ -46,6 +47,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedVisitRoute = AuthenticatedVisitRouteImport.update({
+  id: '/visit',
+  path: '/visit',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   id: '/tasks',
@@ -172,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/patients': typeof AuthenticatedPatientsRoute
   '/prescriptions': typeof AuthenticatedPrescriptionsRoute
   '/tasks': typeof AuthenticatedTasksRoute
+  '/visit': typeof AuthenticatedVisitRoute
   '/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
   '/appointments/calendar': typeof AuthenticatedAppointmentsCalendarRoute
   '/appointments/new': typeof AuthenticatedAppointmentsNewRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/patients': typeof AuthenticatedPatientsRoute
   '/prescriptions': typeof AuthenticatedPrescriptionsRoute
   '/tasks': typeof AuthenticatedTasksRoute
+  '/visit': typeof AuthenticatedVisitRoute
   '/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
   '/appointments/calendar': typeof AuthenticatedAppointmentsCalendarRoute
   '/appointments/new': typeof AuthenticatedAppointmentsNewRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/_authenticated/patients': typeof AuthenticatedPatientsRoute
   '/_authenticated/prescriptions': typeof AuthenticatedPrescriptionsRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
+  '/_authenticated/visit': typeof AuthenticatedVisitRoute
   '/_authenticated/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
   '/_authenticated/appointments/calendar': typeof AuthenticatedAppointmentsCalendarRoute
   '/_authenticated/appointments/new': typeof AuthenticatedAppointmentsNewRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/patients'
     | '/prescriptions'
     | '/tasks'
+    | '/visit'
     | '/appointments/$id'
     | '/appointments/calendar'
     | '/appointments/new'
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/patients'
     | '/prescriptions'
     | '/tasks'
+    | '/visit'
     | '/appointments/$id'
     | '/appointments/calendar'
     | '/appointments/new'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/_authenticated/patients'
     | '/_authenticated/prescriptions'
     | '/_authenticated/tasks'
+    | '/_authenticated/visit'
     | '/_authenticated/appointments/$id'
     | '/_authenticated/appointments/calendar'
     | '/_authenticated/appointments/new'
@@ -333,6 +345,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/visit': {
+      id: '/_authenticated/visit'
+      path: '/visit'
+      fullPath: '/visit'
+      preLoaderRoute: typeof AuthenticatedVisitRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tasks': {
       id: '/_authenticated/tasks'
@@ -539,6 +558,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRoute
   AuthenticatedPrescriptionsRoute: typeof AuthenticatedPrescriptionsRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
+  AuthenticatedVisitRoute: typeof AuthenticatedVisitRoute
   AuthenticatedOwnersIdRoute: typeof AuthenticatedOwnersIdRoute
   AuthenticatedPatientsIdRoute: typeof AuthenticatedPatientsIdRoute
 }
@@ -554,6 +574,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPatientsRoute: AuthenticatedPatientsRoute,
   AuthenticatedPrescriptionsRoute: AuthenticatedPrescriptionsRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
+  AuthenticatedVisitRoute: AuthenticatedVisitRoute,
   AuthenticatedOwnersIdRoute: AuthenticatedOwnersIdRoute,
   AuthenticatedPatientsIdRoute: AuthenticatedPatientsIdRoute,
 }
