@@ -18,6 +18,7 @@ interface PatientSearchProps {
   placeholder?: string
   disabled?: boolean
   className?: string
+  counts?: Record<string, number>
 }
 
 export function PatientSearch({
@@ -27,6 +28,7 @@ export function PatientSearch({
   placeholder = "Search patients...",
   disabled,
   className,
+  counts,
 }: PatientSearchProps) {
   const [search, setSearch] = useState("")
   const [open, setOpen] = useState(false)
@@ -116,13 +118,18 @@ export function PatientSearch({
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
                         <PawPrint className="h-3.5 w-3.5 text-primary" />
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium leading-tight">{patient.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {patient.species}
                           {patient.owner ? ` · ${patient.owner.name}` : ""}
                         </p>
                       </div>
+                      {counts != null && counts[patient.id] != null && (
+                        <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
+                          {counts[patient.id]}
+                        </span>
+                      )}
                     </div>
                   </button>
                 ))

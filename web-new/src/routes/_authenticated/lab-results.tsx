@@ -1,21 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import {
   FlaskConical,
-  ArrowLeft,
+  X,
   AlertTriangle,
   CheckCircle2,
   Activity,
   Calendar,
   User,
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { fetchWithAuth } from "../../lib/api"
 import { PatientSearch } from "../../components/patients/PatientSearch"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
 import { Skeleton } from "../../components/ui/skeleton"
+import { Separator } from "../../components/ui/separator"
 import {
   Table,
   TableBody,
@@ -122,6 +124,17 @@ function useLabResultDetail(id: string | null) {
   })
 }
 
+// Also always fetch the full unfiltered list so we can count per patient
+function useAllLabResults() {
+  return useQuery({
+    queryKey: ["lab-results", "list", undefined],
+    queryFn: async (): Promise<LabResult[]> => {
+      const res = (await fetchWithAuth("/v1/lab-results?limit=100")) as PaginatedResponse<LabResult>
+      return res.data ?? []
+    },
+  })
+}
+
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
     year: "numeric",
@@ -178,38 +191,27 @@ function getValueStatusBg(status: string) {
 }
 
 function LabResultsPage() {
-  const [view, setView] = useState<"list" | "detail">("list")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [patientFilter, setPatientFilter] = useState<string>("")
 
   const { data: patients } = usePatients()
   const { data: results, isLoading } = useLabResults(patientFilter || undefined)
-  const { data: detail } = useLabResultDetail(selectedId)
+  const { data: allResults } = useAllLabResults()
 
-  const handleViewDetail = (id: string) => {
-    setSelectedId(id)
-    setView("detail")
-  }
-
-  const handleBack = () => {
-    setView("list")
-    setSelectedId(null)
-  }
-
-  if (view === "detail" && detail) {
-    return <LabResultDetail result={detail} onBack={handleBack} />
-  }
+  const countsByPatientId = useMemo<Record<string, number>>(() => {
+    const counts: Record<string, number> = {}
+    allResults?.forEach((r) => {
+      counts[r.patientId] = (counts[r.patientId] ?? 0) + 1
+    })
+    return counts
+  }, [allResults])
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Lab Results
-          </h1>
-          <p className="mt-1 text-muted-foreground">
-            View and review laboratory test results.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Lab Results</h1>
+          <p className="mt-1 text-muted-foreground">View and review laboratory test results.</p>
         </div>
       </div>
 
@@ -220,6 +222,7 @@ function LabResultsPage() {
           onChange={setPatientFilter}
           placeholder="Filter by patient…"
           className="max-w-sm flex-1"
+          counts={countsByPatientId}
         />
       </div>
 
@@ -242,8 +245,8 @@ function LabResultsPage() {
               {results.map((result) => (
                 <div
                   key={result.id}
-                  className="flex cursor-pointer items-center justify-between py-4 transition-colors hover:bg-accent/50"
-                  onClick={() => handleViewDetail(result.id)}
+                  className="flex cursor-pointer items-center justify-between py-4 transition-colors hover:bg-accent/50 -mx-6 px-6"
+                  onClick={() => setSelectedId(result.id)}
                 >
                   <div className="flex items-center gap-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -251,9 +254,7 @@ function LabResultsPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-foreground">
-                          {result.panel.name}
-                        </p>
+                        <p className="text-sm font-medium text-foreground">{result.panel.name}</p>
                         <Badge variant={getStatusBadgeVariant(result.status)} className="text-xs">
                           {result.status}
                         </Badge>
@@ -289,218 +290,238 @@ function LabResultsPage() {
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <FlaskConical className="h-10 w-10 text-muted-foreground/50" />
-              <p className="mt-3 text-sm text-muted-foreground">
-                No lab results found.
-              </p>
+              <p className="mt-3 text-sm text-muted-foreground">No lab results found.</p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <LabResultDrawer selectedId={selectedId} onClose={() => setSelectedId(null)} />
     </div>
   )
 }
 
-function LabResultDetail({
-  result,
-  onBack,
+function LabResultDrawer({
+  selectedId,
+  onClose,
 }: {
-  result: LabResult
-  onBack: () => void
+  selectedId: string | null
+  onClose: () => void
+}) {
+  const { data: result, isLoading } = useLabResultDetail(selectedId)
+
+  return (
+    <AnimatePresence>
+      {selectedId && (
+        <>
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={onClose}
+          />
+          <motion.div
+            key="drawer"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 280 }}
+            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-2xl flex-col bg-background shadow-2xl"
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between border-b px-5 py-4">
+              {isLoading || !result ? (
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-11 w-11 rounded-full" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <FlaskConical className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold leading-tight">{result.panel.name}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {result.patient.name} · {formatDate(result.testDate)}
+                    </p>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                {result && (
+                  <Badge variant={getStatusBadgeVariant(result.status)} className="capitalize">
+                    {result.status}
+                  </Badge>
+                )}
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto">
+              {isLoading || !result ? (
+                <div className="space-y-3 p-5">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-5 px-5 py-4">
+
+                  {/* Summary stats */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <StatTile
+                      label="Normal"
+                      value={result.values.filter((v) => v.status === "normal").length}
+                      colorClass="text-emerald-600 dark:text-emerald-400"
+                    />
+                    <StatTile
+                      label="Abnormal"
+                      value={result.abnormalCount}
+                      colorClass="text-amber-600 dark:text-amber-400"
+                    />
+                    <StatTile
+                      label="Critical"
+                      value={result.criticalCount}
+                      colorClass="text-red-600 dark:text-red-400"
+                    />
+                  </div>
+
+                  <Separator />
+
+                  {/* Test values */}
+                  <section>
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Test Values
+                    </p>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Test</TableHead>
+                          <TableHead>Value</TableHead>
+                          <TableHead>Ref Range</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {result.values.map((val) => (
+                          <TableRow key={val.id} className={getValueStatusBg(val.status)}>
+                            <TableCell>
+                              <p className="text-sm font-medium">{val.test.name}</p>
+                              {val.test.abbreviation && (
+                                <p className="text-xs text-muted-foreground">{val.test.abbreviation}</p>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <span className={`text-sm font-semibold ${getValueStatusColor(val.status)}`}>
+                                {val.displayValue} {val.test.unit}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {val.refRangeMin ?? "—"} – {val.refRangeMax ?? "—"} {val.test.unit}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={getStatusBadgeVariant(val.status)}
+                                className="text-xs capitalize"
+                              >
+                                {val.status.replace("_", " ")}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </section>
+
+                  {(result.interpretation || result.notes) && <Separator />}
+
+                  {result.interpretation && (
+                    <section>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Interpretation
+                      </p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap">
+                        {result.interpretation}
+                      </p>
+                    </section>
+                  )}
+
+                  {result.notes && (
+                    <section>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Notes
+                      </p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap">{result.notes}</p>
+                    </section>
+                  )}
+
+                  <Separator />
+
+                  {/* Meta */}
+                  <section>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Info
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="h-4 w-4 shrink-0" />
+                        <span>{result.patient.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4 shrink-0" />
+                        <span>{formatDate(result.testDate)}</span>
+                      </div>
+                      {result.externalLab && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <FlaskConical className="h-4 w-4 shrink-0" />
+                          <span>{result.externalLab}</span>
+                        </div>
+                      )}
+                      {result.reviewedBy && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Activity className="h-4 w-4 shrink-0" />
+                          <span>
+                            Reviewed by {result.reviewedBy}
+                            {result.reviewedDate ? ` · ${formatDate(result.reviewedDate)}` : ""}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  )
+}
+
+function StatTile({
+  label,
+  value,
+  colorClass,
+}: {
+  label: string
+  value: number
+  colorClass: string
 }) {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to list
-        </Button>
-      </div>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {result.panel.name}
-          </h1>
-          <p className="mt-1 text-muted-foreground">
-            {result.patient.name} · {formatDate(result.testDate)}
-          </p>
-        </div>
-        <Badge
-          variant={getStatusBadgeVariant(result.status)}
-          className="w-fit text-sm px-3 py-1"
-        >
-          {result.status}
-        </Badge>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Test Values</CardTitle>
-              <CardDescription>
-                Color-coded results with reference ranges
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Test</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Reference Range</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {result.values.map((val) => (
-                    <TableRow
-                      key={val.id}
-                      className={getValueStatusBg(val.status)}
-                    >
-                      <TableCell>
-                        <div>
-                          <p className="text-sm font-medium">{val.test.name}</p>
-                          {val.test.abbreviation && (
-                            <p className="text-xs text-muted-foreground">
-                              {val.test.abbreviation}
-                            </p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`text-sm font-semibold ${getValueStatusColor(
-                            val.status
-                          )}`}
-                        >
-                          {val.displayValue} {val.test.unit}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-xs text-muted-foreground">
-                          {val.refRangeMin !== null && val.refRangeMin !== undefined
-                            ? val.refRangeMin
-                            : "—"}{" "}
-                          –{" "}
-                          {val.refRangeMax !== null && val.refRangeMax !== undefined
-                            ? val.refRangeMax
-                            : "—"}{" "}
-                          {val.test.unit}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={getStatusBadgeVariant(val.status)}
-                          className="text-xs capitalize"
-                        >
-                          {val.status.replace("_", " ")}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          {result.interpretation && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Interpretation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-foreground whitespace-pre-wrap">
-                  {result.interpretation}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {result.notes && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-foreground whitespace-pre-wrap">
-                  {result.notes}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Result Info</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">{result.patient.name}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">{formatDate(result.testDate)}</span>
-              </div>
-              {result.externalLab && (
-                <div className="flex items-center gap-3">
-                  <FlaskConical className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">{result.externalLab}</span>
-                </div>
-              )}
-              {result.reviewedBy && (
-                <div className="flex items-center gap-3">
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">
-                    Reviewed by {result.reviewedBy}
-                    {result.reviewedDate && ` on ${formatDate(result.reviewedDate)}`}
-                  </span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total Tests</span>
-                <span className="text-sm font-medium">{result.values.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Normal</span>
-                <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                  {result.values.filter((v) => v.status === "normal").length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Abnormal</span>
-                <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                  {result.values.filter(
-                    (v) => v.status === "low" || v.status === "high"
-                  ).length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Critical</span>
-                <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                  {result.values.filter(
-                    (v) =>
-                      v.status === "critical_low" ||
-                      v.status === "critical_high" ||
-                      v.status === "critical"
-                  ).length}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+    <div className="rounded-lg border bg-card px-3 py-3 text-center">
+      <p className={`text-2xl font-bold tabular-nums ${colorClass}`}>{value}</p>
+      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
     </div>
   )
 }
