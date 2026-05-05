@@ -54,9 +54,14 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Clinical",
+    label: "Appointments",
     items: [
       { label: "Appointments", to: "/appointments", icon: CalendarDays, roles: ["doctor", "nurse", "registrar"] },
+    ],
+  },
+  {
+    label: "Clinical",
+    items: [
       { label: "Medical Records", to: "/medical-records", icon: FileText, roles: ["doctor", "nurse"] },
       { label: "Lab Results", to: "/lab-results", icon: FlaskConical, roles: ["doctor", "nurse"] },
       { label: "Prescriptions", to: "/prescriptions", icon: Pill, roles: ["doctor"] },
