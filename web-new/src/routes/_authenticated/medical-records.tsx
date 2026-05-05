@@ -22,6 +22,10 @@ import {
   Clock,
   Info,
   TrendingUp,
+  Printer,
+  Share2,
+  Mail,
+  Link2,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { fetchWithAuth } from "../../lib/api"
@@ -326,6 +330,188 @@ function TabCount({ n }: { n: number }) {
   )
 }
 
+// ─── print utilities ─────────────────────────────────────────────────────────
+
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+}
+
+const PRINT_CSS = `
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11pt;color:#111;padding:20mm;line-height:1.5}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6mm;padding-bottom:4mm;border-bottom:2pt solid #111}
+  .clinic{font-size:15pt;font-weight:700}.clinic-sub{font-size:9pt;color:#666;margin-top:2px}
+  .meta{font-size:9pt;color:#666;text-align:right;line-height:1.8}
+  h1{font-size:17pt;font-weight:700;margin-bottom:1mm}
+  .subtitle{font-size:11pt;color:#555;margin-bottom:6mm}
+  .pbox{display:flex;flex-wrap:wrap;gap:6mm;background:#f5f5f5;border:0.5pt solid #ddd;border-radius:3pt;padding:3.5mm 5mm;margin-bottom:6mm}
+  .pf-l{font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888}
+  .pf-v{font-size:11pt;font-weight:500;margin-top:.5mm}
+  .vitals{display:flex;flex-wrap:wrap;gap:3mm;margin-bottom:5mm}
+  .vc{border:.5pt solid #ddd;border-radius:20pt;padding:1.5mm 4mm;font-size:10pt;background:#fafafa}
+  .sl{font-size:8.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:1.5mm}
+  .sc{font-size:11pt;white-space:pre-wrap;line-height:1.6}
+  .sec{margin-bottom:5mm}
+  hr{border:none;border-top:.5pt solid #ddd;margin:4mm 0}
+  .footer{margin-top:8mm;padding-top:3mm;border-top:.5pt solid #ddd;font-size:8pt;color:#bbb;display:flex;justify-content:space-between}
+  .tl-item{display:flex;gap:5mm;margin-bottom:6mm}
+  .tl-date{min-width:26mm;font-size:9pt;font-weight:700;font-family:monospace;color:#555;padding-top:1mm}
+  .tl-body{flex:1;border-left:.5pt solid #ddd;padding-left:5mm}
+  .tl-summary{font-size:11pt;margin-bottom:2mm}
+  .tl-sub{font-size:9.5pt;color:#555;margin-bottom:1.5mm}
+  .badge{display:inline-block;border:.5pt solid #ddd;border-radius:20pt;padding:1mm 3.5mm;font-size:9pt;margin-right:2mm;margin-bottom:2mm}
+  @media print{@page{margin:0;size:A4}body{padding:15mm 20mm}}
+`
+
+function openPrintWindow(html: string) {
+  const win = window.open("", "_blank")
+  if (!win) {
+    toast.error("Pop-up blocked — please allow pop-ups to print.")
+    return
+  }
+  win.document.write(html)
+  win.document.close()
+  setTimeout(() => win.print(), 400)
+}
+
+function printRecord(record: MedicalRecord) {
+  const d = (s: string) =>
+    new Date(s).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+
+  const vchip = (label: string, val: number | undefined, unit: string) =>
+    val != null ? `<span class="vc">${label} ${val}${unit}</span>` : ""
+
+  const sec = (label: string, content: string | undefined) =>
+    content
+      ? `<hr><div class="sec"><div class="sl">${label}</div><div class="sc">${esc(content)}</div></div>`
+      : ""
+
+  const vitalsHTML = record.vitalSigns
+    ? `<div class="vitals">
+        ${vchip("T", record.vitalSigns.temperature, "°C")}
+        ${vchip("HR", record.vitalSigns.heartRate, " bpm")}
+        ${vchip("W", record.vitalSigns.weight, " kg")}
+        ${vchip("RR", record.vitalSigns.respiratoryRate, " /min")}
+        ${record.vitalSigns.bloodPressureSystolic != null && record.vitalSigns.bloodPressureDiastolic != null
+          ? `<span class="vc">BP ${record.vitalSigns.bloodPressureSystolic}/${record.vitalSigns.bloodPressureDiastolic} mmHg</span>`
+          : ""}
+      </div>`
+    : ""
+
+  openPrintWindow(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Medical Record — ${esc(record.patient.name)}</title>
+<style>${PRINT_CSS}</style></head><body>
+<div class="hdr">
+  <div><div class="clinic">Vet Clinic</div><div class="clinic-sub">Medical Record</div></div>
+  <div class="meta">Printed: ${d(new Date().toISOString())}<br>Visit Date: ${d(record.visitDate)}</div>
+</div>
+<h1>${esc(record.patient.name)}</h1>
+<div class="subtitle">${esc(record.patient.species)}${record.patient.owner ? ` &middot; Owner: ${esc(record.patient.owner.name)}` : ""}</div>
+<div class="pbox">
+  <div><div class="pf-l">Visit Date</div><div class="pf-v">${d(record.visitDate)}</div></div>
+  ${record.createdBy ? `<div><div class="pf-l">Veterinarian</div><div class="pf-v">${esc(record.createdBy.name)}</div></div>` : ""}
+  ${record.bodyConditionScore != null ? `<div><div class="pf-l">BCS</div><div class="pf-v">${record.bodyConditionScore}/9</div></div>` : ""}
+  ${record.nextVisitRecommended ? `<div><div class="pf-l">Next Visit</div><div class="pf-v">${d(record.nextVisitRecommended)}</div></div>` : ""}
+</div>
+${vitalsHTML}
+<div class="sec"><div class="sl">Summary</div><div class="sc">${esc(record.summary)}</div></div>
+${sec("Diagnoses", record.diagnoses)}
+${sec("Treatments", record.treatments)}
+${sec("Prescriptions", record.prescriptions)}
+<div class="footer"><span>Vet Clinic Management System</span><span>Confidential — For clinical use only</span></div>
+</body></html>`)
+}
+
+function printHistory(
+  patient: Patient,
+  records: MedicalRecord[],
+  labResults: LabResult[],
+  prescriptions: Prescription[]
+) {
+  const d = (s: string) =>
+    new Date(s).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+
+  const sorted = [...records].sort(
+    (a, b) => new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime()
+  )
+
+  const recordsHTML = sorted.length
+    ? sorted
+        .map(
+          (r) => `
+      <div class="tl-item">
+        <div class="tl-date">${r.visitDate.slice(0, 10)}</div>
+        <div class="tl-body">
+          ${r.vitalSigns
+            ? `<div class="vitals" style="margin-bottom:2mm">
+                ${r.vitalSigns.temperature != null ? `<span class="badge">T ${r.vitalSigns.temperature}°C</span>` : ""}
+                ${r.vitalSigns.heartRate != null ? `<span class="badge">HR ${r.vitalSigns.heartRate} bpm</span>` : ""}
+                ${r.vitalSigns.weight != null ? `<span class="badge">W ${r.vitalSigns.weight} kg</span>` : ""}
+              </div>`
+            : ""}
+          <div class="tl-summary">${esc(r.summary)}</div>
+          ${r.diagnoses ? `<div class="tl-sub"><strong>Diagnoses:</strong> ${esc(r.diagnoses)}</div>` : ""}
+          ${r.treatments ? `<div class="tl-sub"><strong>Treatments:</strong> ${esc(r.treatments)}</div>` : ""}
+        </div>
+      </div>`
+        )
+        .join("")
+    : "<p style='color:#888;font-size:10pt'>No records.</p>"
+
+  const labHTML = labResults.length
+    ? labResults
+        .map(
+          (lr) =>
+            `<div style="display:flex;gap:4mm;margin-bottom:3mm">
+              <div style="min-width:26mm;font-size:9pt;color:#555">${lr.testDate.slice(0, 10)}</div>
+              <div>${esc(lr.panel.name)} &nbsp;
+                <span class="badge">${esc(lr.status)}</span>
+                ${lr.criticalCount > 0 ? `<span class="badge" style="color:#b91c1c">${lr.criticalCount} critical</span>` : ""}
+                ${lr.abnormalCount > 0 ? `<span class="badge" style="color:#d97706">${lr.abnormalCount} abnormal</span>` : ""}
+              </div>
+            </div>`
+        )
+        .join("")
+    : "<p style='color:#888;font-size:10pt'>No lab results.</p>"
+
+  const rxHTML = prescriptions.length
+    ? prescriptions
+        .map((rx) => {
+          const expired = new Date(rx.expiresAt) < new Date()
+          return `<div style="display:flex;gap:4mm;margin-bottom:3mm">
+            <div style="min-width:26mm;font-size:9pt;color:#555">${rx.prescribedAt.slice(0, 10)}</div>
+            <div>${esc(rx.medication)}
+              <span class="badge" style="color:${expired ? "#b91c1c" : "#065f46"}">${expired ? "Expired" : "Active"}</span>
+              <div style="font-size:9.5pt;color:#555;margin-top:1mm">${esc(rx.dosage)} &middot; ${esc(rx.frequency)} &middot; ${esc(rx.duration)}</div>
+            </div>
+          </div>`
+        })
+        .join("")
+    : "<p style='color:#888;font-size:10pt'>No prescriptions.</p>"
+
+  openPrintWindow(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Medical History — ${esc(patient.name)}</title>
+<style>${PRINT_CSS}</style></head><body>
+<div class="hdr">
+  <div><div class="clinic">Vet Clinic</div><div class="clinic-sub">Complete Medical History</div></div>
+  <div class="meta">Printed: ${d(new Date().toISOString())}</div>
+</div>
+<h1>${esc(patient.name)}</h1>
+<div class="subtitle">${esc(patient.species)}${patient.owner ? ` &middot; Owner: ${esc(patient.owner.name)}` : ""}</div>
+<div class="pbox">
+  <div><div class="pf-l">Records</div><div class="pf-v">${records.length}</div></div>
+  <div><div class="pf-l">Lab Results</div><div class="pf-v">${labResults.length}</div></div>
+  <div><div class="pf-l">Prescriptions</div><div class="pf-v">${prescriptions.length}</div></div>
+</div>
+<div class="sec"><div class="sl" style="font-size:11pt;margin-bottom:4mm">Visit Records</div>${recordsHTML}</div>
+<hr>
+<div class="sec"><div class="sl" style="font-size:11pt;margin-bottom:4mm">Lab Results</div>${labHTML}</div>
+<hr>
+<div class="sec"><div class="sl" style="font-size:11pt;margin-bottom:4mm">Prescriptions</div>${rxHTML}</div>
+<div class="footer"><span>Vet Clinic Management System</span><span>Confidential — For clinical use only</span></div>
+</body></html>`)
+}
+
 // ─── page ────────────────────────────────────────────────────────────────────
 
 type Selected =
@@ -386,14 +572,29 @@ function MedicalHistoryPage() {
           className="max-w-sm"
         />
         {patientFilter && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSelected({ type: "patient-info" })}
-          >
-            <Info className="mr-2 h-4 w-4" />
-            Patient Info
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelected({ type: "patient-info" })}
+            >
+              <Info className="mr-2 h-4 w-4" />
+              Patient Info
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const patient = patients?.find((p) => p.id === patientFilter)
+                if (patient) {
+                  printHistory(patient, records ?? [], labResults ?? [], prescriptions ?? [])
+                }
+              }}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Print History
+            </Button>
+          </>
         )}
       </div>
 
@@ -955,6 +1156,7 @@ function MedicalRecordDrawer({
   onClose: () => void
 }) {
   const { data: record, isLoading } = useMedicalRecordDetail(selectedId)
+  const [shareOpen, setShareOpen] = useState(false)
 
   return (
     <DrawerShell open={!!selectedId} onClose={onClose}>
@@ -976,10 +1178,27 @@ function MedicalRecordDrawer({
             </div>
           </div>
         )}
-        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1 shrink-0">
+          {!isLoading && record && (
+            <>
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="Print record" onClick={() => printRecord(record)}>
+                <Printer className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="Share" onClick={() => setShareOpen(true)}>
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
+      <ShareModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        title={record ? `${record.patient.name} — ${formatDate(record.visitDate)}` : "Medical Record"}
+      />
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto">
@@ -1341,6 +1560,134 @@ function StatTile({ label, value, colorClass }: { label: string; value: number; 
       <p className={`text-2xl font-bold tabular-nums ${colorClass}`}>{value}</p>
       <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
     </div>
+  )
+}
+
+// ─── share modal ──────────────────────────────────────────────────────────────
+
+const SHARE_CHANNELS = [
+  { id: "slack",    name: "Slack",   abbr: "Sl", bg: "#4A154B", fg: "#fff" },
+  { id: "teams",    name: "Teams",   abbr: "Te", bg: "#5B5EA6", fg: "#fff" },
+  { id: "whatsapp", name: "WhatsApp",abbr: "WA", bg: "#25D366", fg: "#fff" },
+  { id: "telegram", name: "Telegram",abbr: "Tg", bg: "#229ED9", fg: "#fff" },
+] as const
+
+function ShareModal({
+  open,
+  onClose,
+  title,
+}: {
+  open: boolean
+  onClose: () => void
+  title: string
+}) {
+  function handleChannel(id: string) {
+    toast.info(`${id.charAt(0).toUpperCase() + id.slice(1)} integration coming soon.`)
+    onClose()
+  }
+
+  function handleCopyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      toast.success("Link copied to clipboard.")
+    })
+    onClose()
+  }
+
+  function handleEmail() {
+    const subject = encodeURIComponent(`Medical Record: ${title}`)
+    const body = encodeURIComponent(`Please find the medical record attached.\n\nRecord: ${title}\nLink: ${window.location.href}`)
+    window.open(`mailto:?subject=${subject}&body=${body}`)
+    onClose()
+  }
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <motion.div
+            key="share-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 bg-black/50"
+            onClick={onClose}
+          />
+          <motion.div
+            key="share-modal"
+            initial={{ opacity: 0, scale: 0.95, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            className="relative z-10 w-full max-w-sm"
+          >
+            <div className="rounded-2xl border bg-card p-6 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="font-semibold text-foreground">Share Record</h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground truncate max-w-[220px]">{title}</p>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="rounded-sm opacity-60 transition-opacity hover:opacity-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Chat app channels (scaffolded) */}
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Send via
+              </p>
+              <div className="grid grid-cols-4 gap-3 mb-5">
+                {SHARE_CHANNELS.map((ch) => (
+                  <button
+                    key={ch.id}
+                    onClick={() => handleChannel(ch.id)}
+                    className="flex flex-col items-center gap-2 rounded-xl border p-3 text-xs font-medium transition-colors hover:bg-accent/50"
+                  >
+                    <span
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold"
+                      style={{ background: ch.bg, color: ch.fg }}
+                    >
+                      {ch.abbr}
+                    </span>
+                    {ch.name}
+                  </button>
+                ))}
+              </div>
+
+              <Separator className="mb-4" />
+
+              {/* Implemented actions */}
+              <div className="space-y-2">
+                <button
+                  onClick={handleEmail}
+                  className="flex w-full items-center gap-3 rounded-lg border px-4 py-2.5 text-sm transition-colors hover:bg-accent/50"
+                >
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  Send via Email
+                </button>
+                <button
+                  onClick={handleCopyLink}
+                  className="flex w-full items-center gap-3 rounded-lg border px-4 py-2.5 text-sm transition-colors hover:bg-accent/50"
+                >
+                  <Link2 className="h-4 w-4 text-muted-foreground" />
+                  Copy Link
+                </button>
+              </div>
+
+              <p className="mt-4 text-center text-xs text-muted-foreground">
+                Chat integrations can be configured in{" "}
+                <span className="underline underline-offset-2 cursor-pointer hover:text-foreground">
+                  Admin → Integrations
+                </span>
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   )
 }
 
