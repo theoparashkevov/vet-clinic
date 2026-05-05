@@ -13,8 +13,17 @@ import {
   Weight,
   ClipboardList,
   User,
+  FlaskConical,
+  Pill,
+  X,
+  RefreshCcw,
+  ShieldAlert,
+  CheckCircle2,
+  Clock,
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { fetchWithAuth } from "../../lib/api"
+import { PatientSearch } from "../../components/patients/PatientSearch"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
@@ -23,12 +32,22 @@ import { Label } from "../../components/ui/label"
 import { Textarea } from "../../components/ui/textarea"
 import { Skeleton } from "../../components/ui/skeleton"
 import { Separator } from "../../components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../components/ui/table"
 import { toast } from "sonner"
-import { PatientSearch } from "../../components/patients/PatientSearch"
 
 export const Route = createFileRoute("/_authenticated/medical-records")({
-  component: MedicalRecordsPage,
+  component: MedicalHistoryPage,
 })
+
+// ─── types ───────────────────────────────────────────────────────────────────
 
 interface Patient {
   id: string
@@ -38,7 +57,6 @@ interface Patient {
 }
 
 interface VitalSigns {
-  id?: string
   temperature?: number
   heartRate?: number
   respiratoryRate?: number
@@ -47,14 +65,12 @@ interface VitalSigns {
   weight?: number
   bodyConditionScore?: number
   notes?: string
-  recordedAt?: string
 }
 
 interface MedicalRecord {
   id: string
   patientId: string
   patient: Patient
-  appointmentId?: string
   visitDate: string
   summary: string
   diagnoses?: string
@@ -62,22 +78,59 @@ interface MedicalRecord {
   prescriptions?: string
   bodyConditionScore?: number
   nextVisitRecommended?: string
-  createdBy?: { id: string; name: string }
-  updatedBy?: { id: string; name: string }
+  createdBy?: { name: string }
   vitalSigns?: VitalSigns
   createdAt: string
-  updatedAt: string
+}
+
+interface LabResult {
+  id: string
+  patientId: string
+  patient: Patient
+  panel: { id: string; name: string; category: string }
+  testDate: string
+  status: string
+  abnormalCount: number
+  criticalCount: number
+  externalLab?: string
+  reviewedBy?: string
+  reviewedDate?: string
+  interpretation?: string
+  notes?: string
+  values: Array<{
+    id: string
+    displayValue: string
+    status: string
+    refRangeMin?: number
+    refRangeMax?: number
+    test: { id: string; name: string; abbreviation?: string; unit: string }
+  }>
+}
+
+interface Prescription {
+  id: string
+  patientId: string
+  patient: { name: string; species: string }
+  medication: string
+  dosage: string
+  frequency: string
+  duration: string
+  instructions?: string
+  prescribedAt: string
+  expiresAt: string
+  refillsTotal: number
+  refillsRemaining: number
+  isControlled: boolean
+  veterinarian?: string
+  notes?: string
 }
 
 interface PaginatedResponse<T> {
   data: T[]
-  meta: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-  }
+  meta: { total: number; page: number; limit: number; totalPages: number }
 }
+
+// ─── hooks ───────────────────────────────────────────────────────────────────
 
 function usePatients() {
   return useQuery({
@@ -102,7 +155,7 @@ function useMedicalRecords(patientId?: string) {
   })
 }
 
-function useMedicalRecord(id: string | null) {
+function useMedicalRecordDetail(id: string | null) {
   return useQuery({
     queryKey: ["medical-records", "detail", id],
     queryFn: async (): Promise<MedicalRecord> => {
@@ -110,6 +163,69 @@ function useMedicalRecord(id: string | null) {
       return res.data as MedicalRecord
     },
     enabled: !!id,
+  })
+}
+
+function useLabResults(patientId?: string) {
+  return useQuery({
+    queryKey: ["lab-results", "list", patientId],
+    queryFn: async (): Promise<LabResult[]> => {
+      const url = patientId
+        ? `/v1/lab-results?patientId=${patientId}&limit=100`
+        : "/v1/lab-results?limit=100"
+      const res = (await fetchWithAuth(url)) as PaginatedResponse<LabResult>
+      return res.data ?? []
+    },
+  })
+}
+
+function useLabResultDetail(id: string | null) {
+  return useQuery({
+    queryKey: ["lab-results", "detail", id],
+    queryFn: async (): Promise<LabResult> => {
+      const res = await fetchWithAuth(`/v1/lab-results/${id}`)
+      return res.data as LabResult
+    },
+    enabled: !!id,
+  })
+}
+
+function usePrescriptions(patientId?: string) {
+  return useQuery({
+    queryKey: ["prescriptions", "list", patientId],
+    queryFn: async (): Promise<Prescription[]> => {
+      const url = patientId
+        ? `/v1/prescriptions?patientId=${patientId}&limit=100`
+        : "/v1/prescriptions?limit=100"
+      const res = (await fetchWithAuth(url)) as PaginatedResponse<Prescription>
+      return res.data ?? []
+    },
+  })
+}
+
+function usePrescriptionDetail(id: string | null) {
+  return useQuery({
+    queryKey: ["prescriptions", "detail", id],
+    queryFn: async (): Promise<Prescription> => {
+      const res = await fetchWithAuth(`/v1/prescriptions/${id}`)
+      return res.data as Prescription
+    },
+    enabled: !!id,
+  })
+}
+
+function useRefillPrescription() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetchWithAuth(`/v1/prescriptions/${id}/refill`, { method: "POST" })
+      return res.data as Prescription
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prescriptions"] })
+      toast.success("Prescription refilled")
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to refill"),
   })
 }
 
@@ -134,7 +250,6 @@ function useCreateMedicalRecord() {
         weight?: number
         bodyConditionScore?: number
         notes?: string
-        recordedAt?: string
       }
     }) => {
       const res = await fetchWithAuth("/v1/medical-records", {
@@ -145,13 +260,13 @@ function useCreateMedicalRecord() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["medical-records"] })
-      toast.success("Medical record created successfully")
+      toast.success("Medical record created")
     },
-    onError: (err: Error) => {
-      toast.error(err.message || "Failed to create medical record")
-    },
+    onError: (err: Error) => toast.error(err.message || "Failed to create record"),
   })
 }
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -161,38 +276,81 @@ function formatDate(dateStr: string) {
   })
 }
 
-function MedicalRecordsPage() {
-  const [view, setView] = useState<"list" | "detail" | "create">("list")
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [patientFilter, setPatientFilter] = useState<string>("")
+function isExpired(expiresAt: string) {
+  return new Date(expiresAt) < new Date()
+}
+
+function getLabStatusVariant(status: string) {
+  switch (status.toLowerCase()) {
+    case "normal": return "default"
+    case "abnormal": return "secondary"
+    case "critical":
+    case "critical_low":
+    case "critical_high": return "destructive"
+    default: return "outline"
+  }
+}
+
+function getValueStatusColor(status: string) {
+  switch (status.toLowerCase()) {
+    case "normal": return "text-emerald-600 dark:text-emerald-400"
+    case "low":
+    case "high": return "text-amber-600 dark:text-amber-400"
+    case "critical_low":
+    case "critical_high":
+    case "critical": return "text-red-600 dark:text-red-400"
+    default: return "text-foreground"
+  }
+}
+
+function getValueStatusBg(status: string) {
+  switch (status.toLowerCase()) {
+    case "normal": return "bg-emerald-50 dark:bg-emerald-900/20"
+    case "low":
+    case "high": return "bg-amber-50 dark:bg-amber-900/20"
+    case "critical_low":
+    case "critical_high":
+    case "critical": return "bg-red-50 dark:bg-red-900/20"
+    default: return "bg-transparent"
+  }
+}
+
+function TabCount({ n }: { n: number }) {
+  if (!n) return null
+  return (
+    <span className="ml-1.5 rounded-full bg-muted-foreground/20 px-1.5 py-0.5 text-xs leading-none tabular-nums">
+      {n}
+    </span>
+  )
+}
+
+// ─── page ────────────────────────────────────────────────────────────────────
+
+type Selected =
+  | { type: "record"; id: string }
+  | { type: "lab"; id: string }
+  | { type: "rx"; id: string }
+  | null
+
+function MedicalHistoryPage() {
+  const [view, setView] = useState<"list" | "create">("list")
+  const [patientFilter, setPatientFilter] = useState("")
+  const [selected, setSelected] = useState<Selected>(null)
 
   const { data: patients } = usePatients()
-  const { data: records, isLoading } = useMedicalRecords(patientFilter || undefined)
-  const { data: recordDetail } = useMedicalRecord(selectedId)
+  const { data: records, isLoading: recordsLoading } = useMedicalRecords(patientFilter || undefined)
+  const { data: labResults, isLoading: labLoading } = useLabResults(patientFilter || undefined)
+  const { data: prescriptions, isLoading: rxLoading } = usePrescriptions(patientFilter || undefined)
   const createMutation = useCreateMedicalRecord()
-
-  const handleViewDetail = (id: string) => {
-    setSelectedId(id)
-    setView("detail")
-  }
-
-  const handleBack = () => {
-    setView("list")
-    setSelectedId(null)
-  }
-
-  if (view === "detail" && recordDetail) {
-    return <MedicalRecordDetail record={recordDetail} onBack={handleBack} />
-  }
 
   if (view === "create") {
     return (
       <CreateMedicalRecordForm
         patients={patients ?? []}
-        onCancel={handleBack}
+        onCancel={() => setView("list")}
         onSubmit={async (data) => {
           await createMutation.mutateAsync(data)
-          handleBack()
+          setView("list")
         }}
         isSubmitting={createMutation.isPending}
       />
@@ -200,14 +358,13 @@ function MedicalRecordsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Medical Records
-          </h1>
-          <p className="mt-1 text-muted-foreground">
-            View and manage patient visit records.
+          <h1 className="text-2xl font-bold tracking-tight">Medical History</h1>
+          <p className="text-muted-foreground">
+            Complete patient history — visit records, lab results, and prescriptions.
           </p>
         </div>
         <Button onClick={() => setView("create")}>
@@ -216,297 +373,686 @@ function MedicalRecordsPage() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-3">
-        <PatientSearch
-          patients={patients ?? []}
-          value={patientFilter}
-          onChange={setPatientFilter}
-          placeholder="Filter by patient…"
-          className="max-w-sm flex-1"
-        />
-      </div>
+      {/* Patient filter */}
+      <PatientSearch
+        patients={patients ?? []}
+        value={patientFilter}
+        onChange={setPatientFilter}
+        placeholder="Filter by patient…"
+        className="max-w-sm"
+      />
 
-      <div className="space-y-4">
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <Skeleton className="h-6 w-48" />
-                <Skeleton className="mt-2 h-4 w-96" />
-              </CardContent>
-            </Card>
-          ))
-        ) : records && records.length > 0 ? (
-          records.map((record) => (
-            <MedicalRecordCard
-              key={record.id}
-              record={record}
-              onClick={() => handleViewDetail(record.id)}
-            />
-          ))
-        ) : (
+      {/* Tabs */}
+      <Tabs defaultValue="records">
+        <TabsList>
+          <TabsTrigger value="records" className="gap-1.5">
+            <FileText className="h-3.5 w-3.5" />
+            Records
+            <TabCount n={records?.length ?? 0} />
+          </TabsTrigger>
+          <TabsTrigger value="lab" className="gap-1.5">
+            <FlaskConical className="h-3.5 w-3.5" />
+            Lab Results
+            <TabCount n={labResults?.length ?? 0} />
+          </TabsTrigger>
+          <TabsTrigger value="rx" className="gap-1.5">
+            <Pill className="h-3.5 w-3.5" />
+            Prescriptions
+            <TabCount n={prescriptions?.length ?? 0} />
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ── Records ── */}
+        <TabsContent value="records" className="mt-4">
+          <div className="space-y-3">
+            {recordsLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i}><CardContent className="p-5">
+                  <Skeleton className="h-5 w-48" /><Skeleton className="mt-2 h-4 w-full" />
+                </CardContent></Card>
+              ))
+            ) : records && records.length > 0 ? (
+              records.map((r) => (
+                <MedicalRecordRow
+                  key={r.id}
+                  record={r}
+                  onClick={() => setSelected({ type: "record", id: r.id })}
+                />
+              ))
+            ) : (
+              <EmptyState icon={FileText} text="No medical records found." action={
+                <Button variant="outline" size="sm" onClick={() => setView("create")}>
+                  <Plus className="mr-2 h-4 w-4" />Create first record
+                </Button>
+              } />
+            )}
+          </div>
+        </TabsContent>
+
+        {/* ── Lab Results ── */}
+        <TabsContent value="lab" className="mt-4">
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <FileText className="h-10 w-10 text-muted-foreground/50" />
-              <p className="mt-3 text-sm text-muted-foreground">
-                No medical records found.
-              </p>
-              <Button variant="outline" size="sm" className="mt-4" onClick={() => setView("create")}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create first record
-              </Button>
+            <CardContent className="p-0">
+              {labLoading ? (
+                <div className="space-y-3 p-5">
+                  {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+                </div>
+              ) : labResults && labResults.length > 0 ? (
+                <div className="divide-y">
+                  {labResults.map((lr) => (
+                    <div
+                      key={lr.id}
+                      className="flex cursor-pointer items-center justify-between px-5 py-4 transition-colors hover:bg-accent/50"
+                      onClick={() => setSelected({ type: "lab", id: lr.id })}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                          <FlaskConical className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">{lr.panel.name}</p>
+                            <Badge variant={getLabStatusVariant(lr.status)} className="text-xs">{lr.status}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{lr.patient.name} · {formatDate(lr.testDate)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs">
+                        {lr.criticalCount > 0 && (
+                          <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+                            <Activity className="h-3.5 w-3.5" />{lr.criticalCount} critical
+                          </span>
+                        )}
+                        {lr.abnormalCount > 0 && lr.criticalCount === 0 && (
+                          <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                            <Activity className="h-3.5 w-3.5" />{lr.abnormalCount} abnormal
+                          </span>
+                        )}
+                        {lr.abnormalCount === 0 && lr.criticalCount === 0 && (
+                          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="h-3.5 w-3.5" />All normal
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState icon={FlaskConical} text="No lab results found." />
+              )}
             </CardContent>
           </Card>
-        )}
-      </div>
+        </TabsContent>
+
+        {/* ── Prescriptions ── */}
+        <TabsContent value="rx" className="mt-4">
+          <Card>
+            <CardContent className="p-0">
+              {rxLoading ? (
+                <div className="space-y-3 p-5">
+                  {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+                </div>
+              ) : prescriptions && prescriptions.length > 0 ? (
+                <div className="divide-y">
+                  {prescriptions.map((rx) => {
+                    const expired = isExpired(rx.expiresAt)
+                    return (
+                      <div
+                        key={rx.id}
+                        className="flex cursor-pointer items-center justify-between px-5 py-4 transition-colors hover:bg-accent/50"
+                        onClick={() => setSelected({ type: "rx", id: rx.id })}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                            <Pill className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium">{rx.medication}</p>
+                              {rx.isControlled && <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {rx.patient.name} · {formatDate(rx.prescribedAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          {expired ? (
+                            <span className="text-red-600 dark:text-red-400">Expired</span>
+                          ) : (
+                            <span className="text-emerald-600 dark:text-emerald-400">Active</span>
+                          )}
+                          {rx.refillsRemaining > 0 && (
+                            <span className="text-muted-foreground">
+                              · {rx.refillsRemaining} refill{rx.refillsRemaining !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <EmptyState icon={Pill} text="No prescriptions found." />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Drawers */}
+      <MedicalRecordDrawer
+        selectedId={selected?.type === "record" ? selected.id : null}
+        onClose={() => setSelected(null)}
+      />
+      <LabResultDrawer
+        selectedId={selected?.type === "lab" ? selected.id : null}
+        onClose={() => setSelected(null)}
+      />
+      <PrescriptionDrawer
+        selectedId={selected?.type === "rx" ? selected.id : null}
+        onClose={() => setSelected(null)}
+      />
     </div>
   )
 }
 
-function MedicalRecordCard({
-  record,
-  onClick,
-}: {
-  record: MedicalRecord
-  onClick: () => void
-}) {
+// ─── list row components ──────────────────────────────────────────────────────
+
+function MedicalRecordRow({ record, onClick }: { record: MedicalRecord; onClick: () => void }) {
   return (
-    <Card
-      className="cursor-pointer transition-colors hover:bg-accent/50"
+    <div
+      className="flex cursor-pointer items-start gap-4 rounded-xl border bg-card px-4 py-3.5 transition-colors hover:bg-accent/50"
       onClick={onClick}
     >
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-0.5">
+        <Calendar className="h-4 w-4 text-primary" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-medium">{formatDate(record.visitDate)}</p>
+          <Badge variant="secondary" className="text-xs">{record.patient.name}</Badge>
+          {record.diagnoses && (
+            <Badge variant="outline" className="text-xs">
+              <Stethoscope className="mr-1 h-3 w-3" />Diagnosis
+            </Badge>
+          )}
+          {record.vitalSigns?.temperature && (
+            <Badge variant="outline" className="text-xs">
+              <Thermometer className="mr-1 h-3 w-3" />{record.vitalSigns.temperature}°C
+            </Badge>
+          )}
+        </div>
+        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{record.summary}</p>
+      </div>
+      {record.nextVisitRecommended && (
+        <div className="shrink-0 text-right text-xs text-muted-foreground">
+          <p className="font-medium">Next visit</p>
+          <p>{formatDate(record.nextVisitRecommended)}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function EmptyState({
+  icon: Icon,
+  text,
+  action,
+}: {
+  icon: React.ElementType
+  text: string
+  action?: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+      <Icon className="h-10 w-10 opacity-30" />
+      <p className="mt-3 text-sm">{text}</p>
+      {action && <div className="mt-4">{action}</div>}
+    </div>
+  )
+}
+
+// ─── drawers ─────────────────────────────────────────────────────────────────
+
+function DrawerShell({
+  open,
+  onClose,
+  width = "max-w-xl",
+  children,
+}: {
+  open: boolean
+  onClose: () => void
+  width?: string
+  children: React.ReactNode
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={onClose}
+          />
+          <motion.div
+            key="drawer"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 280 }}
+            className={`fixed right-0 top-0 z-50 flex h-full w-full ${width} flex-col bg-background shadow-2xl`}
+          >
+            {children}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  )
+}
+
+function MedicalRecordDrawer({
+  selectedId,
+  onClose,
+}: {
+  selectedId: string | null
+  onClose: () => void
+}) {
+  const { data: record, isLoading } = useMedicalRecordDetail(selectedId)
+
+  return (
+    <DrawerShell open={!!selectedId} onClose={onClose}>
+      {/* Header */}
+      <div className="flex items-start justify-between border-b px-5 py-4">
+        {isLoading || !record ? (
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-11 w-11 rounded-full" />
+            <div className="space-y-1.5"><Skeleton className="h-5 w-36" /><Skeleton className="h-4 w-24" /></div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
               <Calendar className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-foreground">
-                  {formatDate(record.visitDate)}
-                </p>
-                <Badge variant="secondary" className="text-xs">
-                  {record.patient.name}
-                </Badge>
-              </div>
-              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                {record.summary}
-              </p>
-              {record.diagnoses && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  <span className="font-medium">Diagnoses:</span> {record.diagnoses}
-                </p>
-              )}
+              <h2 className="text-lg font-semibold leading-tight">{formatDate(record.visitDate)}</h2>
+              <p className="text-sm text-muted-foreground">{record.patient.name}</p>
             </div>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            {record.vitalSigns?.temperature && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Thermometer className="h-3 w-3" />
-                {record.vitalSigns.temperature}°C
-              </div>
-            )}
-            {record.vitalSigns?.heartRate && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Heart className="h-3 w-3" />
-                {record.vitalSigns.heartRate} bpm
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function MedicalRecordDetail({
-  record,
-  onBack,
-}: {
-  record: MedicalRecord
-  onBack: () => void
-}) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to list
+        )}
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClose}>
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Medical Record
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          {record.patient.name} · {formatDate(record.visitDate)}
-        </p>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Stethoscope className="h-4 w-4 text-primary" />
-                Visit Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-foreground whitespace-pre-wrap">
-                {record.summary}
-              </p>
-            </CardContent>
-          </Card>
-
-          {record.diagnoses && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <ClipboardList className="h-4 w-4 text-primary" />
-                  Diagnoses
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-foreground whitespace-pre-wrap">
-                  {record.diagnoses}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {record.treatments && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Activity className="h-4 w-4 text-primary" />
-                  Treatments
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-foreground whitespace-pre-wrap">
-                  {record.treatments}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {record.prescriptions && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileText className="h-4 w-4 text-primary" />
-                  Prescriptions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-foreground whitespace-pre-wrap">
-                  {record.prescriptions}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Patient Info</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">{record.patient.name}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">{formatDate(record.visitDate)}</span>
-              </div>
-              {record.createdBy && (
-                <div className="flex items-center gap-3">
-                  <Stethoscope className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">{record.createdBy.name}</span>
-                </div>
-              )}
-              {record.bodyConditionScore && (
-                <div className="flex items-center gap-3">
-                  <Weight className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">BCS: {record.bodyConditionScore}/9</span>
-                </div>
-              )}
-              {record.nextVisitRecommended && (
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">
-                    Next visit: {formatDate(record.nextVisitRecommended)}
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto">
+        {isLoading || !record ? (
+          <div className="space-y-3 p-5">
+            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
+          </div>
+        ) : (
+          <div className="space-y-5 px-5 py-4">
+            {/* Vitals chips */}
+            {record.vitalSigns && (
+              <div className="flex flex-wrap gap-2">
+                {record.vitalSigns.temperature != null && (
+                  <span className="flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1 text-xs">
+                    <Thermometer className="h-3.5 w-3.5 text-muted-foreground" />{record.vitalSigns.temperature}°C
                   </span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+                {record.vitalSigns.heartRate != null && (
+                  <span className="flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1 text-xs">
+                    <Heart className="h-3.5 w-3.5 text-muted-foreground" />{record.vitalSigns.heartRate} bpm
+                  </span>
+                )}
+                {record.vitalSigns.weight != null && (
+                  <span className="flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1 text-xs">
+                    <Weight className="h-3.5 w-3.5 text-muted-foreground" />{record.vitalSigns.weight} kg
+                  </span>
+                )}
+                {record.vitalSigns.respiratoryRate != null && (
+                  <span className="flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1 text-xs">
+                    <Activity className="h-3.5 w-3.5 text-muted-foreground" />{record.vitalSigns.respiratoryRate} /min
+                  </span>
+                )}
+              </div>
+            )}
 
-          {record.vitalSigns && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Vital Signs</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {record.vitalSigns.temperature !== undefined && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Temperature</span>
-                    <span className="text-sm font-medium">{record.vitalSigns.temperature}°C</span>
-                  </div>
+            {/* Summary */}
+            <section>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Summary</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{record.summary}</p>
+            </section>
+
+            {record.diagnoses && (
+              <>
+                <Separator />
+                <section>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span className="inline-flex items-center gap-1"><ClipboardList className="h-3 w-3" />Diagnoses</span>
+                  </p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{record.diagnoses}</p>
+                </section>
+              </>
+            )}
+
+            {record.treatments && (
+              <>
+                <Separator />
+                <section>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span className="inline-flex items-center gap-1"><Stethoscope className="h-3 w-3" />Treatments</span>
+                  </p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{record.treatments}</p>
+                </section>
+              </>
+            )}
+
+            {record.prescriptions && (
+              <>
+                <Separator />
+                <section>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span className="inline-flex items-center gap-1"><Pill className="h-3 w-3" />Prescriptions</span>
+                  </p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{record.prescriptions}</p>
+                </section>
+              </>
+            )}
+
+            <Separator />
+
+            {/* Meta */}
+            <section>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Info</p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2"><User className="h-4 w-4 shrink-0" />{record.patient.name}</div>
+                <div className="flex items-center gap-2"><Calendar className="h-4 w-4 shrink-0" />{formatDate(record.visitDate)}</div>
+                {record.createdBy && (
+                  <div className="flex items-center gap-2"><Stethoscope className="h-4 w-4 shrink-0" />{record.createdBy.name}</div>
                 )}
-                {record.vitalSigns.heartRate !== undefined && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Heart Rate</span>
-                    <span className="text-sm font-medium">{record.vitalSigns.heartRate} bpm</span>
-                  </div>
+                {record.bodyConditionScore != null && (
+                  <div className="flex items-center gap-2"><Weight className="h-4 w-4 shrink-0" />BCS {record.bodyConditionScore}/9</div>
                 )}
-                {record.vitalSigns.respiratoryRate !== undefined && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Respiratory Rate</span>
-                    <span className="text-sm font-medium">{record.vitalSigns.respiratoryRate} /min</span>
-                  </div>
+                {record.nextVisitRecommended && (
+                  <div className="flex items-center gap-2"><Calendar className="h-4 w-4 shrink-0" />Next visit: {formatDate(record.nextVisitRecommended)}</div>
                 )}
-                {(record.vitalSigns.bloodPressureSystolic !== undefined ||
-                  record.vitalSigns.bloodPressureDiastolic !== undefined) && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Blood Pressure</span>
-                    <span className="text-sm font-medium">
-                      {record.vitalSigns.bloodPressureSystolic ?? "—"}/
-                      {record.vitalSigns.bloodPressureDiastolic ?? "—"} mmHg
-                    </span>
-                  </div>
-                )}
-                {record.vitalSigns.weight !== undefined && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Weight</span>
-                    <span className="text-sm font-medium">{record.vitalSigns.weight} kg</span>
-                  </div>
-                )}
-                {record.vitalSigns.bodyConditionScore !== undefined && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Body Condition</span>
-                    <span className="text-sm font-medium">{record.vitalSigns.bodyConditionScore}/9</span>
-                  </div>
-                )}
-                {record.vitalSigns.notes && (
-                  <>
-                    <Separator />
-                    <p className="text-xs text-muted-foreground">{record.vitalSigns.notes}</p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
+          </div>
+        )}
+      </div>
+    </DrawerShell>
+  )
+}
+
+function LabResultDrawer({
+  selectedId,
+  onClose,
+}: {
+  selectedId: string | null
+  onClose: () => void
+}) {
+  const { data: result, isLoading } = useLabResultDetail(selectedId)
+
+  return (
+    <DrawerShell open={!!selectedId} onClose={onClose} width="max-w-2xl">
+      {/* Header */}
+      <div className="flex items-start justify-between border-b px-5 py-4">
+        {isLoading || !result ? (
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-11 w-11 rounded-full" />
+            <div className="space-y-1.5"><Skeleton className="h-5 w-40" /><Skeleton className="h-4 w-28" /></div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <FlaskConical className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold leading-tight">{result.panel.name}</h2>
+              <p className="text-sm text-muted-foreground">{result.patient.name} · {formatDate(result.testDate)}</p>
+            </div>
+          </div>
+        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {result && (
+            <Badge variant={getLabStatusVariant(result.status)} className="capitalize">{result.status}</Badge>
           )}
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto">
+        {isLoading || !result ? (
+          <div className="space-y-3 p-5">
+            {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+          </div>
+        ) : (
+          <div className="space-y-5 px-5 py-4">
+            <div className="grid grid-cols-3 gap-3">
+              <StatTile label="Normal" value={result.values.filter(v => v.status === "normal").length} colorClass="text-emerald-600 dark:text-emerald-400" />
+              <StatTile label="Abnormal" value={result.abnormalCount} colorClass="text-amber-600 dark:text-amber-400" />
+              <StatTile label="Critical" value={result.criticalCount} colorClass="text-red-600 dark:text-red-400" />
+            </div>
+
+            <Separator />
+
+            <section>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Test Values</p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Test</TableHead>
+                    <TableHead>Value</TableHead>
+                    <TableHead>Ref Range</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {result.values.map((val) => (
+                    <TableRow key={val.id} className={getValueStatusBg(val.status)}>
+                      <TableCell>
+                        <p className="text-sm font-medium">{val.test.name}</p>
+                        {val.test.abbreviation && <p className="text-xs text-muted-foreground">{val.test.abbreviation}</p>}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`text-sm font-semibold ${getValueStatusColor(val.status)}`}>
+                          {val.displayValue} {val.test.unit}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {val.refRangeMin ?? "—"} – {val.refRangeMax ?? "—"} {val.test.unit}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getLabStatusVariant(val.status)} className="text-xs capitalize">
+                          {val.status.replace("_", " ")}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </section>
+
+            {(result.interpretation || result.notes) && <Separator />}
+            {result.interpretation && (
+              <section>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Interpretation</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{result.interpretation}</p>
+              </section>
+            )}
+            {result.notes && (
+              <section>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notes</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{result.notes}</p>
+              </section>
+            )}
+
+            <Separator />
+
+            <section>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Info</p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2"><User className="h-4 w-4 shrink-0" />{result.patient.name}</div>
+                <div className="flex items-center gap-2"><Calendar className="h-4 w-4 shrink-0" />{formatDate(result.testDate)}</div>
+                {result.externalLab && <div className="flex items-center gap-2"><FlaskConical className="h-4 w-4 shrink-0" />{result.externalLab}</div>}
+                {result.reviewedBy && (
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-4 w-4 shrink-0" />
+                    Reviewed by {result.reviewedBy}{result.reviewedDate ? ` · ${formatDate(result.reviewedDate)}` : ""}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
+      </div>
+    </DrawerShell>
+  )
+}
+
+function PrescriptionDrawer({
+  selectedId,
+  onClose,
+}: {
+  selectedId: string | null
+  onClose: () => void
+}) {
+  const { data: rx, isLoading } = usePrescriptionDetail(selectedId)
+  const refillMutation = useRefillPrescription()
+  const expired = rx ? isExpired(rx.expiresAt) : false
+
+  return (
+    <DrawerShell open={!!selectedId} onClose={onClose}>
+      {/* Header */}
+      <div className="flex items-start justify-between border-b px-5 py-4">
+        {isLoading || !rx ? (
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-11 w-11 rounded-full" />
+            <div className="space-y-1.5"><Skeleton className="h-5 w-36" /><Skeleton className="h-4 w-24" /></div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <Pill className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold leading-tight">{rx.medication}</h2>
+                {rx.isControlled && <ShieldAlert className="h-4 w-4 text-amber-600" />}
+              </div>
+              <p className="text-sm text-muted-foreground">{rx.patient.name}</p>
+            </div>
+          </div>
+        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {rx && (
+            <Badge variant={expired ? "destructive" : "default"}>
+              {expired ? "Expired" : "Active"}
+            </Badge>
+          )}
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto">
+        {isLoading || !rx ? (
+          <div className="space-y-3 p-5">
+            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
+          </div>
+        ) : (
+          <div className="space-y-5 px-5 py-4">
+            {/* Details grid */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><p className="text-xs text-muted-foreground">Dosage</p><p className="font-medium">{rx.dosage}</p></div>
+              <div><p className="text-xs text-muted-foreground">Frequency</p><p className="font-medium">{rx.frequency}</p></div>
+              <div><p className="text-xs text-muted-foreground">Duration</p><p className="font-medium">{rx.duration}</p></div>
+              <div><p className="text-xs text-muted-foreground">Veterinarian</p><p className="font-medium">{rx.veterinarian ?? "—"}</p></div>
+            </div>
+
+            {rx.instructions && (
+              <>
+                <Separator />
+                <section>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Instructions</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{rx.instructions}</p>
+                </section>
+              </>
+            )}
+
+            {rx.notes && (
+              <>
+                <Separator />
+                <section>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notes</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{rx.notes}</p>
+                </section>
+              </>
+            )}
+
+            <Separator />
+
+            {/* Dates + refills */}
+            <section>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Info</p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2"><User className="h-4 w-4 shrink-0" />{rx.patient.name}</div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 shrink-0" />Prescribed {formatDate(rx.prescribedAt)}
+                </div>
+                <div className={`flex items-center gap-2 ${expired ? "text-red-600 dark:text-red-400" : ""}`}>
+                  <Clock className="h-4 w-4 shrink-0" />
+                  {expired ? "Expired" : "Expires"} {formatDate(rx.expiresAt)}
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span>Refills</span>
+                  <span className="font-medium text-foreground">{rx.refillsRemaining} / {rx.refillsTotal} remaining</span>
+                </div>
+              </div>
+            </section>
+
+            {rx.refillsRemaining > 0 && !expired && (
+              <>
+                <Separator />
+                <Button
+                  className="w-full"
+                  onClick={() => refillMutation.mutate(rx.id)}
+                  disabled={refillMutation.isPending}
+                >
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  {refillMutation.isPending ? "Refilling…" : "Refill Prescription"}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </DrawerShell>
+  )
+}
+
+function StatTile({ label, value, colorClass }: { label: string; value: number; colorClass: string }) {
+  return (
+    <div className="rounded-lg border bg-card px-3 py-3 text-center">
+      <p className={`text-2xl font-bold tabular-nums ${colorClass}`}>{value}</p>
+      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
     </div>
   )
 }
+
+// ─── create form (unchanged) ──────────────────────────────────────────────────
 
 function CreateMedicalRecordForm({
   patients,
@@ -565,10 +1111,7 @@ function CreateMedicalRecordForm({
   }
 
   const updateVital = (field: string, value: string) => {
-    setForm((prev) => ({
-      ...prev,
-      vitalSigns: { ...prev.vitalSigns, [field]: value },
-    }))
+    setForm((prev) => ({ ...prev, vitalSigns: { ...prev.vitalSigns, [field]: value } }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -583,24 +1126,15 @@ function CreateMedicalRecordForm({
       bodyConditionScore: form.bodyConditionScore ? parseInt(form.bodyConditionScore) : undefined,
       nextVisitRecommended: form.nextVisitRecommended || undefined,
       vitalSigns:
-        form.vitalSigns.temperature ||
-        form.vitalSigns.heartRate ||
-        form.vitalSigns.respiratoryRate ||
-        form.vitalSigns.weight
+        form.vitalSigns.temperature || form.vitalSigns.heartRate || form.vitalSigns.respiratoryRate || form.vitalSigns.weight
           ? {
               temperature: form.vitalSigns.temperature ? parseFloat(form.vitalSigns.temperature) : undefined,
               heartRate: form.vitalSigns.heartRate ? parseInt(form.vitalSigns.heartRate) : undefined,
               respiratoryRate: form.vitalSigns.respiratoryRate ? parseInt(form.vitalSigns.respiratoryRate) : undefined,
-              bloodPressureSystolic: form.vitalSigns.bloodPressureSystolic
-                ? parseInt(form.vitalSigns.bloodPressureSystolic)
-                : undefined,
-              bloodPressureDiastolic: form.vitalSigns.bloodPressureDiastolic
-                ? parseInt(form.vitalSigns.bloodPressureDiastolic)
-                : undefined,
+              bloodPressureSystolic: form.vitalSigns.bloodPressureSystolic ? parseInt(form.vitalSigns.bloodPressureSystolic) : undefined,
+              bloodPressureDiastolic: form.vitalSigns.bloodPressureDiastolic ? parseInt(form.vitalSigns.bloodPressureDiastolic) : undefined,
               weight: form.vitalSigns.weight ? parseFloat(form.vitalSigns.weight) : undefined,
-              bodyConditionScore: form.vitalSigns.bodyConditionScore
-                ? parseInt(form.vitalSigns.bodyConditionScore)
-                : undefined,
+              bodyConditionScore: form.vitalSigns.bodyConditionScore ? parseInt(form.vitalSigns.bodyConditionScore) : undefined,
               notes: form.vitalSigns.notes || undefined,
             }
           : undefined,
@@ -618,9 +1152,7 @@ function CreateMedicalRecordForm({
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          New Medical Record
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">New Medical Record</h1>
         <p className="mt-1 text-muted-foreground">Record a new patient visit.</p>
       </div>
 
@@ -642,70 +1174,31 @@ function CreateMedicalRecordForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="visitDate">Visit Date *</Label>
-              <Input
-                id="visitDate"
-                type="date"
-                required
-                value={form.visitDate}
-                onChange={(e) => updateField("visitDate", e.target.value)}
-              />
+              <Input id="visitDate" type="date" required value={form.visitDate} onChange={(e) => updateField("visitDate", e.target.value)} />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="summary">Summary *</Label>
-              <Textarea
-                id="summary"
-                required
-                placeholder="Chief complaint and overall assessment..."
-                value={form.summary}
-                onChange={(e) => updateField("summary", e.target.value)}
-              />
+              <Textarea id="summary" required placeholder="Chief complaint and overall assessment..." value={form.summary} onChange={(e) => updateField("summary", e.target.value)} />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="diagnoses">Diagnoses</Label>
-              <Textarea
-                id="diagnoses"
-                placeholder="Primary and secondary diagnoses..."
-                value={form.diagnoses}
-                onChange={(e) => updateField("diagnoses", e.target.value)}
-              />
+              <Textarea id="diagnoses" placeholder="Primary and secondary diagnoses..." value={form.diagnoses} onChange={(e) => updateField("diagnoses", e.target.value)} />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="treatments">Treatments</Label>
-              <Textarea
-                id="treatments"
-                placeholder="Procedures, therapies, and treatments performed..."
-                value={form.treatments}
-                onChange={(e) => updateField("treatments", e.target.value)}
-              />
+              <Textarea id="treatments" placeholder="Procedures, therapies, and treatments performed..." value={form.treatments} onChange={(e) => updateField("treatments", e.target.value)} />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="prescriptions">Prescriptions</Label>
-              <Textarea
-                id="prescriptions"
-                placeholder="Medications prescribed..."
-                value={form.prescriptions}
-                onChange={(e) => updateField("prescriptions", e.target.value)}
-              />
+              <Textarea id="prescriptions" placeholder="Medications prescribed..." value={form.prescriptions} onChange={(e) => updateField("prescriptions", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="bodyConditionScore">Body Condition Score (1-9)</Label>
-              <Input
-                id="bodyConditionScore"
-                type="number"
-                min={1}
-                max={9}
-                value={form.bodyConditionScore}
-                onChange={(e) => updateField("bodyConditionScore", e.target.value)}
-              />
+              <Input id="bodyConditionScore" type="number" min={1} max={9} value={form.bodyConditionScore} onChange={(e) => updateField("bodyConditionScore", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="nextVisitRecommended">Next Visit Recommended</Label>
-              <Input
-                id="nextVisitRecommended"
-                type="date"
-                value={form.nextVisitRecommended}
-                onChange={(e) => updateField("nextVisitRecommended", e.target.value)}
-              />
+              <Input id="nextVisitRecommended" type="date" value={form.nextVisitRecommended} onChange={(e) => updateField("nextVisitRecommended", e.target.value)} />
             </div>
           </CardContent>
         </Card>
@@ -718,96 +1211,42 @@ function CreateMedicalRecordForm({
           <CardContent className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="temp">Temperature (°C)</Label>
-              <Input
-                id="temp"
-                type="number"
-                step="0.1"
-                placeholder="38.5"
-                value={form.vitalSigns.temperature}
-                onChange={(e) => updateVital("temperature", e.target.value)}
-              />
+              <Input id="temp" type="number" step="0.1" placeholder="38.5" value={form.vitalSigns.temperature} onChange={(e) => updateVital("temperature", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="hr">Heart Rate (bpm)</Label>
-              <Input
-                id="hr"
-                type="number"
-                placeholder="120"
-                value={form.vitalSigns.heartRate}
-                onChange={(e) => updateVital("heartRate", e.target.value)}
-              />
+              <Input id="hr" type="number" placeholder="120" value={form.vitalSigns.heartRate} onChange={(e) => updateVital("heartRate", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="rr">Respiratory Rate (/min)</Label>
-              <Input
-                id="rr"
-                type="number"
-                placeholder="20"
-                value={form.vitalSigns.respiratoryRate}
-                onChange={(e) => updateVital("respiratoryRate", e.target.value)}
-              />
+              <Input id="rr" type="number" placeholder="20" value={form.vitalSigns.respiratoryRate} onChange={(e) => updateVital("respiratoryRate", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="bps">BP Systolic (mmHg)</Label>
-              <Input
-                id="bps"
-                type="number"
-                placeholder="120"
-                value={form.vitalSigns.bloodPressureSystolic}
-                onChange={(e) => updateVital("bloodPressureSystolic", e.target.value)}
-              />
+              <Input id="bps" type="number" placeholder="120" value={form.vitalSigns.bloodPressureSystolic} onChange={(e) => updateVital("bloodPressureSystolic", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="bpd">BP Diastolic (mmHg)</Label>
-              <Input
-                id="bpd"
-                type="number"
-                placeholder="80"
-                value={form.vitalSigns.bloodPressureDiastolic}
-                onChange={(e) => updateVital("bloodPressureDiastolic", e.target.value)}
-              />
+              <Input id="bpd" type="number" placeholder="80" value={form.vitalSigns.bloodPressureDiastolic} onChange={(e) => updateVital("bloodPressureDiastolic", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="weight">Weight (kg)</Label>
-              <Input
-                id="weight"
-                type="number"
-                step="0.1"
-                placeholder="25.0"
-                value={form.vitalSigns.weight}
-                onChange={(e) => updateVital("weight", e.target.value)}
-              />
+              <Input id="weight" type="number" step="0.1" placeholder="25.0" value={form.vitalSigns.weight} onChange={(e) => updateVital("weight", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="vitalBcs">Body Condition Score (1-9)</Label>
-              <Input
-                id="vitalBcs"
-                type="number"
-                min={1}
-                max={9}
-                value={form.vitalSigns.bodyConditionScore}
-                onChange={(e) => updateVital("bodyConditionScore", e.target.value)}
-              />
+              <Input id="vitalBcs" type="number" min={1} max={9} value={form.vitalSigns.bodyConditionScore} onChange={(e) => updateVital("bodyConditionScore", e.target.value)} />
             </div>
             <div className="space-y-2 sm:col-span-3">
               <Label htmlFor="vitalNotes">Notes</Label>
-              <Textarea
-                id="vitalNotes"
-                placeholder="Additional observations..."
-                value={form.vitalSigns.notes}
-                onChange={(e) => updateVital("notes", e.target.value)}
-              />
+              <Textarea id="vitalNotes" placeholder="Additional observations..." value={form.vitalSigns.notes} onChange={(e) => updateVital("notes", e.target.value)} />
             </div>
           </CardContent>
         </Card>
 
         <div className="flex items-center gap-3">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Record"}
-          </Button>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
+          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Creating..." : "Create Record"}</Button>
+          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         </div>
       </form>
     </div>

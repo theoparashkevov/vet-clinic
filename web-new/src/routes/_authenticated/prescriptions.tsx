@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { AnimatePresence, motion } from "framer-motion"
 import {
   Pill,
   Plus,
@@ -10,6 +11,7 @@ import {
   Clock,
   ShieldAlert,
   RefreshCcw,
+  X,
 } from "lucide-react"
 import { fetchWithAuth } from "../../lib/api"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
@@ -188,32 +190,16 @@ function isExpired(expiresAt: string) {
 }
 
 function PrescriptionsPage() {
-  const [view, setView] = useState<"list" | "detail" | "create">("list")
+  const [view, setView] = useState<"list" | "create">("list")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [patientFilter, setPatientFilter] = useState<string>("")
 
   const { data: patients } = usePatients()
   const { data: prescriptions, isLoading } = usePrescriptions(patientFilter || undefined)
-  const { data: detail } = usePrescriptionDetail(selectedId)
   const createMutation = useCreatePrescription()
-
-  const handleViewDetail = (id: string) => {
-    setSelectedId(id)
-    setView("detail")
-  }
 
   const handleBack = () => {
     setView("list")
-    setSelectedId(null)
-  }
-
-  if (view === "detail" && detail) {
-    return (
-      <PrescriptionDetail
-        prescription={detail}
-        onBack={handleBack}
-      />
-    )
   }
 
   if (view === "create") {
@@ -273,7 +259,7 @@ function PrescriptionsPage() {
                 <PrescriptionCard
                   key={rx.id}
                   prescription={rx}
-                  onClick={() => handleViewDetail(rx.id)}
+                  onClick={() => setSelectedId(rx.id)}
                 />
               ))
             : null}
@@ -293,6 +279,11 @@ function PrescriptionsPage() {
           </CardContent>
         </Card>
       )}
+
+      <PrescriptionDrawer
+        id={selectedId}
+        onClose={() => setSelectedId(null)}
+      />
     </div>
   )
 }
@@ -363,139 +354,174 @@ function PrescriptionCard({
   )
 }
 
-function PrescriptionDetail({
-  prescription,
-  onBack,
+function PrescriptionDrawer({
+  id,
+  onClose,
 }: {
-  prescription: Prescription
-  onBack: () => void
+  id: string | null
+  onClose: () => void
 }) {
+  const { data: prescription, isLoading } = usePrescriptionDetail(id)
   const refillMutation = useRefillPrescription()
-  const expired = isExpired(prescription.expiresAt)
+
+  const expired = prescription ? isExpired(prescription.expiresAt) : false
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to list
-        </Button>
-      </div>
+    <AnimatePresence>
+      {id && (
+        <>
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={onClose}
+          />
+          <motion.div
+            key="drawer"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 280 }}
+            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-background shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b px-6 py-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  <Pill className="h-4 w-4 text-primary" />
+                </div>
+                <h2 className="font-semibold text-foreground">Prescription Details</h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {prescription.medication}
-          </h1>
-          <p className="mt-1 text-muted-foreground">
-            {prescription.patient.name} · Prescribed {formatDate(prescription.prescribedAt)}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {prescription.isControlled && (
-            <Badge variant="secondary" className="gap-1">
-              <ShieldAlert className="h-3 w-3" />
-              Controlled
-            </Badge>
-          )}
-          {expired ? (
-            <Badge variant="destructive">Expired</Badge>
-          ) : (
-            <Badge variant="default">Active</Badge>
-          )}
-        </div>
-      </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              {isLoading || !prescription ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl font-bold text-foreground">
+                        {prescription.medication}
+                      </h3>
+                      {prescription.isControlled && (
+                        <Badge variant="secondary" className="gap-1 text-xs">
+                          <ShieldAlert className="h-3 w-3" />
+                          Controlled
+                        </Badge>
+                      )}
+                      {expired ? (
+                        <Badge variant="destructive" className="text-xs">Expired</Badge>
+                      ) : (
+                        <Badge variant="default" className="text-xs">Active</Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {prescription.patient.name} · {prescription.patient.species}
+                    </p>
+                  </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Prescription Details</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <Label className="text-xs text-muted-foreground">Dosage</Label>
-                <p className="text-sm font-medium text-foreground">{prescription.dosage}</p>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Frequency</Label>
-                <p className="text-sm font-medium text-foreground">{prescription.frequency}</p>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Duration</Label>
-                <p className="text-sm font-medium text-foreground">{prescription.duration}</p>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Veterinarian</Label>
-                <p className="text-sm font-medium text-foreground">
-                  {prescription.veterinarian ?? "—"}
-                </p>
-              </div>
-              {prescription.instructions && (
-                <div className="sm:col-span-2">
-                  <Label className="text-xs text-muted-foreground">Instructions</Label>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">
-                    {prescription.instructions}
-                  </p>
+                  <div className="grid grid-cols-2 gap-4 rounded-lg border p-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Dosage</p>
+                      <p className="text-sm font-medium text-foreground">{prescription.dosage}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Frequency</p>
+                      <p className="text-sm font-medium text-foreground">{prescription.frequency}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Duration</p>
+                      <p className="text-sm font-medium text-foreground">{prescription.duration}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Veterinarian</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {prescription.veterinarian ?? "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {prescription.instructions && (
+                    <div>
+                      <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Instructions
+                      </p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                        {prescription.instructions}
+                      </p>
+                    </div>
+                  )}
+
+                  {prescription.notes && (
+                    <div>
+                      <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Notes
+                      </p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                        {prescription.notes}
+                      </p>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 text-sm">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-foreground">{prescription.patient.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-foreground">
+                        Prescribed {formatDate(prescription.prescribedAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className={expired ? "text-red-600" : "text-foreground"}>
+                        {expired ? "Expired" : "Expires"} {formatDate(prescription.expiresAt)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3">
+                    <span className="text-sm text-muted-foreground">Refills remaining</span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {prescription.refillsRemaining} / {prescription.refillsTotal}
+                    </span>
+                  </div>
+
+                  {prescription.refillsRemaining > 0 && !expired && (
+                    <Button
+                      className="w-full"
+                      onClick={() => refillMutation.mutate(prescription.id)}
+                      disabled={refillMutation.isPending}
+                    >
+                      <RefreshCcw className="mr-2 h-4 w-4" />
+                      {refillMutation.isPending ? "Refilling..." : "Refill Prescription"}
+                    </Button>
+                  )}
                 </div>
               )}
-              {prescription.notes && (
-                <div className="sm:col-span-2">
-                  <Label className="text-xs text-muted-foreground">Notes</Label>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">
-                    {prescription.notes}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Info</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">{prescription.patient.name}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">
-                  Prescribed {formatDate(prescription.prescribedAt)}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">
-                  Expires {formatDate(prescription.expiresAt)}
-                </span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Refills</span>
-                <span className="text-sm font-medium">
-                  {prescription.refillsRemaining} / {prescription.refillsTotal}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {prescription.refillsRemaining > 0 && !expired && (
-            <Button
-              className="w-full"
-              onClick={() => refillMutation.mutate(prescription.id)}
-              disabled={refillMutation.isPending}
-            >
-              <RefreshCcw className="mr-2 h-4 w-4" />
-              {refillMutation.isPending ? "Refilling..." : "Refill Prescription"}
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   )
 }
 
