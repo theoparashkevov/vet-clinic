@@ -11,6 +11,7 @@ import {
   Shield,
   Stethoscope,
   ClipboardList,
+  ClipboardPlus,
 } from "lucide-react"
 import { useAuthStore } from "../../stores/authStore"
 import {
@@ -44,6 +45,7 @@ const navGroups: NavGroup[] = [
   {
     items: [
       { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard, roles: [] },
+      { label: "New Visit", to: "/visit", icon: ClipboardPlus, roles: [] },
     ],
   },
   {
