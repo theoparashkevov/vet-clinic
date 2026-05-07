@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router"
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router"
 import {
   LayoutDashboard,
   PawPrint,
@@ -13,6 +13,7 @@ import {
   ClipboardList,
   ClipboardPlus,
   Settings2,
+  LogOut,
 } from "lucide-react"
 import { useAuthStore } from "../../stores/authStore"
 import {
@@ -95,8 +96,9 @@ function hasAccess(userRoles: string[] | undefined, allowedRoles: string[], isSu
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const { user } = useAuthStore()
+  const { user, logout } = useAuthStore()
   const { state } = useSidebar()
+  const navigate = useNavigate()
   const isCollapsed = state === "collapsed"
 
   const initials = user?.name
@@ -164,22 +166,33 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" tooltip="My Account" render={<Link to="/account" />} className="gap-3">
-              <Avatar className="h-7 w-7 shrink-0">
-                {user?.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
-                <AvatarFallback className="bg-sidebar-primary/20 text-xs font-semibold text-sidebar-primary">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
+            <div className="flex items-center gap-1">
+              <SidebarMenuButton size="lg" tooltip="My Account" render={<Link to="/account" />} className="flex-1 gap-3 min-w-0">
+                <Avatar className="h-7 w-7 shrink-0">
+                  {user?.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
+                  <AvatarFallback className="bg-sidebar-primary/20 text-xs font-semibold text-sidebar-primary">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                {!isCollapsed && (
+                  <div className="flex min-w-0 flex-col leading-tight">
+                    <span className="truncate text-sm font-medium">{user?.name ?? "User"}</span>
+                    <span className="truncate text-xs text-sidebar-foreground/60 capitalize">
+                      {user?.roles?.[0] ?? "Staff"}
+                    </span>
+                  </div>
+                )}
+              </SidebarMenuButton>
               {!isCollapsed && (
-                <div className="flex min-w-0 flex-col leading-tight">
-                  <span className="truncate text-sm font-medium">{user?.name ?? "User"}</span>
-                  <span className="truncate text-xs text-sidebar-foreground/60 capitalize">
-                    {user?.roles?.[0] ?? "Staff"}
-                  </span>
-                </div>
+                <button
+                  onClick={() => { logout(); navigate({ to: "/login" }) }}
+                  title="Log out"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
               )}
-            </SidebarMenuButton>
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
