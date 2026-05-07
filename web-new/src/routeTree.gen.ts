@@ -26,6 +26,7 @@ import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAppointmentsRouteImport } from './routes/_authenticated/appointments'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedBillingIndexRouteImport } from './routes/_authenticated/billing.index'
 import { Route as AuthenticatedAppointmentsIndexRouteImport } from './routes/_authenticated/appointments.index'
 import { Route as AuthenticatedPatientsIdRouteImport } from './routes/_authenticated/patients_.$id'
@@ -124,6 +125,11 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedBillingIndexRoute =
   AuthenticatedBillingIndexRouteImport.update({
     id: '/',
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthenticatedTasksRoute
   '/users': typeof AuthenticatedUsersRoute
   '/visit': typeof AuthenticatedVisitRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
   '/appointments/calendar': typeof AuthenticatedAppointmentsCalendarRoute
   '/appointments/new': typeof AuthenticatedAppointmentsNewRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/tasks': typeof AuthenticatedTasksRoute
   '/users': typeof AuthenticatedUsersRoute
   '/visit': typeof AuthenticatedVisitRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
   '/appointments/calendar': typeof AuthenticatedAppointmentsCalendarRoute
   '/appointments/new': typeof AuthenticatedAppointmentsNewRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/visit': typeof AuthenticatedVisitRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
   '/_authenticated/appointments/calendar': typeof AuthenticatedAppointmentsCalendarRoute
   '/_authenticated/appointments/new': typeof AuthenticatedAppointmentsNewRoute
@@ -286,6 +295,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/users'
     | '/visit'
+    | '/settings'
     | '/appointments/$id'
     | '/appointments/calendar'
     | '/appointments/new'
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/users'
     | '/visit'
+    | '/settings'
     | '/appointments/$id'
     | '/appointments/calendar'
     | '/appointments/new'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks'
     | '/_authenticated/users'
     | '/_authenticated/visit'
+    | '/_authenticated/settings'
     | '/_authenticated/appointments/$id'
     | '/_authenticated/appointments/calendar'
     | '/_authenticated/appointments/new'
@@ -478,6 +490,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/billing/': {
@@ -619,6 +638,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedVisitRoute: typeof AuthenticatedVisitRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedOwnersIdRoute: typeof AuthenticatedOwnersIdRoute
   AuthenticatedPatientsIdRoute: typeof AuthenticatedPatientsIdRoute
 }
@@ -638,6 +658,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedVisitRoute: AuthenticatedVisitRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedOwnersIdRoute: AuthenticatedOwnersIdRoute,
   AuthenticatedPatientsIdRoute: AuthenticatedPatientsIdRoute,
 }

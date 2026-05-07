@@ -12,7 +12,6 @@ import {
   Stethoscope,
   ClipboardList,
   ClipboardPlus,
-  UserCog,
   Settings2,
 } from "lucide-react"
 import { useAuthStore } from "../../stores/authStore"
@@ -79,16 +78,10 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Administration",
+    label: "Settings",
     items: [
-      { label: "Users", to: "/users", icon: UserCog, roles: ["admin", "superadmin"] },
+      { label: "Settings", to: "/settings", icon: Settings2, roles: ["admin", "superadmin"] },
       { label: "Admin", to: "/admin", icon: Shield, roles: ["superadmin"] },
-    ],
-  },
-  {
-    label: "Platform",
-    items: [
-      { label: "Role Definitions", to: "/platform", icon: Settings2, roles: ["superadmin"] },
     ],
   },
 ]
