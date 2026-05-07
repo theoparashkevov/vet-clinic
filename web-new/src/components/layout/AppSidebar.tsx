@@ -12,6 +12,8 @@ import {
   Stethoscope,
   ClipboardList,
   ClipboardPlus,
+  UserCog,
+  Settings2,
 } from "lucide-react"
 import { useAuthStore } from "../../stores/authStore"
 import {
@@ -77,15 +79,23 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "System",
+    label: "Administration",
     items: [
+      { label: "Users", to: "/users", icon: UserCog, roles: ["admin", "superadmin"] },
       { label: "Admin", to: "/admin", icon: Shield, roles: ["superadmin"] },
+    ],
+  },
+  {
+    label: "Platform",
+    items: [
+      { label: "Role Definitions", to: "/platform", icon: Settings2, roles: ["superadmin"] },
     ],
   },
 ]
 
-function hasAccess(userRoles: string[] | undefined, allowedRoles: string[]): boolean {
+function hasAccess(userRoles: string[] | undefined, allowedRoles: string[], isSuperAdmin?: boolean): boolean {
   if (allowedRoles.length === 0) return true
+  if (isSuperAdmin) return true
   if (!userRoles?.length) return false
   return userRoles.some((r) => allowedRoles.includes(r))
 }
@@ -103,7 +113,7 @@ export function AppSidebar() {
   const visibleGroups = navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => hasAccess(user?.roles, item.roles)),
+      items: group.items.filter((item) => hasAccess(user?.roles, item.roles, user?.isSuperAdmin)),
     }))
     .filter((group) => group.items.length > 0)
 
@@ -161,7 +171,7 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="gap-3">
+            <SidebarMenuButton size="lg" tooltip="My Account" render={<Link to="/account" />} className="gap-3">
               <Avatar className="h-7 w-7 shrink-0">
                 <AvatarFallback className="bg-sidebar-primary/20 text-xs font-semibold text-sidebar-primary">
                   {initials}
