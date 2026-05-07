@@ -2,6 +2,7 @@ import { type ReactNode } from "react"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "../../lib/useTheme"
 import { Separator } from "../ui/separator"
+import { NotificationBell } from "./NotificationBell"
 
 interface TopBarProps {
   trigger: ReactNode
@@ -24,6 +25,7 @@ export function TopBar({ trigger }: TopBarProps) {
       </span>
 
       <div className="ml-auto flex items-center gap-2">
+        <NotificationBell />
         <button
           onClick={toggle}
           className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
