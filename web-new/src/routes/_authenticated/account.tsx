@@ -8,6 +8,7 @@ import { Badge } from "../../components/ui/badge"
 import { Separator } from "../../components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
 import { User, KeyRound, ShieldCheck, Save, Pencil, X } from "lucide-react"
+import { AvatarUpload } from "../../components/ui/avatar-upload"
 
 export const Route = createFileRoute("/_authenticated/account")({
   component: AccountPage,
@@ -66,9 +67,14 @@ function AccountPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-xl font-bold">
-                {initials}
-              </div>
+              <AvatarUpload
+                src={user?.avatar}
+                onChange={(dataUrl) => updateUser({ avatar: dataUrl ?? undefined })}
+                className="h-16 w-16 bg-sidebar-primary"
+                fallback={
+                  <span className="text-xl font-bold text-sidebar-primary-foreground">{initials}</span>
+                }
+              />
               <div className="space-y-1">
                 <p className="text-lg font-semibold">{user?.name}</p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>

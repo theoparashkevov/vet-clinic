@@ -29,7 +29,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "../ui/sidebar"
-import { Avatar, AvatarFallback } from "../ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 
 interface NavItem {
   label: string
@@ -173,6 +173,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" tooltip="My Account" render={<Link to="/account" />} className="gap-3">
               <Avatar className="h-7 w-7 shrink-0">
+                {user?.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
                 <AvatarFallback className="bg-sidebar-primary/20 text-xs font-semibold text-sidebar-primary">
                   {initials}
                 </AvatarFallback>

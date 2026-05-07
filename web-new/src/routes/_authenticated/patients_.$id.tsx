@@ -30,6 +30,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/ta
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../components/ui/tooltip"
 import { useState } from "react"
 import { PatientFormModal } from "../../components/patients/PatientFormModal"
+import { AvatarUpload, useEntityPhoto } from "../../components/ui/avatar-upload"
 import { AppointmentDetailSheet } from "../../components/appointments/AppointmentDetailSheet"
 import type { Patient, MedicalRecord, Vaccination, WeightRecord, Prescription, LabResult } from "../../components/patients/types"
 import {
@@ -196,6 +197,7 @@ function PatientDetailPage() {
 
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedApptId, setSelectedApptId] = useState<string | null>(null)
+  const { photo, save: savePhoto, clear: clearPhoto } = useEntityPhoto("patient", id)
 
   if (isLoading) {
     return (
@@ -239,9 +241,12 @@ function PatientDetailPage() {
             <ArrowLeft className="mr-1.5 h-4 w-4" />
             Patients
           </Button>
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
-            <PawPrint className="h-5 w-5 text-primary" />
-          </div>
+          <AvatarUpload
+            src={photo}
+            onChange={(v) => (v ? savePhoto(v) : clearPhoto())}
+            className="h-11 w-11 bg-primary/10"
+            fallback={<PawPrint className="h-5 w-5 text-primary" />}
+          />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-foreground">{patient.name}</h1>

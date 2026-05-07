@@ -27,6 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Separator } from "../../components/ui/separator"
 import { Badge } from "../../components/ui/badge"
 import { AppointmentDetailSheet } from "../../components/appointments/AppointmentDetailSheet"
+import { AvatarUpload, useEntityPhoto } from "../../components/ui/avatar-upload"
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -188,6 +189,7 @@ function OwnerProfilePage() {
   const { data: appointments = [] } = useOwnerAppointments(id)
   const [editing, setEditing] = useState(false)
   const [selectedApptId, setSelectedApptId] = useState<string | null>(null)
+  const { photo, save: savePhoto, clear: clearPhoto } = useEntityPhoto("owner", id)
 
   if (isLoading) {
     return (
@@ -237,9 +239,12 @@ function OwnerProfilePage() {
             <ArrowLeft className="mr-1.5 h-4 w-4" />
             Owners
           </Button>
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
-            <Users className="h-5 w-5 text-primary" />
-          </div>
+          <AvatarUpload
+            src={photo}
+            onChange={(v) => (v ? savePhoto(v) : clearPhoto())}
+            className="h-11 w-11 bg-primary/10"
+            fallback={<Users className="h-5 w-5 text-primary" />}
+          />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight">{owner.name}</h1>
