@@ -150,7 +150,7 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ type: "spring", damping: 28, stiffness: 300 }}
-            className="absolute right-0 top-11 z-50 w-96 rounded-xl border bg-popover shadow-xl"
+            className="absolute right-0 top-11 z-[200] w-96 rounded-xl border bg-popover shadow-xl"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3">

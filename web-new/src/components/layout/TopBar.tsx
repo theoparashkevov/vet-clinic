@@ -12,7 +12,7 @@ export function TopBar({ trigger }: TopBarProps) {
   const { theme, toggle } = useTheme()
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur-md">
+    <header className="relative z-40 flex h-16 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur-md">
       {trigger}
       <Separator orientation="vertical" className="mx-1 h-4" />
       <span className="text-sm text-muted-foreground hidden sm:block">
