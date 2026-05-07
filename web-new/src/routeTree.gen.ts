@@ -13,8 +13,10 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedVisitRouteImport } from './routes/_authenticated/visit'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedPrescriptionsRouteImport } from './routes/_authenticated/prescriptions'
+import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
 import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticated/patients'
 import { Route as AuthenticatedOwnersRouteImport } from './routes/_authenticated/owners'
 import { Route as AuthenticatedMedicalRecordsRouteImport } from './routes/_authenticated/medical-records'
@@ -24,8 +26,6 @@ import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAppointmentsRouteImport } from './routes/_authenticated/appointments'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
-import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
-import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
 import { Route as AuthenticatedBillingIndexRouteImport } from './routes/_authenticated/billing.index'
 import { Route as AuthenticatedAppointmentsIndexRouteImport } from './routes/_authenticated/appointments.index'
 import { Route as AuthenticatedPatientsIdRouteImport } from './routes/_authenticated/patients_.$id'
@@ -56,6 +56,11 @@ const AuthenticatedVisitRoute = AuthenticatedVisitRouteImport.update({
   path: '/visit',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -67,6 +72,11 @@ const AuthenticatedPrescriptionsRoute =
     path: '/prescriptions',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPlatformRoute = AuthenticatedPlatformRouteImport.update({
+  id: '/platform',
+  path: '/platform',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedPatientsRoute = AuthenticatedPatientsRouteImport.update({
   id: '/patients',
   path: '/patients',
@@ -112,16 +122,6 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   id: '/account',
   path: '/account',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedPlatformRoute = AuthenticatedPlatformRouteImport.update({
-  id: '/platform',
-  path: '/platform',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedBillingIndexRoute =
@@ -186,10 +186,8 @@ const AuthenticatedBillingInvoicesIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/admin': typeof AuthenticatedAdminRoute
   '/account': typeof AuthenticatedAccountRoute
-  '/users': typeof AuthenticatedUsersRoute
-  '/platform': typeof AuthenticatedPlatformRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/appointments': typeof AuthenticatedAppointmentsRouteWithChildren
   '/billing': typeof AuthenticatedBillingRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -197,8 +195,10 @@ export interface FileRoutesByFullPath {
   '/medical-records': typeof AuthenticatedMedicalRecordsRoute
   '/owners': typeof AuthenticatedOwnersRoute
   '/patients': typeof AuthenticatedPatientsRoute
+  '/platform': typeof AuthenticatedPlatformRoute
   '/prescriptions': typeof AuthenticatedPrescriptionsRoute
   '/tasks': typeof AuthenticatedTasksRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/visit': typeof AuthenticatedVisitRoute
   '/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
   '/appointments/calendar': typeof AuthenticatedAppointmentsCalendarRoute
@@ -214,17 +214,17 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/admin': typeof AuthenticatedAdminRoute
   '/account': typeof AuthenticatedAccountRoute
-  '/users': typeof AuthenticatedUsersRoute
-  '/platform': typeof AuthenticatedPlatformRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/lab-results': typeof AuthenticatedLabResultsRoute
   '/medical-records': typeof AuthenticatedMedicalRecordsRoute
   '/owners': typeof AuthenticatedOwnersRoute
   '/patients': typeof AuthenticatedPatientsRoute
+  '/platform': typeof AuthenticatedPlatformRoute
   '/prescriptions': typeof AuthenticatedPrescriptionsRoute
   '/tasks': typeof AuthenticatedTasksRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/visit': typeof AuthenticatedVisitRoute
   '/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
   '/appointments/calendar': typeof AuthenticatedAppointmentsCalendarRoute
@@ -242,10 +242,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
-  '/_authenticated/users': typeof AuthenticatedUsersRoute
-  '/_authenticated/platform': typeof AuthenticatedPlatformRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/appointments': typeof AuthenticatedAppointmentsRouteWithChildren
   '/_authenticated/billing': typeof AuthenticatedBillingRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -253,8 +251,10 @@ export interface FileRoutesById {
   '/_authenticated/medical-records': typeof AuthenticatedMedicalRecordsRoute
   '/_authenticated/owners': typeof AuthenticatedOwnersRoute
   '/_authenticated/patients': typeof AuthenticatedPatientsRoute
+  '/_authenticated/platform': typeof AuthenticatedPlatformRoute
   '/_authenticated/prescriptions': typeof AuthenticatedPrescriptionsRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/visit': typeof AuthenticatedVisitRoute
   '/_authenticated/appointments/$id': typeof AuthenticatedAppointmentsIdRoute
   '/_authenticated/appointments/calendar': typeof AuthenticatedAppointmentsCalendarRoute
@@ -272,10 +272,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
-    | '/admin'
     | '/account'
-    | '/users'
-    | '/platform'
+    | '/admin'
     | '/appointments'
     | '/billing'
     | '/dashboard'
@@ -283,8 +281,10 @@ export interface FileRouteTypes {
     | '/medical-records'
     | '/owners'
     | '/patients'
+    | '/platform'
     | '/prescriptions'
     | '/tasks'
+    | '/users'
     | '/visit'
     | '/appointments/$id'
     | '/appointments/calendar'
@@ -300,17 +300,17 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
-    | '/admin'
     | '/account'
-    | '/users'
-    | '/platform'
+    | '/admin'
     | '/dashboard'
     | '/lab-results'
     | '/medical-records'
     | '/owners'
     | '/patients'
+    | '/platform'
     | '/prescriptions'
     | '/tasks'
+    | '/users'
     | '/visit'
     | '/appointments/$id'
     | '/appointments/calendar'
@@ -327,10 +327,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/login'
-    | '/_authenticated/admin'
     | '/_authenticated/account'
-    | '/_authenticated/users'
-    | '/_authenticated/platform'
+    | '/_authenticated/admin'
     | '/_authenticated/appointments'
     | '/_authenticated/billing'
     | '/_authenticated/dashboard'
@@ -338,8 +336,10 @@ export interface FileRouteTypes {
     | '/_authenticated/medical-records'
     | '/_authenticated/owners'
     | '/_authenticated/patients'
+    | '/_authenticated/platform'
     | '/_authenticated/prescriptions'
     | '/_authenticated/tasks'
+    | '/_authenticated/users'
     | '/_authenticated/visit'
     | '/_authenticated/appointments/$id'
     | '/_authenticated/appointments/calendar'
@@ -389,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVisitRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/tasks': {
       id: '/_authenticated/tasks'
       path: '/tasks'
@@ -401,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/prescriptions'
       fullPath: '/prescriptions'
       preLoaderRoute: typeof AuthenticatedPrescriptionsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/platform': {
+      id: '/_authenticated/platform'
+      path: '/platform'
+      fullPath: '/platform'
+      preLoaderRoute: typeof AuthenticatedPlatformRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/patients': {
@@ -464,20 +478,6 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/users': {
-      id: '/_authenticated/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AuthenticatedUsersRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/platform': {
-      id: '/_authenticated/platform'
-      path: '/platform'
-      fullPath: '/platform'
-      preLoaderRoute: typeof AuthenticatedPlatformRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/billing/': {
@@ -605,10 +605,8 @@ const AuthenticatedBillingRouteWithChildren =
   AuthenticatedBillingRoute._addFileChildren(AuthenticatedBillingRouteChildren)
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
-  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
-  AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAppointmentsRoute: typeof AuthenticatedAppointmentsRouteWithChildren
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -616,18 +614,18 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMedicalRecordsRoute: typeof AuthenticatedMedicalRecordsRoute
   AuthenticatedOwnersRoute: typeof AuthenticatedOwnersRoute
   AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRoute
+  AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRoute
   AuthenticatedPrescriptionsRoute: typeof AuthenticatedPrescriptionsRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedVisitRoute: typeof AuthenticatedVisitRoute
   AuthenticatedOwnersIdRoute: typeof AuthenticatedOwnersIdRoute
   AuthenticatedPatientsIdRoute: typeof AuthenticatedPatientsIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
-  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
-  AuthenticatedPlatformRoute: AuthenticatedPlatformRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAppointmentsRoute: AuthenticatedAppointmentsRouteWithChildren,
   AuthenticatedBillingRoute: AuthenticatedBillingRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -635,8 +633,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMedicalRecordsRoute: AuthenticatedMedicalRecordsRoute,
   AuthenticatedOwnersRoute: AuthenticatedOwnersRoute,
   AuthenticatedPatientsRoute: AuthenticatedPatientsRoute,
+  AuthenticatedPlatformRoute: AuthenticatedPlatformRoute,
   AuthenticatedPrescriptionsRoute: AuthenticatedPrescriptionsRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedVisitRoute: AuthenticatedVisitRoute,
   AuthenticatedOwnersIdRoute: AuthenticatedOwnersIdRoute,
   AuthenticatedPatientsIdRoute: AuthenticatedPatientsIdRoute,
