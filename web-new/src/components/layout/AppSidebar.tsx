@@ -14,6 +14,7 @@ import {
   ClipboardPlus,
   Settings2,
   LogOut,
+  Server,
 } from "lucide-react"
 import { useAuthStore } from "../../stores/authStore"
 import {
@@ -82,6 +83,7 @@ const navGroups: NavGroup[] = [
     label: "Settings",
     items: [
       { label: "Settings", to: "/settings", icon: Settings2, roles: ["admin", "superadmin"] },
+      { label: "Platform", to: "/platform", icon: Server, roles: ["superadmin"] },
       { label: "Admin", to: "/admin", icon: Shield, roles: ["superadmin"] },
     ],
   },
