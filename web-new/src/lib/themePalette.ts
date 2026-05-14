@@ -93,11 +93,23 @@ export function clearSavedPalette(): void {
   document.getElementById('vet-theme-palette')?.remove()
 }
 
+// Merges saved values into defaults so new entries are never lost
+function mergePalette(defaults: PaletteEntry[], saved: PaletteEntry[]): PaletteEntry[] {
+  return defaults.map((d) => {
+    const match = saved.find((s) => s.key === d.key)
+    return match ? { ...d, value: match.value } : d
+  })
+}
+
 export function loadSavedPalette(): { light: PaletteEntry[]; dark: PaletteEntry[] } | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
-    return JSON.parse(raw) as { light: PaletteEntry[]; dark: PaletteEntry[] }
+    const saved = JSON.parse(raw) as { light: PaletteEntry[]; dark: PaletteEntry[] }
+    return {
+      light: mergePalette(LIGHT_DEFAULTS, saved.light ?? []),
+      dark:  mergePalette(DARK_DEFAULTS,  saved.dark  ?? []),
+    }
   } catch {
     return null
   }
