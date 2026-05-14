@@ -12,7 +12,9 @@ import {
   ShieldAlert,
   RefreshCcw,
   X,
+  Sparkles,
 } from "lucide-react"
+import { AIPanel } from "../../components/ai/AIPanel"
 import { fetchWithAuth } from "../../lib/api"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
@@ -363,44 +365,57 @@ function PrescriptionDrawer({
 }) {
   const { data: prescription, isLoading } = usePrescriptionDetail(id)
   const refillMutation = useRefillPrescription()
+  const [aiOpen, setAiOpen] = useState(false)
 
   const expired = prescription ? isExpired(prescription.expiresAt) : false
 
   return (
-    <AnimatePresence>
-      {id && (
-        <>
-          <motion.div
-            key="backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-black/30"
-            onClick={onClose}
-          />
-          <motion.div
-            key="drawer"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 280 }}
-            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-background shadow-2xl"
-          >
-            <div className="flex items-center justify-between border-b px-6 py-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <Pill className="h-4 w-4 text-primary" />
+    <>
+      <AnimatePresence>
+        {id && (
+          <>
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/30"
+              onClick={onClose}
+            />
+            <motion.div
+              key="drawer"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-background shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b px-6 py-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                    <Pill className="h-4 w-4 text-primary" />
+                  </div>
+                  <h2 className="font-semibold text-foreground">Prescription Details</h2>
                 </div>
-                <h2 className="font-semibold text-foreground">Prescription Details</h2>
+                <div className="flex items-center gap-1">
+                  {prescription && (
+                    <button
+                      onClick={() => setAiOpen(true)}
+                      className="rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      title="AI analysis"
+                    >
+                      <Sparkles className="h-4 w-4 text-primary" />
+                    </button>
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={onClose}
-                className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
 
             <div className="flex-1 overflow-y-auto p-6">
               {isLoading || !prescription ? (
@@ -518,11 +533,35 @@ function PrescriptionDrawer({
                 </div>
               )}
             </div>
-          </motion.div>
-        </>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+      {prescription && (
+        <AIPanel
+          open={aiOpen}
+          onClose={() => setAiOpen(false)}
+          title="Prescription Analysis"
+          systemPrompt={buildRxPrompt(prescription)}
+        />
       )}
-    </AnimatePresence>
+    </>
   )
+}
+
+function buildRxPrompt(rx: Prescription): string {
+  const lines = [
+    `You are a veterinary clinical assistant. Analyze this prescription for ${rx.patient.name} (${rx.patient.species}).`,
+    `Medication: ${rx.medication}`,
+    `Dosage: ${rx.dosage}, Frequency: ${rx.frequency}, Duration: ${rx.duration}`,
+    rx.instructions ? `Instructions: ${rx.instructions}` : null,
+    rx.veterinarian ? `Prescribed by: ${rx.veterinarian}` : null,
+    `Refills: ${rx.refillsRemaining}/${rx.refillsTotal} remaining`,
+    rx.isControlled ? "This is a controlled substance." : null,
+    rx.notes ? `Notes: ${rx.notes}` : null,
+  ]
+  const context = lines.filter(Boolean).join("\n")
+  return `${context}\n\nProvide a brief clinical summary covering: what this medication is used for, key monitoring considerations for ${rx.patient.species}, common side effects to watch for, and any important owner instructions.`
 }
 
 function CreatePrescriptionForm({

@@ -32,6 +32,7 @@ model User {
   recordedVitalSigns      VitalSigns[]       @relation("VitalSignsRecordedBy")
   assignedTasks           Task[]             @relation("TaskAssignedTo")
   auditLogs               AuditLog[]
+  notifications           Notification[]
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
 
@@ -763,5 +764,22 @@ model AuditLog {
   @@index([action])
   @@index([resourceType])
   @@index([resourceId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id           String   @id @default(cuid())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  type         String
+  title        String
+  body         String
+  resourceType String?
+  resourceId   String?
+  read         Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, read])
   @@index([createdAt])
 }
