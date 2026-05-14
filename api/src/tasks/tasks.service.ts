@@ -2,11 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTaskDto, UpdateTaskDto } from './dto';
+import { NotificationsService } from '../notifications/notifications.service';
 import { createPaginatedResult, getPaginationParams } from '../common/pagination';
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async list(filters: {
     patientId?: string;
@@ -112,7 +116,7 @@ export class TasksService {
       data.assignedToUser = { connect: { id: dto.assignedTo } };
     }
 
-    return this.prisma.task.create({
+    const task = await this.prisma.task.create({
       data,
       include: {
         patient: { select: { id: true, name: true, species: true } },
@@ -121,6 +125,21 @@ export class TasksService {
         assignedToUser: { select: { id: true, name: true, email: true } },
       },
     });
+
+    if (dto.assignedTo && dto.assignedTo !== userId) {
+      await this.notificationsService.create({
+        userId: dto.assignedTo,
+        type: 'task_assigned',
+        title: 'Task assigned to you',
+        body: dto.description
+          ? `${dto.title} — ${dto.description}`
+          : dto.title,
+        resourceType: 'task',
+        resourceId: task.id,
+      });
+    }
+
+    return task;
   }
 
   async update(id: string, dto: UpdateTaskDto, userId?: string) {
@@ -178,7 +197,7 @@ export class TasksService {
       data.completedBy = userId;
     }
 
-    return this.prisma.task.update({
+    const task = await this.prisma.task.update({
       where: { id },
       data,
       include: {
@@ -188,6 +207,22 @@ export class TasksService {
         assignedToUser: { select: { id: true, name: true, email: true } },
       },
     });
+
+    const newAssignee = dto.assignedTo;
+    if (newAssignee && newAssignee !== existing.assignedTo && newAssignee !== userId) {
+      await this.notificationsService.create({
+        userId: newAssignee,
+        type: 'task_assigned',
+        title: 'Task assigned to you',
+        body: task.description
+          ? `${task.title} — ${task.description}`
+          : task.title,
+        resourceType: 'task',
+        resourceId: task.id,
+      });
+    }
+
+    return task;
   }
 
   async remove(id: string) {

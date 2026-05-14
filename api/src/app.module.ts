@@ -28,6 +28,7 @@ import { SettingsModule } from './settings/settings.module';
 import { BotModule } from './bot/bot.module';
 import { AIModule } from './ai/ai.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { InvoicesModule } from './invoices/invoices.module';
     BotModule,
     AIModule,
     InvoicesModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
 })
