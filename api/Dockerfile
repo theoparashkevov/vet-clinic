@@ -5,8 +5,10 @@ COPY package.json tsconfig.json ./
 RUN npm install --production=false
 COPY scripts ./scripts
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN node scripts/use-prisma-schema.js postgres && npx prisma generate
 COPY src ./src
 RUN npm run build
+COPY entrypoint.sh ./entrypoint.sh
+RUN chmod +x entrypoint.sh
 EXPOSE 3000
-CMD ["npm","start"]
+ENTRYPOINT ["./entrypoint.sh"]
