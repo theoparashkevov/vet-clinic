@@ -22,6 +22,7 @@ import BotConfigTab from "../../components/admin/BotConfigTab"
 import AuditLogsTab from "../../components/admin/AuditLogsTab"
 import {
   applyPalette, savePalette, clearSavedPalette, loadSavedPalette,
+  paletteFromPreset, PRESETS,
   LIGHT_DEFAULTS, DARK_DEFAULTS,
   type PaletteEntry,
 } from "../../lib/themePalette"
@@ -99,6 +100,82 @@ function ColorSwatch({ entry, onChange }: { entry: PaletteEntry; onChange: (val:
   )
 }
 
+// ─── Preset selector ─────────────────────────────────────────────────────────
+
+function PresetSelector({
+  activeId,
+  onSelect,
+}: {
+  activeId: string | null
+  onSelect: (id: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+
+  const active = PRESETS.find((p) => p.id === activeId)
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-accent ${open ? "bg-accent" : "bg-background"}`}
+      >
+        {active ? (
+          <>
+            <span className="flex gap-1">
+              {active.preview.map((c) => (
+                <span key={c} className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: c }} />
+              ))}
+            </span>
+            <span className="font-medium">{active.name}</span>
+          </>
+        ) : (
+          <span className="text-muted-foreground">Choose preset…</span>
+        )}
+        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="absolute left-0 top-11 z-40 w-72 rounded-xl border bg-popover shadow-xl p-1.5 space-y-0.5"
+            >
+              {PRESETS.map((preset) => {
+                const isActive = preset.id === activeId
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => { onSelect(preset.id); setOpen(false) }}
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent ${isActive ? "bg-accent" : ""}`}
+                  >
+                    <span className="flex gap-1 shrink-0">
+                      {preset.preview.map((c) => (
+                        <span key={c} className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: c }} />
+                      ))}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium leading-tight">{preset.name}</span>
+                      <span className="block text-xs text-muted-foreground leading-tight truncate">{preset.description}</span>
+                    </span>
+                    {isActive && <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-primary" />}
+                  </button>
+                )
+              })}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ─── Platform Info Tab ────────────────────────────────────────────────────────
 
 function PlatformInfoTab() {
@@ -110,6 +187,7 @@ function PlatformInfoTab() {
     supportEmail: "support@vetclinic.com",
   })
 
+  const [activePreset, setActivePreset] = useState<string | null>(null)
   const [lightPalette, setLightPalette] = useState<PaletteEntry[]>(
     () => loadSavedPalette()?.light ?? LIGHT_DEFAULTS
   )
@@ -122,11 +200,21 @@ function PlatformInfoTab() {
     applyPalette(lightPalette, darkPalette)
   }, [lightPalette, darkPalette])
 
+  function applyPreset(id: string) {
+    const preset = PRESETS.find((p) => p.id === id)
+    if (!preset) return
+    setActivePreset(id)
+    setLightPalette(paletteFromPreset(preset, 'light'))
+    setDarkPalette(paletteFromPreset(preset, 'dark'))
+  }
+
   function updateLight(key: string, value: string) {
+    setActivePreset(null)
     setLightPalette((prev) => prev.map((e) => e.key === key ? { ...e, value } : e))
   }
 
   function updateDark(key: string, value: string) {
+    setActivePreset(null)
     setDarkPalette((prev) => prev.map((e) => e.key === key ? { ...e, value } : e))
   }
 
@@ -189,20 +277,23 @@ function PlatformInfoTab() {
       {/* Light theme palette */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div>
               <CardTitle className="flex items-center gap-2 text-sm">
                 <Palette className="h-4 w-4" /> Light Theme Palette
               </CardTitle>
               <CardDescription className="mt-1">Colours used when the app is in light mode.</CardDescription>
             </div>
-            <Button
-              variant="ghost" size="sm"
-              className="h-7 text-xs text-muted-foreground"
-              onClick={() => setLightPalette(LIGHT_DEFAULTS)}
-            >
-              Reset defaults
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <PresetSelector activeId={activePreset} onSelect={applyPreset} />
+              <Button
+                variant="ghost" size="sm"
+                className="h-7 text-xs text-muted-foreground"
+                onClick={() => setLightPalette(LIGHT_DEFAULTS)}
+              >
+                Reset
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <Separator />

@@ -2,6 +2,59 @@ const STORAGE_KEY = 'vet-theme-palette'
 
 export interface PaletteEntry { key: string; label: string; description: string; value: string }
 
+export interface ThemePreset {
+  id: string
+  name: string
+  description: string
+  /** 4 representative hex colours shown in the preview strip [bg, primary, accent, destructive] */
+  preview: [string, string, string, string]
+  light: Record<string, string>
+  dark:  Record<string, string>
+}
+
+export const PRESETS: ThemePreset[] = [
+  {
+    id: 'forest',
+    name: 'Forest',
+    description: 'Teal greens — calm and clinical',
+    preview: ['#f6f7f9', '#22776c', '#e5e8eb', '#dc2828'],
+    light: { background: '#f6f7f9', foreground: '#192029', primary: '#22776c', secondary: '#ebedf0', accent: '#e5e8eb', muted: '#ebedf0', destructive: '#dc2828' },
+    dark:  { background: '#12151c', foreground: '#eaedf0', primary: '#31af9e', secondary: '#252931', accent: '#272b34', muted: '#252931', destructive: '#c62e2e' },
+  },
+  {
+    id: 'ocean',
+    name: 'Ocean',
+    description: 'Cool blues — clean and professional',
+    preview: ['#f0f5ff', '#2563eb', '#e6eefb', '#dc2626'],
+    light: { background: '#f0f5ff', foreground: '#0c1a3d', primary: '#2563eb', secondary: '#dde5f9', accent: '#e6eefb', muted: '#dde5f9', destructive: '#dc2626' },
+    dark:  { background: '#0d1120', foreground: '#dde8ff', primary: '#3b82f6', secondary: '#131b30', accent: '#1a2540', muted: '#131b30', destructive: '#f87171' },
+  },
+  {
+    id: 'sunset',
+    name: 'Sunset',
+    description: 'Warm ambers — energetic and inviting',
+    preview: ['#fffbf5', '#c2610f', '#fddfc4', '#dc2626'],
+    light: { background: '#fffbf5', foreground: '#291806', primary: '#c2610f', secondary: '#feecd8', accent: '#fddfc4', muted: '#feecd8', destructive: '#dc2626' },
+    dark:  { background: '#160d04', foreground: '#f5e4cf', primary: '#f97316', secondary: '#2a1806', accent: '#391f08', muted: '#2a1806', destructive: '#f87171' },
+  },
+  {
+    id: 'lavender',
+    name: 'Lavender',
+    description: 'Soft purples — modern and distinctive',
+    preview: ['#f9f7ff', '#7c3aed', '#e6deff', '#dc2626'],
+    light: { background: '#f9f7ff', foreground: '#1a1033', primary: '#7c3aed', secondary: '#ede8ff', accent: '#e6deff', muted: '#ede8ff', destructive: '#dc2626' },
+    dark:  { background: '#100b1e', foreground: '#e4deff', primary: '#a78bfa', secondary: '#1e1533', accent: '#2a1f44', muted: '#1e1533', destructive: '#f87171' },
+  },
+  {
+    id: 'slate',
+    name: 'Slate',
+    description: 'Neutral grays — minimal and timeless',
+    preview: ['#f8fafc', '#475569', '#e2e8f0', '#dc2626'],
+    light: { background: '#f8fafc', foreground: '#0f172a', primary: '#475569', secondary: '#e2e8f0', accent: '#e2e8f0', muted: '#e2e8f0', destructive: '#dc2626' },
+    dark:  { background: '#0f172a', foreground: '#f1f5f9', primary: '#94a3b8', secondary: '#1e293b', accent: '#1e293b', muted: '#1e293b', destructive: '#f87171' },
+  },
+]
+
 // Defaults match the actual CSS variable values in index.css
 export const LIGHT_DEFAULTS: PaletteEntry[] = [
   { key: 'light-background',  label: 'Background',  description: 'Main page canvas and sidebar background',             value: '#f6f7f9' },
@@ -22,6 +75,16 @@ export const DARK_DEFAULTS: PaletteEntry[] = [
   { key: 'dark-muted',       label: 'Muted',       description: 'Muted/disabled backgrounds, table stripes',            value: '#252931' },
   { key: 'dark-destructive', label: 'Destructive', description: 'Delete buttons, error alerts, danger states',          value: '#c62e2e' },
 ]
+
+/** Build a full PaletteEntry[] from a preset's flat colour map */
+export function paletteFromPreset(preset: ThemePreset, mode: 'light' | 'dark'): PaletteEntry[] {
+  const defaults = mode === 'light' ? LIGHT_DEFAULTS : DARK_DEFAULTS
+  const values   = mode === 'light' ? preset.light   : preset.dark
+  return defaults.map((d) => {
+    const slot = d.key.replace(`${mode}-`, '')
+    return values[slot] ? { ...d, value: values[slot] } : d
+  })
+}
 
 function hexToHslString(hex: string): string {
   if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return 'hsl(0 0% 50%)'
@@ -75,8 +138,6 @@ function buildRules(entries: PaletteEntry[]): string {
 export function applyPalette(light: PaletteEntry[], dark: PaletteEntry[]): void {
   const css = `:root {\n${buildRules(light)}\n}\n.dark {\n${buildRules(dark)}\n}`
 
-  // Always remove and re-append so this tag is last in <head>,
-  // guaranteeing it wins the cascade over Vite-injected stylesheets.
   document.getElementById('vet-theme-palette')?.remove()
   const el = document.createElement('style')
   el.id = 'vet-theme-palette'
@@ -93,7 +154,6 @@ export function clearSavedPalette(): void {
   document.getElementById('vet-theme-palette')?.remove()
 }
 
-// Merges saved values into defaults so new entries are never lost
 function mergePalette(defaults: PaletteEntry[], saved: PaletteEntry[]): PaletteEntry[] {
   return defaults.map((d) => {
     const match = saved.find((s) => s.key === d.key)
