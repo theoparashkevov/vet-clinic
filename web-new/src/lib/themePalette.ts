@@ -1,22 +1,22 @@
 const STORAGE_KEY = 'vet-theme-palette'
 
-export interface PaletteEntry { key: string; label: string; value: string }
+export interface PaletteEntry { key: string; label: string; description: string; value: string }
 
-// Defaults derived from the actual CSS variables in index.css
+// Defaults match the actual CSS variable values in index.css
 export const LIGHT_DEFAULTS: PaletteEntry[] = [
-  { key: 'light-primary',     label: 'Primary',     value: '#22776c' },
-  { key: 'light-secondary',   label: 'Secondary',   value: '#ebedf0' },
-  { key: 'light-accent',      label: 'Accent',      value: '#e5e8eb' },
-  { key: 'light-muted',       label: 'Muted',       value: '#ebedf0' },
-  { key: 'light-destructive', label: 'Destructive', value: '#dc2828' },
+  { key: 'light-primary',     label: 'Primary',     description: 'Buttons, active nav items, links, focus rings',      value: '#22776c' },
+  { key: 'light-secondary',   label: 'Secondary',   description: 'Secondary button backgrounds, badge fills',           value: '#ebedf0' },
+  { key: 'light-accent',      label: 'Accent',      description: 'Hover highlights on menus, dropdowns, sidebar rows',  value: '#e5e8eb' },
+  { key: 'light-muted',       label: 'Muted',       description: 'Muted/disabled backgrounds, table stripes',           value: '#ebedf0' },
+  { key: 'light-destructive', label: 'Destructive', description: 'Delete buttons, error alerts, danger states',         value: '#dc2828' },
 ]
 
 export const DARK_DEFAULTS: PaletteEntry[] = [
-  { key: 'dark-primary',     label: 'Primary',     value: '#31af9e' },
-  { key: 'dark-secondary',   label: 'Secondary',   value: '#252931' },
-  { key: 'dark-accent',      label: 'Accent',      value: '#272b34' },
-  { key: 'dark-muted',       label: 'Muted',       value: '#252931' },
-  { key: 'dark-destructive', label: 'Destructive', value: '#c62e2e' },
+  { key: 'dark-primary',     label: 'Primary',     description: 'Buttons, active nav items, links, focus rings',      value: '#31af9e' },
+  { key: 'dark-secondary',   label: 'Secondary',   description: 'Secondary button backgrounds, badge fills',           value: '#252931' },
+  { key: 'dark-accent',      label: 'Accent',      description: 'Hover highlights on menus, dropdowns, sidebar rows',  value: '#272b34' },
+  { key: 'dark-muted',       label: 'Muted',       description: 'Muted/disabled backgrounds, table stripes',           value: '#252931' },
+  { key: 'dark-destructive', label: 'Destructive', description: 'Delete buttons, error alerts, danger states',         value: '#c62e2e' },
 ]
 
 function hexToHslString(hex: string): string {
@@ -43,24 +43,29 @@ function hexToHslString(hex: string): string {
   return `hsl(${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%)`
 }
 
-const VAR_MAP: Record<string, string> = {
-  'light-primary':     '--primary',
-  'light-secondary':   '--secondary',
-  'light-accent':      '--accent',
-  'light-muted':       '--muted',
-  'light-destructive': '--destructive',
-  'dark-primary':      '--primary',
-  'dark-secondary':    '--secondary',
-  'dark-accent':       '--accent',
-  'dark-muted':        '--muted',
-  'dark-destructive':  '--destructive',
+// Each palette key maps to every CSS variable it should drive
+const VAR_MAP: Record<string, string[]> = {
+  'light-primary':     ['--primary', '--ring', '--sidebar-primary', '--sidebar-ring'],
+  'light-secondary':   ['--secondary'],
+  'light-accent':      ['--accent', '--sidebar-accent'],
+  'light-muted':       ['--muted'],
+  'light-destructive': ['--destructive'],
+  'dark-primary':      ['--primary', '--ring', '--sidebar-primary', '--sidebar-ring'],
+  'dark-secondary':    ['--secondary'],
+  'dark-accent':       ['--accent', '--sidebar-accent'],
+  'dark-muted':        ['--muted'],
+  'dark-destructive':  ['--destructive'],
+}
+
+function buildRules(entries: PaletteEntry[]): string {
+  return entries.flatMap((e) => {
+    const hsl = hexToHslString(e.value)
+    return (VAR_MAP[e.key] ?? []).map((cssVar) => `  ${cssVar}: ${hsl};`)
+  }).join('\n')
 }
 
 export function applyPalette(light: PaletteEntry[], dark: PaletteEntry[]): void {
-  const lightRules = light.map((e) => `  ${VAR_MAP[e.key]}: ${hexToHslString(e.value)};`).join('\n')
-  const darkRules  = dark.map((e) =>  `  ${VAR_MAP[e.key]}: ${hexToHslString(e.value)};`).join('\n')
-
-  const css = `:root {\n${lightRules}\n}\n.dark {\n${darkRules}\n}`
+  const css = `:root {\n${buildRules(light)}\n}\n.dark {\n${buildRules(dark)}\n}`
 
   // Always remove and re-append so this tag is last in <head>,
   // guaranteeing it wins the cascade over Vite-injected stylesheets.
@@ -90,7 +95,6 @@ export function loadSavedPalette(): { light: PaletteEntry[]; dark: PaletteEntry[
   }
 }
 
-// Call once on app boot to re-apply any saved palette
 export function loadAndApplyPalette(): void {
   const saved = loadSavedPalette()
   if (saved) applyPalette(saved.light, saved.dark)

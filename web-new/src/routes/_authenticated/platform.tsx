@@ -71,7 +71,7 @@ function ColorSwatch({ entry, onChange }: { entry: PaletteEntry; onChange: (val:
   const id = `cp-${entry.key}`
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="block cursor-pointer">
+      <label htmlFor={id} className="block cursor-pointer" title={entry.description}>
         <div
           className="h-14 w-full rounded-lg border-2 border-border cursor-pointer transition-transform hover:scale-[1.03] active:scale-[0.98]"
           style={{ backgroundColor: entry.value }}
@@ -84,7 +84,7 @@ function ColorSwatch({ entry, onChange }: { entry: PaletteEntry; onChange: (val:
         onChange={(e) => onChange(e.target.value)}
         className="sr-only"
       />
-      <p className="text-center text-xs font-medium text-muted-foreground">{entry.label}</p>
+      <p className="text-center text-xs font-semibold">{entry.label}</p>
       <Input
         value={entry.value}
         onChange={(e) => {
@@ -94,6 +94,7 @@ function ColorSwatch({ entry, onChange }: { entry: PaletteEntry; onChange: (val:
         className="h-7 text-center font-mono text-xs"
         maxLength={7}
       />
+      <p className="text-center text-[10px] text-muted-foreground leading-tight">{entry.description}</p>
     </div>
   )
 }
