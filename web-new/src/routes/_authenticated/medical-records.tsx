@@ -26,6 +26,7 @@ import {
   Share2,
   Mail,
   Link2,
+  Sparkles,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { fetchWithAuth } from "../../lib/api"
@@ -48,6 +49,7 @@ import {
   TableRow,
 } from "../../components/ui/table"
 import { toast } from "sonner"
+import { AIPanel } from "../../components/ai/AIPanel"
 
 export const Route = createFileRoute("/_authenticated/medical-records")({
   component: MedicalHistoryPage,
@@ -510,6 +512,67 @@ function printHistory(
 <div class="sec"><div class="sl" style="font-size:11pt;margin-bottom:4mm">Prescriptions</div>${rxHTML}</div>
 <div class="footer"><span>Vet Clinic Management System</span><span>Confidential — For clinical use only</span></div>
 </body></html>`)
+}
+
+// ─── AI prompt builders ──────────────────────────────────────────────────────
+
+function buildRecordPrompt(record: MedicalRecord): string {
+  const vitals = record.vitalSigns
+    ? [
+        record.vitalSigns.temperature != null && `T: ${record.vitalSigns.temperature}°C`,
+        record.vitalSigns.heartRate != null && `HR: ${record.vitalSigns.heartRate} bpm`,
+        record.vitalSigns.respiratoryRate != null && `RR: ${record.vitalSigns.respiratoryRate}/min`,
+        record.vitalSigns.weight != null && `Weight: ${record.vitalSigns.weight} kg`,
+        record.vitalSigns.bloodPressureSystolic != null &&
+          `BP: ${record.vitalSigns.bloodPressureSystolic}/${record.vitalSigns.bloodPressureDiastolic} mmHg`,
+        record.vitalSigns.bodyConditionScore != null && `BCS: ${record.vitalSigns.bodyConditionScore}/9`,
+      ].filter(Boolean).join(", ")
+    : "Not recorded"
+
+  return `You are an expert veterinary clinical assistant. Analyse the following visit record.
+
+Patient: ${record.patient.name} (${record.patient.species})
+Visit date: ${record.visitDate.slice(0, 10)}${record.createdBy ? `\nVeterinarian: ${record.createdBy.name}` : ""}
+Vitals: ${vitals}
+Summary: ${record.summary}${record.diagnoses ? `\nDiagnoses: ${record.diagnoses}` : ""}${record.treatments ? `\nTreatments: ${record.treatments}` : ""}${record.prescriptions ? `\nPrescriptions: ${record.prescriptions}` : ""}${record.nextVisitRecommended ? `\nNext visit recommended: ${record.nextVisitRecommended.slice(0, 10)}` : ""}
+
+Provide a concise clinical summary, highlight any notable findings or concerns, and suggest follow-up considerations.`
+}
+
+function buildLabPrompt(result: LabResult): string {
+  const values = result.values
+    .map((v) =>
+      `  - ${v.test.name}${v.test.abbreviation ? ` (${v.test.abbreviation})` : ""}: ` +
+      `${v.displayValue} ${v.test.unit} [${v.status}]` +
+      (v.refRangeMin != null ? ` (ref: ${v.refRangeMin}–${v.refRangeMax} ${v.test.unit})` : "")
+    )
+    .join("\n")
+
+  return `You are an expert veterinary clinical assistant. Interpret the following lab results.
+
+Patient: ${result.patient.name} (${result.patient.species})
+Panel: ${result.panel.name} (${result.panel.category})
+Test date: ${result.testDate.slice(0, 10)}
+Overall status: ${result.status} · ${result.abnormalCount} abnormal · ${result.criticalCount} critical
+
+Test values:
+${values}${result.interpretation ? `\n\nExisting interpretation: ${result.interpretation}` : ""}${result.notes ? `\nNotes: ${result.notes}` : ""}
+
+Explain the clinical significance of any abnormal or critical values, provide context on what they might indicate, and suggest follow-up actions.`
+}
+
+function buildRxPrompt(rx: Prescription): string {
+  return `You are an expert veterinary clinical assistant. Review the following prescription.
+
+Patient: ${rx.patient.name} (${rx.patient.species})
+Medication: ${rx.medication}${rx.isControlled ? " (CONTROLLED SUBSTANCE)" : ""}
+Dosage: ${rx.dosage}
+Frequency: ${rx.frequency}
+Duration: ${rx.duration}${rx.instructions ? `\nInstructions: ${rx.instructions}` : ""}${rx.veterinarian ? `\nPrescribed by: ${rx.veterinarian}` : ""}
+Status: ${isExpired(rx.expiresAt) ? "EXPIRED" : "Active"}
+Refills remaining: ${rx.refillsRemaining} of ${rx.refillsTotal}
+
+Review this prescription for any concerns about dosage, duration, or administration. Confirm the instructions are appropriate for this species and flag any potential issues.`
 }
 
 // ─── page ────────────────────────────────────────────────────────────────────
@@ -1157,8 +1220,12 @@ function MedicalRecordDrawer({
 }) {
   const { data: record, isLoading } = useMedicalRecordDetail(selectedId)
   const [shareOpen, setShareOpen] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
+
+  useEffect(() => { if (!selectedId) setAiOpen(false) }, [selectedId])
 
   return (
+    <>
     <DrawerShell open={!!selectedId} onClose={onClose}>
       {/* Header */}
       <div className="flex items-start justify-between border-b px-5 py-4">
@@ -1181,6 +1248,9 @@ function MedicalRecordDrawer({
         <div className="flex items-center gap-1 shrink-0">
           {!isLoading && record && (
             <>
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="AI analysis" onClick={() => setAiOpen(true)}>
+                <Sparkles className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" size="icon" className="h-8 w-8" title="Print record" onClick={() => printRecord(record)}>
                 <Printer className="h-4 w-4" />
               </Button>
@@ -1299,6 +1369,13 @@ function MedicalRecordDrawer({
         )}
       </div>
     </DrawerShell>
+    <AIPanel
+      open={aiOpen}
+      onClose={() => setAiOpen(false)}
+      title={record ? `${record.patient.name} · ${formatDate(record.visitDate)}` : "Medical Record"}
+      systemPrompt={record ? buildRecordPrompt(record) : ""}
+    />
+    </>
   )
 }
 
@@ -1310,8 +1387,12 @@ function LabResultDrawer({
   onClose: () => void
 }) {
   const { data: result, isLoading } = useLabResultDetail(selectedId)
+  const [aiOpen, setAiOpen] = useState(false)
+
+  useEffect(() => { if (!selectedId) setAiOpen(false) }, [selectedId])
 
   return (
+    <>
     <DrawerShell open={!!selectedId} onClose={onClose} width="max-w-2xl">
       {/* Header */}
       <div className="flex items-start justify-between border-b px-5 py-4">
@@ -1331,9 +1412,14 @@ function LabResultDrawer({
             </div>
           </div>
         )}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           {result && (
-            <Badge variant={getLabStatusVariant(result.status)} className="capitalize">{result.status}</Badge>
+            <>
+              <Badge variant={getLabStatusVariant(result.status)} className="capitalize mr-1">{result.status}</Badge>
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="AI interpretation" onClick={() => setAiOpen(true)}>
+                <Sparkles className="h-4 w-4" />
+              </Button>
+            </>
           )}
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -1428,6 +1514,13 @@ function LabResultDrawer({
         )}
       </div>
     </DrawerShell>
+    <AIPanel
+      open={aiOpen}
+      onClose={() => setAiOpen(false)}
+      title={result ? `${result.patient.name} · ${result.panel.name}` : "Lab Result"}
+      systemPrompt={result ? buildLabPrompt(result) : ""}
+    />
+    </>
   )
 }
 
@@ -1441,8 +1534,12 @@ function PrescriptionDrawer({
   const { data: rx, isLoading } = usePrescriptionDetail(selectedId)
   const refillMutation = useRefillPrescription()
   const expired = rx ? isExpired(rx.expiresAt) : false
+  const [aiOpen, setAiOpen] = useState(false)
+
+  useEffect(() => { if (!selectedId) setAiOpen(false) }, [selectedId])
 
   return (
+    <>
     <DrawerShell open={!!selectedId} onClose={onClose}>
       {/* Header */}
       <div className="flex items-start justify-between border-b px-5 py-4">
@@ -1465,11 +1562,16 @@ function PrescriptionDrawer({
             </div>
           </div>
         )}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           {rx && (
-            <Badge variant={expired ? "destructive" : "default"}>
-              {expired ? "Expired" : "Active"}
-            </Badge>
+            <>
+              <Badge variant={expired ? "destructive" : "default"} className="mr-1">
+                {expired ? "Expired" : "Active"}
+              </Badge>
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="AI review" onClick={() => setAiOpen(true)}>
+                <Sparkles className="h-4 w-4" />
+              </Button>
+            </>
           )}
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -1551,6 +1653,13 @@ function PrescriptionDrawer({
         )}
       </div>
     </DrawerShell>
+    <AIPanel
+      open={aiOpen}
+      onClose={() => setAiOpen(false)}
+      title={rx ? `${rx.patient.name} · ${rx.medication}` : "Prescription"}
+      systemPrompt={rx ? buildRxPrompt(rx) : ""}
+    />
+    </>
   )
 }
 

@@ -20,6 +20,7 @@ import {
   ShieldAlert,
   Heart,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react"
 import { fetchWithAuth } from "../../lib/api"
 import { Button } from "../../components/ui/button"
@@ -31,6 +32,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../
 import { useState } from "react"
 import { PatientFormModal } from "../../components/patients/PatientFormModal"
 import { AvatarUpload, useEntityPhoto } from "../../components/ui/avatar-upload"
+import { AIPanel } from "../../components/ai/AIPanel"
 import { AppointmentDetailSheet } from "../../components/appointments/AppointmentDetailSheet"
 import type { Patient, MedicalRecord, Vaccination, WeightRecord, Prescription, LabResult } from "../../components/patients/types"
 import {
@@ -197,6 +199,7 @@ function PatientDetailPage() {
 
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedApptId, setSelectedApptId] = useState<string | null>(null)
+  const [aiOpen, setAiOpen] = useState(false)
   const { photo, save: savePhoto, clear: clearPhoto } = useEntityPhoto("patient", id)
 
   if (isLoading) {
@@ -269,10 +272,16 @@ function PatientDetailPage() {
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setEditModalOpen(true)}>
-          <Pencil className="mr-1.5 h-3.5 w-3.5" />
-          Edit Patient
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setAiOpen(true)}>
+            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+            AI Summary
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setEditModalOpen(true)}>
+            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+            Edit Patient
+          </Button>
+        </div>
       </div>
 
       {/* Alert banners */}
@@ -708,8 +717,71 @@ function PatientDetailPage() {
         appointmentId={selectedApptId}
         onClose={() => setSelectedApptId(null)}
       />
+
+      {/* AI summary panel */}
+      <AIPanel
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        title={`${patient.name} — Health Summary`}
+        systemPrompt={buildPatientPrompt(patient, records, prescriptions, labResults)}
+      />
     </div>
   )
+}
+
+function buildPatientPrompt(
+  patient: Patient,
+  records: MedicalRecord[],
+  prescriptions: Prescription[],
+  labResults: LabResult[],
+): string {
+  const recentRecords = [...records]
+    .sort((a, b) => new Date(b.visitDate).getTime() - new Date(a.visitDate).getTime())
+    .slice(0, 5)
+
+  const activePrescriptions = prescriptions.filter(
+    (rx) => new Date(rx.expiresAt) > new Date()
+  )
+
+  const recordsSummary = recentRecords.length > 0
+    ? recentRecords.map((r) =>
+        `  - ${r.visitDate.slice(0, 10)}: ${r.summary}${r.diagnoses ? ` | Dx: ${r.diagnoses}` : ""}`
+      ).join("\n")
+    : "  None"
+
+  const rxSummary = activePrescriptions.length > 0
+    ? activePrescriptions.map((rx) =>
+        `  - ${rx.medication} ${rx.dosage} ${rx.frequency} (${rx.duration})`
+      ).join("\n")
+    : "  None"
+
+  const recentLab = [...labResults]
+    .sort((a, b) => new Date(b.testDate).getTime() - new Date(a.testDate).getTime())
+    .slice(0, 3)
+
+  const labSummary = recentLab.length > 0
+    ? recentLab.map((lr) =>
+        `  - ${lr.testDate.slice(0, 10)}: ${lr.panel.name} [${lr.status}]${lr.criticalCount > 0 ? ` ⚠ ${lr.criticalCount} critical` : ""}${lr.abnormalCount > 0 ? ` ${lr.abnormalCount} abnormal` : ""}`
+      ).join("\n")
+    : "  None"
+
+  return `You are an expert veterinary clinical assistant. Provide a concise health summary for the following patient.
+
+Patient: ${patient.name}
+Species/Breed: ${patient.species}${patient.breed ? ` (${patient.breed})` : ""}
+Age: ${patient.birthdate ? `${patient.birthdate.slice(0, 10)}` : "Unknown"}
+Sex: ${patient.sex ?? "Unknown"}${patient.isNeutered != null ? ` · ${patient.isNeutered ? "Neutered" : "Intact"}` : ""}${patient.allergies ? `\nAllergies: ${patient.allergies}` : ""}${patient.chronicConditions ? `\nChronic conditions: ${patient.chronicConditions}` : ""}
+
+Recent visits (last 5):
+${recordsSummary}
+
+Active prescriptions:
+${rxSummary}
+
+Recent lab results:
+${labSummary}
+
+Summarise this patient's current health status, highlight any ongoing concerns or risk factors, note any trends across the visit history, and suggest preventive or follow-up actions if appropriate.`
 }
 
 function InfoRow({
