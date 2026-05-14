@@ -5,6 +5,7 @@ import { USER_ROLES } from '../src/auth/roles.constants';
 const prisma = new PrismaClient();
 const demoDoctorPassword = 'demo12345';
 const adminPassword = 'admin123';
+const superadminPassword = 'superadmin123';
 
 function daysAgo(n: number): Date {
   const d = new Date();
@@ -29,6 +30,7 @@ async function main() {
   console.log('Seeding database...');
   const doctorPasswordHash = hashPassword(demoDoctorPassword);
   const adminPasswordHash = hashPassword(adminPassword);
+  const superadminPasswordHash = hashPassword(superadminPassword);
 
   const roles = {
     superadmin: await prisma.role.upsert({
@@ -85,6 +87,11 @@ async function main() {
     update: { name: 'Clinic Admin', passwordHash: adminPasswordHash },
     create: { name: 'Clinic Admin', email: 'admin@vetclinic.com', passwordHash: adminPasswordHash },
   });
+  const superadminUser = await prisma.user.upsert({
+    where: { email: 'superadmin@vetclinic.com' },
+    update: { name: 'Super Admin', passwordHash: superadminPasswordHash, isSuperAdmin: true },
+    create: { name: 'Super Admin', email: 'superadmin@vetclinic.com', passwordHash: superadminPasswordHash, isSuperAdmin: true },
+  });
   const staffUser = await prisma.user.upsert({
     where: { email: 'staff@vetclinic.com' },
     update: { name: 'Front Desk Staff', passwordHash: doctorPasswordHash },
@@ -101,6 +108,7 @@ async function main() {
     { userId: drPetar.id, roleId: roles.doctor.id },
     { userId: drElena.id, roleId: roles.doctor.id },
     { userId: adminUser.id, roleId: roles.admin.id },
+    { userId: superadminUser.id, roleId: roles.superadmin.id },
     { userId: staffUser.id, roleId: roles.registrar.id },
     { userId: clientUser.id, roleId: roles.client.id },
   ]) {
@@ -112,9 +120,11 @@ async function main() {
   }
 
   console.log('  Doctors: Dr. Ivanova, Dr. Dimitrov, Dr. Georgieva');
+  console.log('  Superadmin: superadmin@vetclinic.com');
   console.log('  Admin user: admin@vetclinic.com');
   console.log('  Staff users: staff@vetclinic.com');
   console.log('  Client user: client@vetclinic.com');
+  console.log(`  Superadmin password: ${superadminPassword}`);
   console.log(`  Admin password: ${adminPassword}`);
   console.log(`  Other users password: ${demoDoctorPassword}`);
 
