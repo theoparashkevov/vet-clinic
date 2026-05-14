@@ -4,6 +4,9 @@ import { useAuthStore } from "../stores/authStore"
 import { useAuth } from "../hooks/useAuth"
 import { AppLayout } from "../components/layout/AppLayout"
 import { Skeleton } from "../components/ui/skeleton"
+import { loadAndApplyPalette } from "../lib/themePalette"
+
+loadAndApplyPalette()
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: () => {

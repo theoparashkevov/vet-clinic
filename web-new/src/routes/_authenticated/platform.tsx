@@ -20,6 +20,11 @@ import {
 import AIConfigTab from "../../components/admin/AIConfigTab"
 import BotConfigTab from "../../components/admin/BotConfigTab"
 import AuditLogsTab from "../../components/admin/AuditLogsTab"
+import {
+  applyPalette, savePalette, clearSavedPalette, loadSavedPalette,
+  LIGHT_DEFAULTS, DARK_DEFAULTS,
+  type PaletteEntry,
+} from "../../lib/themePalette"
 
 export const Route = createFileRoute("/_authenticated/platform")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -62,25 +67,7 @@ function roleColor(name: string) {
 
 // ─── Color palette ────────────────────────────────────────────────────────────
 
-interface ColorEntry { key: string; label: string; value: string }
-
-const LIGHT_DEFAULTS: ColorEntry[] = [
-  { key: "light-primary",     label: "Primary",     value: "#2563eb" },
-  { key: "light-secondary",   label: "Secondary",   value: "#64748b" },
-  { key: "light-accent",      label: "Accent",      value: "#f1f5f9" },
-  { key: "light-muted",       label: "Muted",       value: "#94a3b8" },
-  { key: "light-destructive", label: "Destructive", value: "#ef4444" },
-]
-
-const DARK_DEFAULTS: ColorEntry[] = [
-  { key: "dark-primary",     label: "Primary",     value: "#3b82f6" },
-  { key: "dark-secondary",   label: "Secondary",   value: "#94a3b8" },
-  { key: "dark-accent",      label: "Accent",      value: "#1e293b" },
-  { key: "dark-muted",       label: "Muted",       value: "#475569" },
-  { key: "dark-destructive", label: "Destructive", value: "#f87171" },
-]
-
-function ColorSwatch({ entry, onChange }: { entry: ColorEntry; onChange: (val: string) => void }) {
+function ColorSwatch({ entry, onChange }: { entry: PaletteEntry; onChange: (val: string) => void }) {
   const id = `cp-${entry.key}`
   return (
     <div className="space-y-2">
@@ -121,17 +108,29 @@ function PlatformInfoTab() {
     version: "1.0.0",
     supportEmail: "support@vetclinic.com",
   })
-  const [lightPalette, setLightPalette] = useState<ColorEntry[]>(LIGHT_DEFAULTS)
-  const [darkPalette, setDarkPalette] = useState<ColorEntry[]>(DARK_DEFAULTS)
+
+  const initialPalette = loadSavedPalette()
+  const [lightPalette, setLightPalette] = useState<PaletteEntry[]>(initialPalette?.light ?? LIGHT_DEFAULTS)
+  const [darkPalette, setDarkPalette] = useState<PaletteEntry[]>(initialPalette?.dark ?? DARK_DEFAULTS)
 
   function updateLight(key: string, value: string) {
-    setLightPalette((prev) => prev.map((e) => e.key === key ? { ...e, value } : e))
+    setLightPalette((prev) => {
+      const next = prev.map((e) => e.key === key ? { ...e, value } : e)
+      applyPalette(next, darkPalette)
+      return next
+    })
   }
+
   function updateDark(key: string, value: string) {
-    setDarkPalette((prev) => prev.map((e) => e.key === key ? { ...e, value } : e))
+    setDarkPalette((prev) => {
+      const next = prev.map((e) => e.key === key ? { ...e, value } : e)
+      applyPalette(lightPalette, next)
+      return next
+    })
   }
 
   function save() {
+    savePalette(lightPalette, darkPalette)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
     toast.success("Platform settings saved")
@@ -199,7 +198,10 @@ function PlatformInfoTab() {
             <Button
               variant="ghost" size="sm"
               className="h-7 text-xs text-muted-foreground"
-              onClick={() => setLightPalette(LIGHT_DEFAULTS)}
+              onClick={() => {
+                setLightPalette(LIGHT_DEFAULTS)
+                applyPalette(LIGHT_DEFAULTS, darkPalette)
+              }}
             >
               Reset defaults
             </Button>
@@ -228,7 +230,10 @@ function PlatformInfoTab() {
             <Button
               variant="ghost" size="sm"
               className="h-7 text-xs text-muted-foreground"
-              onClick={() => setDarkPalette(DARK_DEFAULTS)}
+              onClick={() => {
+                setDarkPalette(DARK_DEFAULTS)
+                applyPalette(lightPalette, DARK_DEFAULTS)
+              }}
             >
               Reset defaults
             </Button>
@@ -247,6 +252,18 @@ function PlatformInfoTab() {
       <div className="flex items-center gap-3">
         <Button onClick={save} className="gap-2">
           <Save className="h-4 w-4" /> Save Changes
+        </Button>
+        <Button
+          variant="ghost"
+          className="text-muted-foreground"
+          onClick={() => {
+            setLightPalette(LIGHT_DEFAULTS)
+            setDarkPalette(DARK_DEFAULTS)
+            clearSavedPalette()
+            toast.success("Palette reset to defaults")
+          }}
+        >
+          Reset all colours
         </Button>
         {saved && <span className="text-sm text-emerald-600 dark:text-emerald-400">Saved successfully.</span>}
       </div>
