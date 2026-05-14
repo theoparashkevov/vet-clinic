@@ -62,13 +62,13 @@ export function applyPalette(light: PaletteEntry[], dark: PaletteEntry[]): void 
 
   const css = `:root {\n${lightRules}\n}\n.dark {\n${darkRules}\n}`
 
-  let el = document.getElementById('vet-theme-palette') as HTMLStyleElement | null
-  if (!el) {
-    el = document.createElement('style')
-    el.id = 'vet-theme-palette'
-    document.head.appendChild(el)
-  }
+  // Always remove and re-append so this tag is last in <head>,
+  // guaranteeing it wins the cascade over Vite-injected stylesheets.
+  document.getElementById('vet-theme-palette')?.remove()
+  const el = document.createElement('style')
+  el.id = 'vet-theme-palette'
   el.textContent = css
+  document.head.appendChild(el)
 }
 
 export function savePalette(light: PaletteEntry[], dark: PaletteEntry[]): void {

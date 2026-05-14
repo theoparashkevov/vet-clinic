@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -109,24 +109,24 @@ function PlatformInfoTab() {
     supportEmail: "support@vetclinic.com",
   })
 
-  const initialPalette = loadSavedPalette()
-  const [lightPalette, setLightPalette] = useState<PaletteEntry[]>(initialPalette?.light ?? LIGHT_DEFAULTS)
-  const [darkPalette, setDarkPalette] = useState<PaletteEntry[]>(initialPalette?.dark ?? DARK_DEFAULTS)
+  const [lightPalette, setLightPalette] = useState<PaletteEntry[]>(
+    () => loadSavedPalette()?.light ?? LIGHT_DEFAULTS
+  )
+  const [darkPalette, setDarkPalette] = useState<PaletteEntry[]>(
+    () => loadSavedPalette()?.dark ?? DARK_DEFAULTS
+  )
+
+  // Apply to live CSS whenever either palette changes
+  useEffect(() => {
+    applyPalette(lightPalette, darkPalette)
+  }, [lightPalette, darkPalette])
 
   function updateLight(key: string, value: string) {
-    setLightPalette((prev) => {
-      const next = prev.map((e) => e.key === key ? { ...e, value } : e)
-      applyPalette(next, darkPalette)
-      return next
-    })
+    setLightPalette((prev) => prev.map((e) => e.key === key ? { ...e, value } : e))
   }
 
   function updateDark(key: string, value: string) {
-    setDarkPalette((prev) => {
-      const next = prev.map((e) => e.key === key ? { ...e, value } : e)
-      applyPalette(lightPalette, next)
-      return next
-    })
+    setDarkPalette((prev) => prev.map((e) => e.key === key ? { ...e, value } : e))
   }
 
   function save() {
@@ -198,10 +198,7 @@ function PlatformInfoTab() {
             <Button
               variant="ghost" size="sm"
               className="h-7 text-xs text-muted-foreground"
-              onClick={() => {
-                setLightPalette(LIGHT_DEFAULTS)
-                applyPalette(LIGHT_DEFAULTS, darkPalette)
-              }}
+              onClick={() => setLightPalette(LIGHT_DEFAULTS)}
             >
               Reset defaults
             </Button>
@@ -230,10 +227,7 @@ function PlatformInfoTab() {
             <Button
               variant="ghost" size="sm"
               className="h-7 text-xs text-muted-foreground"
-              onClick={() => {
-                setDarkPalette(DARK_DEFAULTS)
-                applyPalette(lightPalette, DARK_DEFAULTS)
-              }}
+              onClick={() => setDarkPalette(DARK_DEFAULTS)}
             >
               Reset defaults
             </Button>
@@ -257,9 +251,9 @@ function PlatformInfoTab() {
           variant="ghost"
           className="text-muted-foreground"
           onClick={() => {
+            clearSavedPalette()
             setLightPalette(LIGHT_DEFAULTS)
             setDarkPalette(DARK_DEFAULTS)
-            clearSavedPalette()
             toast.success("Palette reset to defaults")
           }}
         >
