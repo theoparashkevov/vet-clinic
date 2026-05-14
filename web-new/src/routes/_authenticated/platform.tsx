@@ -144,30 +144,32 @@ function PresetSelector({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.97 }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="absolute left-0 top-11 z-40 w-72 rounded-xl border bg-popover shadow-xl p-1.5 space-y-0.5"
+              className="absolute left-0 top-11 z-40 w-[34rem] rounded-xl border bg-popover shadow-xl p-1.5"
             >
-              {PRESETS.map((preset) => {
-                const isActive = preset.id === activeId
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => { onSelect(preset.id); setOpen(false) }}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent ${isActive ? "bg-accent" : ""}`}
-                  >
-                    <span className="flex gap-1 shrink-0">
-                      {preset.preview.map((c) => (
-                        <span key={c} className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: c }} />
-                      ))}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium leading-tight">{preset.name}</span>
-                      <span className="block text-xs text-muted-foreground leading-tight truncate">{preset.description}</span>
-                    </span>
-                    {isActive && <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-primary" />}
-                  </button>
-                )
-              })}
+              <div className="grid grid-cols-2 gap-0.5">
+                {PRESETS.map((preset) => {
+                  const isActive = preset.id === activeId
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => { onSelect(preset.id); setOpen(false) }}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent ${isActive ? "bg-accent" : ""}`}
+                    >
+                      <span className="flex gap-1 shrink-0">
+                        {preset.preview.map((c) => (
+                          <span key={c} className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: c }} />
+                        ))}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium leading-tight">{preset.name}</span>
+                        <span className="block text-xs text-muted-foreground leading-tight truncate">{preset.description}</span>
+                      </span>
+                      {isActive && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                    </button>
+                  )
+                })}
+              </div>
             </motion.div>
           </>
         )}
@@ -274,6 +276,22 @@ function PlatformInfoTab() {
         </CardContent>
       </Card>
 
+      {/* Colour Presets */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Palette className="h-4 w-4" /> Colour Presets
+          </CardTitle>
+          <CardDescription>
+            Apply a curated palette to both light and dark themes at once, then fine-tune individual colours below.
+          </CardDescription>
+        </CardHeader>
+        <Separator />
+        <CardContent className="pt-4">
+          <PresetSelector activeId={activePreset} onSelect={applyPreset} />
+        </CardContent>
+      </Card>
+
       {/* Light theme palette */}
       <Card>
         <CardHeader className="pb-3">
@@ -284,16 +302,13 @@ function PlatformInfoTab() {
               </CardTitle>
               <CardDescription className="mt-1">Colours used when the app is in light mode.</CardDescription>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <PresetSelector activeId={activePreset} onSelect={applyPreset} />
-              <Button
-                variant="ghost" size="sm"
-                className="h-7 text-xs text-muted-foreground"
-                onClick={() => setLightPalette(LIGHT_DEFAULTS)}
-              >
-                Reset
-              </Button>
-            </div>
+            <Button
+              variant="ghost" size="sm"
+              className="h-7 text-xs text-muted-foreground shrink-0"
+              onClick={() => setLightPalette(LIGHT_DEFAULTS)}
+            >
+              Reset
+            </Button>
           </div>
         </CardHeader>
         <Separator />

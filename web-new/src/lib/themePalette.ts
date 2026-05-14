@@ -53,6 +53,46 @@ export const PRESETS: ThemePreset[] = [
     light: { background: '#f8fafc', foreground: '#0f172a', primary: '#475569', secondary: '#e2e8f0', accent: '#e2e8f0', muted: '#e2e8f0', destructive: '#dc2626' },
     dark:  { background: '#0f172a', foreground: '#f1f5f9', primary: '#94a3b8', secondary: '#1e293b', accent: '#1e293b', muted: '#1e293b', destructive: '#f87171' },
   },
+  {
+    id: 'rose',
+    name: 'Rose',
+    description: 'Vibrant pinks — bold and expressive',
+    preview: ['#fff7f9', '#e11d48', '#fdd8e5', '#dc2626'],
+    light: { background: '#fff7f9', foreground: '#2d0a16', primary: '#e11d48', secondary: '#fce7ef', accent: '#fdd8e5', muted: '#fce7ef', destructive: '#dc2626' },
+    dark:  { background: '#1a060d', foreground: '#fce7ef', primary: '#fb7185', secondary: '#2d1520', accent: '#3d1b2a', muted: '#2d1520', destructive: '#f87171' },
+  },
+  {
+    id: 'emerald',
+    name: 'Emerald',
+    description: 'Fresh greens — natural and energising',
+    preview: ['#f0fdf6', '#059669', '#a7f3d0', '#dc2626'],
+    light: { background: '#f0fdf6', foreground: '#052e18', primary: '#059669', secondary: '#d1fae5', accent: '#a7f3d0', muted: '#d1fae5', destructive: '#dc2626' },
+    dark:  { background: '#051a0d', foreground: '#d1fae5', primary: '#34d399', secondary: '#0d2b1a', accent: '#14392a', muted: '#0d2b1a', destructive: '#f87171' },
+  },
+  {
+    id: 'midnight',
+    name: 'Midnight',
+    description: 'Deep indigo — elegant and immersive',
+    preview: ['#f5f5ff', '#4f46e5', '#e0e7ff', '#dc2626'],
+    light: { background: '#f5f5ff', foreground: '#1e1b4b', primary: '#4f46e5', secondary: '#e0e7ff', accent: '#eef2ff', muted: '#e0e7ff', destructive: '#dc2626' },
+    dark:  { background: '#0d0b1e', foreground: '#e0e7ff', primary: '#818cf8', secondary: '#1a1740', accent: '#211e52', muted: '#1a1740', destructive: '#f87171' },
+  },
+  {
+    id: 'copper',
+    name: 'Copper',
+    description: 'Warm amber-gold — earthy and rich',
+    preview: ['#fdfaf6', '#b45309', '#fde68a', '#dc2626'],
+    light: { background: '#fdfaf6', foreground: '#292009', primary: '#b45309', secondary: '#fef3c7', accent: '#fde68a', muted: '#fef3c7', destructive: '#dc2626' },
+    dark:  { background: '#151005', foreground: '#fef3c7', primary: '#f59e0b', secondary: '#251c08', accent: '#35280c', muted: '#251c08', destructive: '#f87171' },
+  },
+  {
+    id: 'arctic',
+    name: 'Arctic',
+    description: 'Ice cyan — crisp and refreshing',
+    preview: ['#f0fbff', '#0891b2', '#b3eaf5', '#dc2626'],
+    light: { background: '#f0fbff', foreground: '#0a2530', primary: '#0891b2', secondary: '#e0f7fc', accent: '#b3eaf5', muted: '#e0f7fc', destructive: '#dc2626' },
+    dark:  { background: '#050f14', foreground: '#e0f7fc', primary: '#22d3ee', secondary: '#0a2030', accent: '#0d2d3a', muted: '#0a2030', destructive: '#f87171' },
+  },
 ]
 
 // Defaults match the actual CSS variable values in index.css
