@@ -8,7 +8,6 @@ import {
   FlaskConical,
   Pill,
   CreditCard,
-  Shield,
   Stethoscope,
   ClipboardList,
   ClipboardPlus,
@@ -84,7 +83,6 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Settings", to: "/settings", icon: Settings2, roles: ["admin", "superadmin"] },
       { label: "Platform", to: "/platform", icon: Server, roles: ["superadmin"] },
-      { label: "Admin", to: "/admin", icon: Shield, roles: ["superadmin"] },
     ],
   },
 ]

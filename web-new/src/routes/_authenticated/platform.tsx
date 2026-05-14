@@ -15,8 +15,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table"
 import {
   UserPlus, Trash2, Search, X, ChevronDown, Check, Loader2,
-  Pencil, KeyRound, Save, Palette, Users2, Layers,
+  Pencil, KeyRound, Save, Palette, Users2, Layers, Bot, BrainCircuit, ScrollText,
 } from "lucide-react"
+import AIConfigTab from "../../components/admin/AIConfigTab"
+import BotConfigTab from "../../components/admin/BotConfigTab"
+import AuditLogsTab from "../../components/admin/AuditLogsTab"
 
 export const Route = createFileRoute("/_authenticated/platform")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -894,10 +897,22 @@ function PlatformPage() {
             <TabsTrigger value="users" className="gap-1.5">
               <Users2 className="h-3.5 w-3.5" /> Users
             </TabsTrigger>
+            <TabsTrigger value="ai-config" className="gap-1.5">
+              <BrainCircuit className="h-3.5 w-3.5" /> AI Config
+            </TabsTrigger>
+            <TabsTrigger value="bot-config" className="gap-1.5">
+              <Bot className="h-3.5 w-3.5" /> Bot Config
+            </TabsTrigger>
+            <TabsTrigger value="audit-logs" className="gap-1.5">
+              <ScrollText className="h-3.5 w-3.5" /> Audit Logs
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="platform"><PlatformInfoTab /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
+          <TabsContent value="ai-config"><AIConfigTab /></TabsContent>
+          <TabsContent value="bot-config"><BotConfigTab /></TabsContent>
+          <TabsContent value="audit-logs"><AuditLogsTab /></TabsContent>
         </Tabs>
       </div>
     </div>
