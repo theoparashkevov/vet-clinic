@@ -231,7 +231,7 @@ model Appointment {
   startsAt           DateTime
   endsAt             DateTime
   reason             String?
-  status             AppointmentStatus  @default(SCHEDULED)
+  status             AppointmentStatus  @default(scheduled)
   checkedInAt        DateTime?
   checkedOutAt       DateTime?
   room               String?
@@ -599,7 +599,7 @@ model ServiceCatalog {
   id              String      @id @default(cuid())
   name            String
   description     String?
-  serviceType     ServiceType @default(OTHER)
+  serviceType     ServiceType @default(other)
   defaultPrice    Float
   durationMinutes Int?
   isActive        Boolean     @default(true)
@@ -621,7 +621,7 @@ model Invoice {
   ownerId        String
   appointment    Appointment?  @relation(fields: [appointmentId], references: [id])
   appointmentId  String?
-  status         InvoiceStatus @default(DRAFT)
+  status         InvoiceStatus @default(draft)
   issueDate      DateTime
   dueDate        DateTime
   subtotal       Float
@@ -656,7 +656,7 @@ model InvoiceItem {
   unitPrice        Float
   discountAmount   Float?          @default(0)
   totalPrice       Float
-  serviceType      ServiceType     @default(OTHER)
+  serviceType      ServiceType     @default(other)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -669,8 +669,8 @@ model Payment {
   invoice       Invoice       @relation(fields: [invoiceId], references: [id])
   invoiceId     String
   amount        Float
-  paymentMethod PaymentMethod @default(CASH)
-  status        PaymentStatus @default(PENDING)
+  paymentMethod PaymentMethod @default(cash)
+  status        PaymentStatus @default(pending)
   transactionId String?
   paidAt        DateTime?
   notes         String?
