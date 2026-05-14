@@ -10,51 +10,53 @@ datasource db {
 // ── Enums ────────────────────────────────────────────────────────────────────
 
 enum AppointmentStatus {
-  SCHEDULED
-  CHECKED_IN
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  NO_SHOW
+  scheduled
+  checked_in
+  in_progress
+  completed
+  cancelled
+  no_show
+  rescheduled
 }
 
 enum InvoiceStatus {
-  DRAFT
-  SENT
-  PAID
-  OVERDUE
-  CANCELLED
-  REFUNDED
+  draft
+  sent
+  paid
+  overdue
+  cancelled
+  refunded
+  partially_paid
 }
 
 enum PaymentMethod {
-  CASH
-  CARD
-  BANK_TRANSFER
-  CHECK
-  INSURANCE
-  ONLINE
+  cash
+  card
+  bank_transfer
+  check
+  insurance
+  online
 }
 
 enum ServiceType {
-  CONSULTATION
-  SURGERY
-  VACCINATION
-  LABORATORY
-  IMAGING
-  MEDICATION
-  GROOMING
-  BOARDING
-  EMERGENCY
-  OTHER
+  consultation
+  surgery
+  vaccination
+  laboratory
+  imaging
+  medication
+  grooming
+  boarding
+  emergency
+  other
 }
 
 enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-  PARTIALLY_REFUNDED
+  pending
+  completed
+  failed
+  refunded
+  partially_refunded
 }
 
 // ── Core Entities ────────────────────────────────────────────────────────────
