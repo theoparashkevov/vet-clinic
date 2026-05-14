@@ -16,8 +16,6 @@ import { Separator } from "../ui/separator"
 import { cn } from "../../lib/utils"
 import { fetchWithAuth } from "../../lib/api"
 
-type NotifType = "appointment" | "lab" | "prescription" | "vaccination" | "task" | "task_assigned"
-
 interface Notification {
   id: string
   type: string

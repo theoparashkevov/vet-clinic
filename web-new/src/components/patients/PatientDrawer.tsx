@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useNavigate } from "@tanstack/react-router"
 import {
   X, PawPrint, User, Phone, Mail, Pencil, CalendarDays,
-  ExternalLink, AlertTriangle, Syringe, Weight, Stethoscope,
+  ExternalLink, AlertTriangle,
 } from "lucide-react"
 import { fetchWithAuth } from "../../lib/api"
 import { Button } from "../../components/ui/button"
