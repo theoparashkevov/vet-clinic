@@ -60,7 +60,7 @@ services:
     networks:
       - vet-clinic-network
 
-  # Web Service (Next.js)
+  # Web Service (Vite + React, served by nginx)
   web:
     build:
       context: ../web-new
@@ -71,8 +71,6 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      PORT: 3000
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     ports:
       - "3001:3000"
     depends_on:
