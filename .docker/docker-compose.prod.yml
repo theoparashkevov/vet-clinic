@@ -27,7 +27,7 @@ services:
   # API Service (NestJS)
   api:
     build:
-      context: ./api
+      context: ../api
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
@@ -63,7 +63,7 @@ services:
   # Web Service (Next.js)
   web:
     build:
-      context: ./web
+      context: ../web-new
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
