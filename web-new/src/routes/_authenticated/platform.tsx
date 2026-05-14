@@ -207,7 +207,7 @@ function PlatformInfoTab() {
         </CardHeader>
         <Separator />
         <CardContent className="pt-5">
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             {lightPalette.map((entry) => (
               <ColorSwatch key={entry.key} entry={entry} onChange={(v) => updateLight(entry.key, v)} />
             ))}
@@ -236,7 +236,7 @@ function PlatformInfoTab() {
         </CardHeader>
         <Separator />
         <CardContent className="pt-5">
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             {darkPalette.map((entry) => (
               <ColorSwatch key={entry.key} entry={entry} onChange={(v) => updateDark(entry.key, v)} />
             ))}

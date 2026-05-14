@@ -4,19 +4,23 @@ export interface PaletteEntry { key: string; label: string; description: string;
 
 // Defaults match the actual CSS variable values in index.css
 export const LIGHT_DEFAULTS: PaletteEntry[] = [
-  { key: 'light-primary',     label: 'Primary',     description: 'Buttons, active nav items, links, focus rings',      value: '#22776c' },
-  { key: 'light-secondary',   label: 'Secondary',   description: 'Secondary button backgrounds, badge fills',           value: '#ebedf0' },
+  { key: 'light-background',  label: 'Background',  description: 'Main page canvas and sidebar background',             value: '#f6f7f9' },
+  { key: 'light-foreground',  label: 'Foreground',  description: 'Default text, headings, icons',                       value: '#192029' },
+  { key: 'light-primary',     label: 'Primary',     description: 'Buttons, active nav items, links, focus rings',       value: '#22776c' },
+  { key: 'light-secondary',   label: 'Secondary',   description: 'Secondary button backgrounds, badge fills',            value: '#ebedf0' },
   { key: 'light-accent',      label: 'Accent',      description: 'Hover highlights on menus, dropdowns, sidebar rows',  value: '#e5e8eb' },
-  { key: 'light-muted',       label: 'Muted',       description: 'Muted/disabled backgrounds, table stripes',           value: '#ebedf0' },
-  { key: 'light-destructive', label: 'Destructive', description: 'Delete buttons, error alerts, danger states',         value: '#dc2828' },
+  { key: 'light-muted',       label: 'Muted',       description: 'Muted/disabled backgrounds, table stripes',            value: '#ebedf0' },
+  { key: 'light-destructive', label: 'Destructive', description: 'Delete buttons, error alerts, danger states',          value: '#dc2828' },
 ]
 
 export const DARK_DEFAULTS: PaletteEntry[] = [
-  { key: 'dark-primary',     label: 'Primary',     description: 'Buttons, active nav items, links, focus rings',      value: '#31af9e' },
-  { key: 'dark-secondary',   label: 'Secondary',   description: 'Secondary button backgrounds, badge fills',           value: '#252931' },
+  { key: 'dark-background',  label: 'Background',  description: 'Main page canvas and sidebar background',             value: '#12151c' },
+  { key: 'dark-foreground',  label: 'Foreground',  description: 'Default text, headings, icons',                       value: '#eaedf0' },
+  { key: 'dark-primary',     label: 'Primary',     description: 'Buttons, active nav items, links, focus rings',       value: '#31af9e' },
+  { key: 'dark-secondary',   label: 'Secondary',   description: 'Secondary button backgrounds, badge fills',            value: '#252931' },
   { key: 'dark-accent',      label: 'Accent',      description: 'Hover highlights on menus, dropdowns, sidebar rows',  value: '#272b34' },
-  { key: 'dark-muted',       label: 'Muted',       description: 'Muted/disabled backgrounds, table stripes',           value: '#252931' },
-  { key: 'dark-destructive', label: 'Destructive', description: 'Delete buttons, error alerts, danger states',         value: '#c62e2e' },
+  { key: 'dark-muted',       label: 'Muted',       description: 'Muted/disabled backgrounds, table stripes',            value: '#252931' },
+  { key: 'dark-destructive', label: 'Destructive', description: 'Delete buttons, error alerts, danger states',          value: '#c62e2e' },
 ]
 
 function hexToHslString(hex: string): string {
@@ -45,11 +49,15 @@ function hexToHslString(hex: string): string {
 
 // Each palette key maps to every CSS variable it should drive
 const VAR_MAP: Record<string, string[]> = {
+  'light-background':  ['--background', '--card', '--popover', '--sidebar'],
+  'light-foreground':  ['--foreground', '--card-foreground', '--popover-foreground', '--sidebar-foreground'],
   'light-primary':     ['--primary', '--ring', '--sidebar-primary', '--sidebar-ring'],
   'light-secondary':   ['--secondary'],
   'light-accent':      ['--accent', '--sidebar-accent'],
   'light-muted':       ['--muted'],
   'light-destructive': ['--destructive'],
+  'dark-background':   ['--background', '--card', '--popover', '--sidebar'],
+  'dark-foreground':   ['--foreground', '--card-foreground', '--popover-foreground', '--sidebar-foreground'],
   'dark-primary':      ['--primary', '--ring', '--sidebar-primary', '--sidebar-ring'],
   'dark-secondary':    ['--secondary'],
   'dark-accent':       ['--accent', '--sidebar-accent'],
